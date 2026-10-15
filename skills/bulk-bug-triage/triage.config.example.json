@@ -1,0 +1,12 @@
+{
+  "repo": "Owner/Repo",
+  "checkout": "/absolute/path/to/primary/checkout",
+  "sha": "full-40-char-sha-of-the-commit-the-evidence-cites",
+  "label": "bug",
+  "branch": "main",
+  "date": "2026-09-19",
+  "triageLabels": ["needs-triage", "needs-info", "ready-for-agent", "ready-for-human"],
+  "inventoryCutoff": "2026-09-19T10:17:00Z",
+  "rereviewed": {},
+  "decisions": "triage-decisions.json"
+}
