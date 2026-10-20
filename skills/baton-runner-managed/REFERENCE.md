@@ -498,6 +498,7 @@ the durable artifact; both JSONs are run bookkeeping. Shape, matching
 | `## Refuted: <n>` | each refuted title + the skeptic's reason; `0` still gets the heading and a sentence |
 | `## Checked claims that were wrong: <n>` | `checkedClaimsThatAreWrong`; `0` means the skeptic looked and they held — say that |
 | `## Residual risk (…verbatim)` | `residualRisk`, in the lanes' own words, not summarized |
+| `## Open questions: <n> (<p> PENDING)` | every `pendingQuestions` entry plus the ANSWERED ones from `verified.openQuestions`, each with its disposition; `0` still gets the heading and a sentence. A PENDING entry means the phase is not CLEAN — say which decision the author owes |
 | `## Verification after the fixes` | the fixer's `verification` output verbatim, then the full gate's `GATE:` line and sha |
 
 The empty lists are not optional. A record with no `Refuted` and no

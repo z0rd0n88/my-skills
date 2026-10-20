@@ -67,9 +67,25 @@ def group_by_dir(confirmed):
     return groups
 
 
+def report_open_questions(payload):
+    """Every open question with its disposition. A PENDING one blocks CLEAN like an
+    open before-merge item, so the manager must see the count."""
+    verified = payload.get("verified") or {}
+    answered = [q for q in (verified.get("openQuestions") or []) if q.get("disposition") != "PENDING"]
+    pending = payload.get("pendingQuestions") or []
+    print("openQuestions: {} ({} PENDING)".format(len(answered) + len(pending), len(pending)))
+    for question in pending + answered:
+        print(
+            "  [{}] ({}) {}".format(
+                question.get("disposition"), question.get("lens"), question.get("question")
+            )
+        )
+
+
 def report_no_findings(payload):
     print("verdict: NO-FINDINGS — the skeptic never ran. NOT an approval.")
     print("ref: {}   sha: {}".format(payload.get("ref"), payload.get("sha")))
+    report_open_questions(payload)
     for review in payload.get("reviews") or []:
         checked = review.get("checked") or []
         not_examined = review.get("notExamined") or []
@@ -87,9 +103,16 @@ def report_no_findings(payload):
 
 def report_verified(payload):
     verified = payload["verified"]
+    # The top-level `verdict` is authoritative: the script lowers an APPROVE to
+    # MERGE-WITH-FIXES over PENDING questions and keeps the skeptic's own in
+    # `skepticVerdict`; older payloads carry only `verified.verdict`.
+    verdict = payload.get("verdict") or verified["verdict"]
     print(
-        "verdict: {}   ref: {}   sha: {}".format(
-            verified["verdict"], payload.get("ref"), payload.get("sha")
+        "verdict: {}{}   ref: {}   sha: {}".format(
+            verdict,
+            " (capped from {})".format(payload.get("skepticVerdict")) if payload.get("capped") else "",
+            payload.get("ref"),
+            payload.get("sha"),
         )
     )
     by_lens = ", ".join(
@@ -125,6 +148,8 @@ def report_verified(payload):
         "residualRisk: {} entries — in the JSON; the closing unit copies them "
         "verbatim into the review record".format(len(residual))
     )
+
+    report_open_questions(payload)
 
     if confirmed:
         groups = group_by_dir(confirmed)
@@ -184,14 +209,37 @@ def selftest():
     assert "  F3 [MEDIUM] c  (CLAUDE.md:9)" in text, text
     assert "refuted: 1" in text and "checkedClaimsThatAreWrong: 1" in text, text
     assert "grouping hint (2 dirs" in text and "  F1, F2  src/a" in text, text
+    assert "openQuestions: 0 (0 PENDING)" in text, text
+
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        report_verified(
+            {
+                **payload,
+                "verdict": "MERGE-WITH-FIXES",
+                "skepticVerdict": "APPROVE",
+                "capped": True,
+                "pendingQuestions": [{"question": "q?", "lens": "api", "disposition": "PENDING"}],
+            }
+        )
+    text = out.getvalue()
+    assert "verdict: MERGE-WITH-FIXES (capped from APPROVE)" in text, text
+    assert "openQuestions: 1 (1 PENDING)" in text and "  [PENDING] (api) q?" in text, text
 
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         report_no_findings(
-            {"verdict": "NO-FINDINGS", "reviews": [{"lens": "api", "checked": []}]}
+            {
+                "verdict": "NO-FINDINGS",
+                "reviews": [{"lens": "api", "checked": []}],
+                "pendingQuestions": [
+                    {"question": "q?", "lens": "api", "disposition": "PENDING"}
+                ],
+            }
         )
     text = out.getvalue()
     assert "NOT an approval" in text, text
+    assert "openQuestions: 1 (1 PENDING)" in text, text
     assert "empty `checked` is the tell" in text, text
 
     # A dead skeptic must exit, not crash and not print a report. The raw payload
