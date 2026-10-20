@@ -13,7 +13,9 @@ output only this help section and stop:
 > Review a committed PR or branch with two or three parallel Codex subagents,
 > followed by one skeptic if any lane finds a defect. Target: `pr <N>`, a branch,
 > or the current branch. The review is read-only and reports in chat. An
-> unchecked-out target may need a temporary git worktree. No PR comment or
+> unchecked-out target may need a temporary git worktree. Lanes also return the
+> questions only the author can answer; any left pending caps the verdict at
+> merge-with-fixes until each is answered, filed, or declined. No PR comment or
 > repository report is published without a separate request.
 
 Use this skill only where Codex native subagent dispatch and waiting are available.
@@ -57,9 +59,12 @@ repository invariants, and its own distinct questions. Require it to verify
 lane is read-only: no edits, commits, pushes, or comments. It may run focused
 checks that do not modify tracked files. Ask for findings with priority,
 precise changed-line location, reproduction or reasoning, and merge impact;
-also ask what it checked and what remains unexamined. Report all supported
-findings to the coordinator, including lower-severity ones; filter and
-deduplicate during synthesis.
+also ask what it checked and what remains unexamined. Ask separately for its
+open questions: decisions only the author can make (a scope call, an intent the
+tree cannot settle, a dependency outside the diff). They are not findings and
+not dropped; they are gated at merge exactly as a finding is. Report all
+supported findings to the coordinator, including lower-severity ones; filter
+and deduplicate during synthesis.
 
 Treat a failed dispatch, missing scope verification, empty or wrong diff, or
 missing lane result as **INCOMPLETE**, never as a clean review. Retry a failed
@@ -73,15 +78,30 @@ candidate set to one fresh skeptic agent. Give it the same pinned scope and
 read-only rules. It must independently inspect code and tests, try to refute
 each candidate, spot-check material claims that reviewers marked verified,
 and classify each finding as confirmed, refuted, or unresolved with evidence.
-If the skeptic fails or scope drifts, report **INCOMPLETE** and do not turn
-unverified candidates into confirmed findings.
+Also give it every lane's open questions. For each one it tries to settle the
+question from the tree: ANSWERED when the code or docs decide it (citing what it
+read), else PENDING with what the author must decide. A statement inside the
+diff under review never settles a question about that diff; ANSWERED needs a
+source outside the changed hunks, such as base-branch docs, an ADR, or a test
+that exercises it. It never declines one; that is the author's call, and it
+returns every question it was given. While any question is PENDING the verdict is at most
+MERGE-WITH-FIXES, whatever the skeptic wrote: the code can be right and the PR
+still not mergeable. If the skeptic fails or scope drifts, report
+**INCOMPLETE** and do not turn unverified candidates into confirmed findings.
 
 If no lane finds anything, skip the skeptic and use **NO-FINDINGS**, not
-`APPROVE`: there was no adversarial verification. In every report name the
+`APPROVE`: there was no adversarial verification. Nobody tried to answer the
+open questions either, so relay every one as PENDING. In every report name the
 exact target and base SHAs, reviewed paths, lanes, checks, confirmed and
-refuted findings, unresolved claims, and residual risk. Distinguish a
-before-merge blocker from a follow-up issue, especially for irreversible
-changes. Findings must point to actionable lines in the reviewed diff.
+refuted findings, unresolved claims, open questions with their dispositions,
+and residual risk. Open questions are a gate, not an appendix: while any is
+PENDING say so in one line (`not merge-ready: <n> open questions pending`). In
+the record the author replaces each PENDING with `ANSWERED - <one
+sentence>[, <commit>]`, `FILED - #<issue>`, or `DECLINED - <one sentence why it
+does not apply>`; the PR merges and its issue closes only when none is PENDING,
+and a FILED issue carries that remainder. Distinguish a before-merge blocker
+from a follow-up issue, especially for irreversible changes. Findings must
+point to actionable lines in the reviewed diff.
 
 Report in chat by default. A PR comment or repository file is a separate
 publication action: prepare its exact body and destination, then follow the
