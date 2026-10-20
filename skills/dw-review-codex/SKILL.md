@@ -83,7 +83,9 @@ question from the tree: ANSWERED when the code or docs decide it (citing what it
 read), else PENDING with what the author must decide. It never declines one;
 that is the author's call. While any question is PENDING the verdict is at most
 MERGE-WITH-FIXES, whatever the skeptic wrote: the code can be right and the PR
-still not mergeable. If the skeptic fails or scope drifts, report
+still not mergeable. A lane question the skeptic did not echo, or marked ANSWERED
+without saying what settles it, is PENDING. A lane reply with no open-questions
+section (not even an explicit none) is a missing lane result. If the skeptic fails or scope drifts, report
 **INCOMPLETE** and do not turn unverified candidates into confirmed findings.
 
 If no lane finds anything, skip the skeptic and use **NO-FINDINGS**, not

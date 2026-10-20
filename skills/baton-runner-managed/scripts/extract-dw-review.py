@@ -67,9 +67,22 @@ def group_by_dir(confirmed):
     return groups
 
 
+def report_open_questions(questions):
+    """A PENDING question blocks CLEAN like an open before-merge item; print every one."""
+    pending = [q for q in questions if q.get("disposition") == "PENDING"]
+    print("openQuestions: {} ({} PENDING)".format(len(questions), len(pending)))
+    for question in questions:
+        print(
+            "  [{}] ({}) {}".format(
+                question.get("disposition"), question.get("lens"), question.get("question")
+            )
+        )
+
+
 def report_no_findings(payload):
     print("verdict: NO-FINDINGS — the skeptic never ran. NOT an approval.")
     print("ref: {}   sha: {}".format(payload.get("ref"), payload.get("sha")))
+    report_open_questions(payload.get("pendingQuestions") or [])
     for review in payload.get("reviews") or []:
         checked = review.get("checked") or []
         not_examined = review.get("notExamined") or []
@@ -125,6 +138,8 @@ def report_verified(payload):
         "residualRisk: {} entries — in the JSON; the closing unit copies them "
         "verbatim into the review record".format(len(residual))
     )
+
+    report_open_questions(payload.get("openQuestions") or verified.get("openQuestions") or [])
 
     if confirmed:
         groups = group_by_dir(confirmed)
@@ -184,14 +199,22 @@ def selftest():
     assert "  F3 [MEDIUM] c  (CLAUDE.md:9)" in text, text
     assert "refuted: 1" in text and "checkedClaimsThatAreWrong: 1" in text, text
     assert "grouping hint (2 dirs" in text and "  F1, F2  src/a" in text, text
+    assert "openQuestions: 0 (0 PENDING)" in text, text
 
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         report_no_findings(
-            {"verdict": "NO-FINDINGS", "reviews": [{"lens": "api", "checked": []}]}
+            {
+                "verdict": "NO-FINDINGS",
+                "reviews": [{"lens": "api", "checked": []}],
+                "pendingQuestions": [
+                    {"question": "q?", "lens": "api", "disposition": "PENDING"}
+                ],
+            }
         )
     text = out.getvalue()
     assert "NOT an approval" in text, text
+    assert "openQuestions: 1 (1 PENDING)" in text and "  [PENDING] (api) q?" in text, text
     assert "empty `checked` is the tell" in text, text
 
     # A dead skeptic must exit, not crash and not print a report. The raw payload

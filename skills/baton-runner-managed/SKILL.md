@@ -195,14 +195,18 @@ stacked-merge order, any waivers).
 
 ### CLEAN
 
-`CLEAN` iff **both**:
+`CLEAN` iff **all three**:
 
 - the **full** gate exits 0 (`GATE: PASS profile=full`) at the phase HEAD, and
 - the skeptic verdict is `APPROVE` or `MERGE-WITH-FIXES` **and every
   before-merge item is closed** — applied by the fixer's writer, or ruled
   `refuted` / `already-handled` by an adjudicator. The evidence check is the
   closing unit's record, which quotes that adjudicator verbatim; the manager
-  never reads it.
+  never reads it, and
+- `pendingQuestions` is empty: every open question the lanes raised carries an
+  author disposition (ANSWERED / FILED / DECLINED). A PENDING question is not a
+  finding, so no fixer closes it; it PAUSEs the phase exactly like a before-merge
+  item left open.
 
 `BLOCK`, a before-merge item left `unresolved` / `real-but-decided-elsewhere` /
 `skipped`, or a closing `VERDICT: ISSUES` → PAUSE. Never waive on your own;

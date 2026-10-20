@@ -344,7 +344,8 @@ OPEN QUESTIONS: each lane also returned questions only the author can answer. Fo
 try to settle it from the tree: ANSWERED when the code or docs decide it (cite what you read),
 else PENDING. Never decline one - that is the author's call, not yours. While any question is
 PENDING the verdict is at most MERGE-WITH-FIXES: the code can be right and the PR still not
-mergeable.
+mergeable. Copy every question's text verbatim into openQuestions and list every one: a question
+you omit stays PENDING, and an ANSWERED whose note names no file:line or doc section is PENDING.
 
 FINDINGS TO REFUTE:
 ${JSON.stringify(all, null, 2)}
@@ -412,12 +413,30 @@ ${JSON.stringify(questions, null, 2)}`,
   },
 )
 
-// The gate is code, not prose: a skeptic that forgets the rule still cannot approve past a
-// PENDING question. A dead skeptic (null) returns no verdict at all, which Step 4 already handles.
-const pendingQuestions = ((verified && verified.openQuestions) || []).filter((q) => q.disposition === 'PENDING')
-if (verified && pendingQuestions.length && verified.verdict === 'APPROVE') verified.verdict = 'MERGE-WITH-FIXES'
+// A dead skeptic is a review with no verdict, not a clean one - the same rule as a lost lane.
+if (!verified) {
+  throw new Error('skeptic failed - resume with Workflow({ scriptPath, resumeFromRunId }); ' +
+                  'do not trust a review with no verdict')
+}
+// The gate is code, not prose, and it reconciles against what the LANES asked, not against what
+// the skeptic chose to echo: a question the skeptic dropped, or marked ANSWERED without saying
+// what settles it, stays PENDING.
+const settled = new Map((verified.openQuestions || []).map((q) => [q.question, q]))
+const openQuestions = questions.map((q) => {
+  const s = settled.get(q.question)
+  if (!s) return { ...q, disposition: 'PENDING', note: 'skeptic did not address it' }
+  if (s.disposition === 'ANSWERED' && !String(s.note || '').trim()) {
+    return { ...s, disposition: 'PENDING', note: 'ANSWERED without evidence - treated as PENDING' }
+  }
+  return s
+})
+const pendingQuestions = openQuestions.filter((q) => q.disposition === 'PENDING')
+if (pendingQuestions.length && verified.verdict === 'APPROVE') {
+  verified.cappedFrom = verified.verdict   // so the record can say the skeptic approved and the gate overrode it
+  verified.verdict = 'MERGE-WITH-FIXES'
+}
 
-return { verified, pendingQuestions, ref: REF, sha: SHA, rawCount: all.length, reviews,
+return { verified, openQuestions, pendingQuestions, ref: REF, sha: SHA, rawCount: all.length, reviews,
          byLens: reviews.map((r) => ({ lens: r.lens, n: (r.findings || []).length })) }
 ```
 
@@ -428,14 +447,18 @@ first, and the must-fix-before-merge split. Say how many findings were **refuted
 That number is the evidence the review was adversarial rather than agreeable, and a run where
 nothing was refuted means the skeptic did not do its job.
 
-Relay `checkedClaimsThatAreWrong` and `residualRisk` **even when empty**, and name the ref
+Relay `checkedClaimsThatAreWrong`, `residualRisk`, and `openQuestions` **even when empty**, and name the ref
 reviewed. An empty spot-check list means the skeptic looked and the claims held; silence lets a
 reader assume that without it being true. `residualRisk` is the difference between "this diff is
 clean" and "these three lenses found nothing".
 
 **Open questions are a gate, not an appendix.** Relay every `openQuestions` entry with its
-disposition. The script caps the verdict at MERGE-WITH-FIXES while any is PENDING; say so in
-one line (`not merge-ready: <n> open questions pending`). In the record, the author replaces
+disposition. The script reconciles the skeptic's answers against what the lanes asked: a question
+the skeptic dropped, or marked ANSWERED with no evidence, comes back PENDING. While any is PENDING
+the verdict is capped at MERGE-WITH-FIXES and `verified.cappedFrom` records what the skeptic
+wrote; say so in one line (`not merge-ready: <n> open questions pending`). A run that threw
+`skeptic failed` has no verdict at all: resume it, and never relay the lanes' raw findings as a
+review. In the record, the author replaces
 each PENDING with `ANSWERED - <one sentence>[, <commit>]`, `FILED - #<issue>`, or
 `DECLINED - <one sentence why it does not apply>`. The PR merges and its issue closes only
 when none is PENDING; a FILED issue carries that remainder. A `NO-FINDINGS` run returns them
