@@ -80,8 +80,11 @@ each candidate, spot-check material claims that reviewers marked verified,
 and classify each finding as confirmed, refuted, or unresolved with evidence.
 Also give it every lane's open questions. For each one it tries to settle the
 question from the tree: ANSWERED when the code or docs decide it (citing what it
-read), else PENDING with what the author must decide. It never declines one;
-that is the author's call. While any question is PENDING the verdict is at most
+read), else PENDING with what the author must decide. A statement inside the
+diff under review never settles a question about that diff; ANSWERED needs a
+source outside the changed hunks, such as base-branch docs, an ADR, or a test
+that exercises it. It never declines one; that is the author's call, and it
+returns every question it was given. While any question is PENDING the verdict is at most
 MERGE-WITH-FIXES, whatever the skeptic wrote: the code can be right and the PR
 still not mergeable. If the skeptic fails or scope drifts, report
 **INCOMPLETE** and do not turn unverified candidates into confirmed findings.

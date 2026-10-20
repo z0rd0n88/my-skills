@@ -19,6 +19,8 @@ skill.
 > comment, an org-visible
 > publish. With no PR, no remote, or no `gh` auth it instead creates a branch and writes a file
 > into your repo. Both records ask for your go-ahead first.
+> Lanes also return the questions only the author can answer; any left pending caps the verdict
+> at merge-with-fixes until each is answered, filed, or declined.
 
 Dynamic-workflow review of a committed PR or branch: three reviewer lanes picked from what the
 diff touches, then one fixed skeptic that tries to refute every finding. Reach for it at a merge
@@ -310,7 +312,7 @@ log(`${all.length} raw findings, ${questions.length} open questions across ${rev
 if (all.length === 0) {
   // No skeptic ran, so nobody tried to answer them: every question is the author's, PENDING.
   return { verdict: 'NO-FINDINGS', ref: REF, sha: SHA, lanes: LANES.map((l) => l.key), reviews,
-           pendingQuestions: questions.map((q) => ({ ...q, disposition: 'PENDING' })) }
+           pendingQuestions: questions.map((q) => ({ ...q, disposition: 'PENDING', note: 'no skeptic ran' })) }
 }
 
 phase('Verify')
@@ -342,9 +344,11 @@ must-fix-before-merge (anything permanent) and can-fix-after.
 
 OPEN QUESTIONS: each lane also returned questions only the author can answer. For each one,
 try to settle it from the tree: ANSWERED when the code or docs decide it (cite what you read),
-else PENDING. Never decline one - that is the author's call, not yours. While any question is
-PENDING the verdict is at most MERGE-WITH-FIXES: the code can be right and the PR still not
-mergeable.
+else PENDING. A statement inside the diff under review never settles a question about that
+diff; ANSWERED needs a source outside the changed hunks - base-branch docs, an ADR, a test that
+exercises it. Never decline one - that is the author's call, not yours. Return every question
+you were given. While any question is PENDING the verdict is at most MERGE-WITH-FIXES: the code
+can be right and the PR still not mergeable.
 
 FINDINGS TO REFUTE:
 ${JSON.stringify(all, null, 2)}
@@ -412,12 +416,24 @@ ${JSON.stringify(questions, null, 2)}`,
   },
 )
 
-// The gate is code, not prose: a skeptic that forgets the rule still cannot approve past a
-// PENDING question. A dead skeptic (null) returns no verdict at all, which Step 4 already handles.
-const pendingQuestions = ((verified && verified.openQuestions) || []).filter((q) => q.disposition === 'PENDING')
-if (verified && pendingQuestions.length && verified.verdict === 'APPROVE') verified.verdict = 'MERGE-WITH-FIXES'
+// The gate is code, not prose: a skeptic that forgets the rule, drops a question, or dies
+// (null) still cannot approve past a PENDING one. A lane question the skeptic did not return
+// is PENDING; with no skeptic at all, every question is. The skeptic's own verdict is kept
+// untouched so the relay can see whether the cap fired.
+const echoed = new Set(((verified && verified.openQuestions) || []).map((q) => q.question))
+const dropped = questions.filter((q) => !echoed.has(q.question)).map((q) => ({
+  ...q, disposition: 'PENDING',
+  note: verified ? 'skeptic did not return this question' : 'no skeptic ran',
+}))
+const pendingQuestions = [
+  ...((verified && verified.openQuestions) || []).filter((q) => q.disposition === 'PENDING'),
+  ...dropped,
+]
+const skepticVerdict = verified ? verified.verdict : null
+const verdict = skepticVerdict === 'APPROVE' && pendingQuestions.length ? 'MERGE-WITH-FIXES' : skepticVerdict
 
-return { verified, pendingQuestions, ref: REF, sha: SHA, rawCount: all.length, reviews,
+return { verdict, skepticVerdict, capped: verdict !== skepticVerdict, verified, pendingQuestions,
+         ref: REF, sha: SHA, rawCount: all.length, reviews,
          byLens: reviews.map((r) => ({ lens: r.lens, n: (r.findings || []).length })) }
 ```
 
@@ -433,9 +449,14 @@ reviewed. An empty spot-check list means the skeptic looked and the claims held;
 reader assume that without it being true. `residualRisk` is the difference between "this diff is
 clean" and "these three lenses found nothing".
 
-**Open questions are a gate, not an appendix.** Relay every `openQuestions` entry with its
-disposition. The script caps the verdict at MERGE-WITH-FIXES while any is PENDING; say so in
-one line (`not merge-ready: <n> open questions pending`). In the record, the author replaces
+**Open questions are a gate, not an appendix.** Relay every `pendingQuestions` entry and every
+ANSWERED one from `verified.openQuestions`, with its disposition and note. The verdict to report
+is the top-level `verdict`, not `verified.verdict`: `capped` is true when the script lowered an
+APPROVE to MERGE-WITH-FIXES over PENDING questions, and `skepticVerdict` keeps what the skeptic
+said. Say so in one line (`not merge-ready: <n> open questions pending`). A question the skeptic
+did not return is in `pendingQuestions` with the note saying so. A null `verified` is
+INCOMPLETE, not a verdict: the skeptic died, so every question is PENDING with note `no skeptic
+ran`, and nothing about the findings is verified. In the record, the author replaces
 each PENDING with `ANSWERED - <one sentence>[, <commit>]`, `FILED - #<issue>`, or
 `DECLINED - <one sentence why it does not apply>`. The PR merges and its issue closes only
 when none is PENDING; a FILED issue carries that remainder. A `NO-FINDINGS` run returns them
@@ -444,7 +465,8 @@ too, as `pendingQuestions`, all PENDING - relay those the same way.
 **Verdict `NO-FINDINGS` is a different report.** The early return fires before Verify, so there
 is no APPROVE/MERGE-WITH-FIXES/BLOCK verdict from the skeptic, no refuted count and no
 `checkedClaimsThatAreWrong`. Say so, and never phrase it as an approval. Report each lane's own
-`checked` and `notExamined` from `reviews[]` instead. A lane whose `checked` is empty is the
+`checked` and `notExamined` from `reviews[]` and the all-PENDING `pendingQuestions` instead. A
+lane whose `checked` is empty is the
 tell that the scope was wrong: an unfetched ref makes every `git diff` fail while a schema'd
 agent still returns a well-formed empty result.
 
