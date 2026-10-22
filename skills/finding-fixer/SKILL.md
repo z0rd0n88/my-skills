@@ -1,6 +1,6 @@
 ---
 name: finding-fixer
-description: Turn review findings into applied edits without letting a wrong one through. Read-only agents adjudicate each finding against the sources that decide it, then one writer applies only what survives. Use whenever a review returns findings that need fixing.
+description: Turn review findings into applied edits without letting a wrong one through. Read-only agents adjudicate each finding against the sources that decide it, then one writer applies only what survives. Use whenever a review returns findings to fix, a brief or plan names finding-fixer for the fix step, findings need SUPPORTED or REFUTED verdicts between review rounds, or a hand-run or inline reviewer fan-out returned a findings list.
 ---
 
 # finding-fixer
