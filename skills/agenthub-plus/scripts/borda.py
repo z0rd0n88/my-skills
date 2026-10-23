@@ -9,11 +9,12 @@ sees them, and a judge's ballot only counts if it cites evidence for its first c
     borda.py tally   --session SID [--format table|json]
     borda.py selftest
 
-prepare: runs the gate in each agent worktree, writes one diff per surviving agent under
-  .agenthub/board/judging/<SID>/candidate-<LABEL>.diff (labels A, B, C ... shuffled so they
-  carry no agent number), mapping.json (label -> agent, for the coordinator only) and
-  order-judge-<i>.txt (a different presentation order per judge).
-tally: reads ballot-judge-<i>.json files, each
+prepare: clears and refills .agenthub/board/judging/<SID>/ (a fresh round each time): runs the
+  gate in each agent worktree, writes candidate-<LABEL>.diff per surviving agent (labels A, B,
+  C ... shuffled so they carry no agent number) and order-judge-<i>.txt (a different
+  presentation order per judge). The label -> agent mapping goes to
+  .agenthub/sessions/<SID>/judging-mapping.json, outside the folder judges read.
+tally: counts only ballot-judge-1..N.json (N from prepare) and ballot-judge-tiebreak.json, each
   {"ranking": ["B", "A", "C"], "evidence": {"B": "file:line or test name", ...}}
   and prints Borda scores. Exit 3 means the top is tied and a tiebreak judge is needed.
 """
@@ -22,6 +23,7 @@ import argparse
 import json
 import os
 import random
+import shutil
 import subprocess
 import sys
 
@@ -32,6 +34,15 @@ from result_ranker import (get_hub_branches, get_session_config,  # noqa: E402
 
 def judging_dir(session_id):
     return os.path.join(".agenthub", "board", "judging", session_id)
+
+
+def mapping_path(session_id):
+    """Coordinator-only: kept out of the judging folder so judges never see who wrote what."""
+    return os.path.join(".agenthub", "sessions", session_id, "judging-mapping.json")
+
+
+def ballot_names(judges):
+    return [f"ballot-judge-{i}.json" for i in range(1, judges + 1)] + ["ballot-judge-tiebreak.json"]
 
 
 def run_gate(worktree, cmd, timeout):
@@ -74,7 +85,9 @@ def cmd_prepare(args):
     timeout = int(config.get("eval_timeout", 1800))
     base = config.get("base_branch", "main")
     out = judging_dir(args.session)
-    os.makedirs(out, exist_ok=True)
+    # A fresh round every time: stale ballots or diffs from an earlier round must never count.
+    shutil.rmtree(out, ignore_errors=True)
+    os.makedirs(out)
 
     survivors, disqualified = [], []
     for branch in get_hub_branches(args.session):
@@ -94,8 +107,9 @@ def cmd_prepare(args):
         mapping[label] = agent
         with open(os.path.join(out, f"candidate-{label}.diff"), "w") as f:
             f.write(run_git("diff", f"{base}...{branch}"))
-    with open(os.path.join(out, "mapping.json"), "w") as f:
-        json.dump({"mapping": mapping, "disqualified": disqualified}, f, indent=2)
+    with open(mapping_path(args.session), "w") as f:
+        json.dump({"mapping": mapping, "judges": args.judges,
+                   "disqualified": disqualified}, f, indent=2)
     for i in range(1, args.judges + 1):
         order = sorted(mapping)
         random.shuffle(order)
@@ -112,18 +126,29 @@ def cmd_prepare(args):
 
 def cmd_tally(args):
     out = judging_dir(args.session)
-    with open(os.path.join(out, "mapping.json")) as f:
-        mapping = json.load(f)["mapping"]
+    with open(mapping_path(args.session)) as f:
+        meta = json.load(f)
+    mapping, judges = meta["mapping"], int(meta["judges"])
     labels = sorted(mapping)
-    ballots, rejected, firsts = [], [], {l: 0 for l in labels}
-    for name in sorted(os.listdir(out)):
-        if not (name.startswith("ballot-judge-") and name.endswith(".json")):
-            continue
+    expected = ballot_names(judges)
+    regular, tiebreak_name = expected[:-1], expected[-1]
+    ignored = sorted(n for n in os.listdir(out) if n.startswith("ballot") and n not in expected)
+
+    def load(name):
         try:
             with open(os.path.join(out, name)) as f:
-                ballot = json.load(f)
+                return json.load(f), ""
+        except FileNotFoundError:
+            return None, ""
         except (OSError, ValueError) as e:
-            rejected.append((name, f"unreadable: {e}"))
+            return None, f"unreadable: {e}"
+
+    ballots, rejected, firsts = [], [], {l: 0 for l in labels}
+    for name in regular:
+        ballot, err = load(name)
+        if ballot is None:
+            if err:
+                rejected.append((name, err))
             continue
         ok, reason = valid_ballot(ballot, labels)
         if not ok:
@@ -133,11 +158,27 @@ def cmd_tally(args):
         firsts[ballot["ranking"][0]] += 1
 
     points = borda(ballots, labels)
-    # Ties on points break on first-place votes; anything still tied needs a tiebreak judge.
+    # Ties on points break on first-place votes; anything still tied goes to the tiebreak judge,
+    # who ranks only the tied candidates.
     order = sorted(labels, key=lambda l: (points[l], firsts[l]), reverse=True)
     top = (points[order[0]], firsts[order[0]]) if order else None
     tied = [l for l in order if (points[l], firsts[l]) == top]
+    tiebreak_used = False
+    if len(tied) > 1 and ballots:
+        tb, err = load(tiebreak_name)
+        if tb is not None:
+            ok, reason = valid_ballot(tb, tied)
+            if ok:
+                winner = tb["ranking"][0]
+                order = [winner] + [l for l in order if l != winner]
+                tied, tiebreak_used = [winner], True
+            else:
+                rejected.append((tiebreak_name, reason))
+        elif err:
+            rejected.append((tiebreak_name, err))
     result = {
+        "tiebreak_used": tiebreak_used,
+        "ballots_ignored": ignored,
         "ballots_counted": len(ballots),
         "ballots_rejected": [{"file": n, "reason": r} for n, r in rejected],
         "ranking": [{"label": l, "agent": mapping[l], "points": points[l],
@@ -148,9 +189,11 @@ def cmd_tally(args):
     if args.format == "json":
         print(json.dumps(result, indent=2))
     else:
-        print(f"Ballots counted: {len(ballots)}  rejected: {len(rejected)}")
+        print(f"Ballots counted: {len(ballots)}  rejected: {len(rejected)}  ignored: {len(ignored)}")
         for n, r in rejected:
             print(f"  rejected {n}: {r}")
+        for n in ignored:
+            print(f"  ignored {n}: not one of the {judges} judge ballots or the tiebreak ballot")
         print(f"{'RANK':<6} {'LABEL':<7} {'AGENT':<10} {'POINTS':<8} {'1ST':<4}")
         for i, r in enumerate(result["ranking"], 1):
             print(f"{i:<6} {r['label']:<7} {r['agent']:<10} {r['points']:<8} {r['first_place_votes']:<4}")
@@ -159,7 +202,7 @@ def cmd_tally(args):
         elif result["tiebreak_needed"]:
             print(f"TIE between {', '.join(result['tied'])}: spawn one tiebreak judge.")
         else:
-            print(f"Winner: {mapping[order[0]]}")
+            print(f"Winner: {mapping[order[0]]}" + (" (decided by the tiebreak judge)" if tiebreak_used else ""))
     if not ballots:
         sys.exit(2)
     if result["tiebreak_needed"]:

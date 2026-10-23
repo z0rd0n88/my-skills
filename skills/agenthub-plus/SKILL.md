@@ -53,7 +53,7 @@ Direction, tie-break metric and timeout come from the session config. An entry w
 **Judge mode:**
 
 1. `python3 scripts/borda.py prepare --session <id>` runs the gate in every worktree. Failing entries are disqualified and their gate output is kept as the reason. For the survivors it writes `candidate-<LABEL>.diff` under `.agenthub/board/judging/<id>/`, shuffled so labels carry no agent number, plus a different presentation order per judge. If fewer than 2 survive, there's no vote.
-2. Spawn **3 fresh judges in one message**. They must not be the agents that wrote the entries. Give each the task, the path to the judging folder, its own `order-judge-<i>.txt`, and the read-only base checkout. Never give a judge `mapping.json`. Judge prompt:
+2. Spawn **3 fresh judges in one message**. They must not be the agents that wrote the entries. Give each the task, the path to the judging folder, its own `order-judge-<i>.txt`, and the read-only base checkout. Each `prepare` starts a fresh round and wipes earlier ballots. The label-to-agent map is in `.agenthub/sessions/<id>/judging-mapping.json`; never show it to a judge or name an agent to one. Judges write only their own ballot file; `tally` ignores any other `ballot*` file and reports it. Judge prompt:
 
    > You are Judge {i}. You wrote none of these solutions. Rank every candidate in `{dir}` (read them in the order in `order-judge-{i}.txt`) from best to worst for this task: {task}.
    > Rank on these criteria, in this order:
@@ -63,7 +63,7 @@ Direction, tie-break metric and timeout come from the session config. An entry w
    > 4. **Simple**: the smallest change that is correct.
    >
    > Speed, size of the change and finish order are not criteria. Read the code the diffs touch, not just the diffs. Write `{dir}/ballot-judge-{i}.json` as `{"ranking": ["B","A","C"], "evidence": {"B": "<file:line or test name that makes it the best>", ...}, "reasons": {"A": "...", ...}}`. A ballot with no evidence for its first choice is discarded.
-3. `python3 scripts/borda.py tally --session <id>`. With N candidates, first place earns N-1 points and last earns 0. Ties on points break on first-place votes. **Exit 3** means the top is still tied: spawn one more fresh judge with only the tied diffs and the other judges' reasons, have it write `ballot-judge-tiebreak.json`, and tally again. **Exit 2** means no valid ballot: re-run the judges.
+3. `python3 scripts/borda.py tally --session <id>`. With N candidates, first place earns N-1 points and last earns 0. Ties on points break on first-place votes. **Exit 3** means the top is still tied: spawn one more fresh judge with only the tied diffs and the other judges' reasons, have it rank **only the tied labels** into `ballot-judge-tiebreak.json` (with evidence for its pick), and tally again. **Exit 2** means no valid ballot: re-run the judges.
 
 ## 5. Verify the winner
 
