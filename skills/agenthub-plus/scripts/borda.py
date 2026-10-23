@@ -23,17 +23,30 @@ import argparse
 import json
 import os
 import random
+import re
 import shutil
 import subprocess
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from result_ranker import (get_hub_branches, get_session_config,  # noqa: E402
                            get_worktree_path, run_git)
 
 
+SESSION_RE = re.compile(r"^[A-Za-z0-9_-]+$")
+JUDGING_ROOT = os.path.join(".agenthub", "board", "judging")
+
+
 def judging_dir(session_id):
-    return os.path.join(".agenthub", "board", "judging", session_id)
+    """The session's judging folder, refusing any id that could point outside JUDGING_ROOT
+    (prepare deletes this folder)."""
+    if not SESSION_RE.match(session_id):
+        sys.exit(f"Error: invalid session id {session_id!r}")
+    path = os.path.realpath(os.path.join(JUDGING_ROOT, session_id))
+    if os.path.dirname(path) != os.path.realpath(JUDGING_ROOT):
+        sys.exit(f"Error: judging folder {path} is outside {JUDGING_ROOT}")
+    return path
 
 
 def mapping_path(session_id):
@@ -165,17 +178,30 @@ def cmd_tally(args):
     tied = [l for l in order if (points[l], firsts[l]) == top]
     tiebreak_used = False
     if len(tied) > 1 and ballots:
+        # The tiebreak ballot counts only if this tie was already recorded by an earlier tally
+        # and the ballot was written after that, so a regular judge cannot pre-write it.
+        tie = meta.get("tie") or {}
+        tb_path = os.path.join(out, tiebreak_name)
         tb, err = load(tiebreak_name)
         if tb is not None:
-            ok, reason = valid_ballot(tb, tied)
-            if ok:
-                winner = tb["ranking"][0]
-                order = [winner] + [l for l in order if l != winner]
-                tied, tiebreak_used = [winner], True
+            if sorted(tie.get("labels", [])) != sorted(tied):
+                rejected.append((tiebreak_name, "written before this tie was recorded by tally"))
+            elif os.stat(tb_path).st_mtime_ns <= int(tie.get("recorded_ns", 0)):
+                rejected.append((tiebreak_name, "older than the recorded tie"))
             else:
-                rejected.append((tiebreak_name, reason))
+                ok, reason = valid_ballot(tb, tied)
+                if ok:
+                    winner = tb["ranking"][0]
+                    order = [winner] + [l for l in order if l != winner]
+                    tied, tiebreak_used = [winner], True
+                else:
+                    rejected.append((tiebreak_name, reason))
         elif err:
             rejected.append((tiebreak_name, err))
+        if not tiebreak_used and sorted(tie.get("labels", [])) != sorted(tied):
+            meta["tie"] = {"labels": tied, "recorded_ns": time.time_ns()}
+            with open(mapping_path(args.session), "w") as f:
+                json.dump(meta, f, indent=2)
     result = {
         "tiebreak_used": tiebreak_used,
         "ballots_ignored": ignored,
