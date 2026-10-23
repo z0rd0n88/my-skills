@@ -184,6 +184,8 @@ def cmd_tally(args):
         # ponytail: agents share one user's filesystem, so this stops accidents and early writes,
         # not a judge that deliberately reads the coordinator-only mapping file.
         tie = meta.get("tie") or {}
+        if not (isinstance(tie.get("nonce"), str) and tie["nonce"]):
+            tie = {}  # fail closed: a tie recorded without a nonce counts as not recorded
         tb, err = load(tiebreak_name)
         if tb is not None:
             if sorted(tie.get("labels", [])) != sorted(tied):
