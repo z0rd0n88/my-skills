@@ -199,6 +199,8 @@ def main():
                         help="Second metric, same direction, that breaks ties on --metric")
     parser.add_argument("--eval-timeout", type=int, default=1800,
                         help="Seconds each eval run may take (default: 1800)")
+    parser.add_argument("--gate", type=str, dest="gate_cmd",
+                        help="Correctness gate (judge mode): an entry whose worktree fails it is disqualified")
     parser.add_argument("--worktrees-dir", type=str,
                         help="Pre-create one worktree per agent under this directory")
     parser.add_argument("--format", choices=["text", "json"], default="text",
@@ -241,6 +243,8 @@ def main():
         f.write(f"eval_timeout: {args.eval_timeout}\n")
         if args.tiebreak_metric:
             f.write(f"tiebreak_metric: {args.tiebreak_metric}\n")
+        if args.gate_cmd:
+            f.write(f"gate_cmd: \"{args.gate_cmd}\"\n")
     worktrees = (create_worktrees(args.worktrees_dir, session_id, args.agents, base_branch)
                  if args.worktrees_dir else [])
 
