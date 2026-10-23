@@ -25,9 +25,9 @@ import os
 import random
 import re
 import shutil
+import secrets
 import subprocess
 import sys
-import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from result_ranker import (get_hub_branches, get_session_config,  # noqa: E402
@@ -178,16 +178,18 @@ def cmd_tally(args):
     tied = [l for l in order if (points[l], firsts[l]) == top]
     tiebreak_used = False
     if len(tied) > 1 and ballots:
-        # The tiebreak ballot counts only if this tie was already recorded by an earlier tally
-        # and the ballot was written after that, so a regular judge cannot pre-write it.
+        # The tiebreak ballot counts only if it carries the nonce this tally issued when it
+        # recorded the tie; only the tiebreak judge is given that nonce, so a regular judge
+        # cannot pre-write the ballot. Recording a tie also deletes any tiebreak file already there.
+        # ponytail: agents share one user's filesystem, so this stops accidents and early writes,
+        # not a judge that deliberately reads the coordinator-only mapping file.
         tie = meta.get("tie") or {}
-        tb_path = os.path.join(out, tiebreak_name)
         tb, err = load(tiebreak_name)
         if tb is not None:
             if sorted(tie.get("labels", [])) != sorted(tied):
                 rejected.append((tiebreak_name, "written before this tie was recorded by tally"))
-            elif os.stat(tb_path).st_mtime_ns <= int(tie.get("recorded_ns", 0)):
-                rejected.append((tiebreak_name, "older than the recorded tie"))
+            elif not secrets.compare_digest(str(tb.get("nonce", "")), tie.get("nonce", "")):
+                rejected.append((tiebreak_name, "missing or wrong tiebreak nonce"))
             else:
                 ok, reason = valid_ballot(tb, tied)
                 if ok:
@@ -199,7 +201,9 @@ def cmd_tally(args):
         elif err:
             rejected.append((tiebreak_name, err))
         if not tiebreak_used and sorted(tie.get("labels", [])) != sorted(tied):
-            meta["tie"] = {"labels": tied, "recorded_ns": time.time_ns()}
+            if os.path.exists(os.path.join(out, tiebreak_name)):
+                os.remove(os.path.join(out, tiebreak_name))
+            meta["tie"] = {"labels": tied, "nonce": secrets.token_hex(16)}
             with open(mapping_path(args.session), "w") as f:
                 json.dump(meta, f, indent=2)
     result = {
@@ -226,7 +230,9 @@ def cmd_tally(args):
         if not ballots:
             print("No valid ballots: no winner. Re-run the judges.")
         elif result["tiebreak_needed"]:
-            print(f"TIE between {', '.join(result['tied'])}: spawn one tiebreak judge.")
+            print(f"TIE between {', '.join(result['tied'])}: spawn one tiebreak judge. Give it the tied "
+                  f"labels {', '.join(l for l in labels if mapping[l] in result['tied'])} and the nonce in "
+                  f"{mapping_path(args.session)} (\"tie\".\"nonce\"); its ballot must include it.")
         else:
             print(f"Winner: {mapping[order[0]]}" + (" (decided by the tiebreak judge)" if tiebreak_used else ""))
     if not ballots:

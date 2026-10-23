@@ -63,7 +63,7 @@ Direction, tie-break metric and timeout come from the session config. An entry w
    > 4. **Simple**: the smallest change that is correct.
    >
    > Speed, size of the change and finish order are not criteria. Read the code the diffs touch, not just the diffs. Write `{dir}/ballot-judge-{i}.json` as `{"ranking": ["B","A","C"], "evidence": {"B": "<file:line or test name that makes it the best>", ...}, "reasons": {"A": "...", ...}}`. A ballot with no evidence for its first choice is discarded.
-3. `python3 scripts/borda.py tally --session <id>`. With N candidates, first place earns N-1 points and last earns 0. Ties on points break on first-place votes. **Exit 3** means the top is still tied: spawn one more fresh judge with only the tied diffs and the other judges' reasons, have it rank **only the tied labels** into `ballot-judge-tiebreak.json` (with evidence for its pick), and tally again. **Exit 2** means no valid ballot: re-run the judges.
+3. `python3 scripts/borda.py tally --session <id>`. With N candidates, first place earns N-1 points and last earns 0. Ties on points break on first-place votes. **Exit 3** means the top is still tied: spawn one more fresh judge with only the tied diffs and the other judges' reasons, have it rank **only the tied labels** into `ballot-judge-tiebreak.json` (with evidence for its pick), and tally again. The tally that finds the tie records a one-time `"tie"."nonce"` in `judging-mapping.json` and deletes any tiebreak ballot already there. Give that nonce to the tiebreak judge only; its ballot must include `"nonce": "<value>"`. **Exit 2** means no valid ballot: re-run the judges.
 
 ## 5. Verify the winner
 
