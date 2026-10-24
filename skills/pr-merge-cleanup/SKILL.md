@@ -127,14 +127,14 @@ CI state is deliberately not fetched here — §2 owns it, and reading it early 
    **`$TITLE` must be authored by you, not lifted from commit text.** There is no `--title-file`, so the title necessarily crosses a shell word, and commit subjects are untrusted. Match `^[A-Za-z0-9][A-Za-z0-9 ._:()/-]{0,71}$`; rewrite until it does. Delete `$BODYFILE` after.
 
    `pr` or `yeet` may substitute **only if** you confirm they pin `--repo`/`--head`/`--base` and use `--body-file`.
-5. **Offer the review, unconditionally:** `multi-agent-review pr <number> --no-loop`.
+5. **Offer the review, unconditionally:** `zord-multi-agent-review pr <number> --no-loop`.
 
    It runs *after* creation because `daily-loop` rule 3's literal form is unrunnable — the `pr` target needs a number that does not exist yet, and `diff` targets the working tree and hard-fails on the empty diff step 1 just required. Rule 3 protects *never merging unreviewed*, which this satisfies. Do not branch on whether `daily-loop` fired — that is unobservable, so the conditional resolves to a guess. `--no-loop` is required: a bare `pr` target loops and *mutates*.
 6. Stop. Merging is a separate decision.
 
 ## §2 — Open PR: merge it
 
-**Review staleness is a property of the commit, not of the session.** "This session reviewed it" is not the question — a PR this session reviewed and then pushed four more commits to is unreviewed at the tip. Compare the OID the review actually ran against to `$VERIFIED_OID`; offer `multi-agent-review pr <number> --no-loop` when they differ, and whenever no review ran at all (the common "finish this PR" case). A fix round is not a review of the fixes: findings closed is a different claim from code reviewed, and the agent that just applied the fixes is not a second pair of eyes on them.
+**Review staleness is a property of the commit, not of the session.** "This session reviewed it" is not the question — a PR this session reviewed and then pushed four more commits to is unreviewed at the tip. Compare the OID the review actually ran against to `$VERIFIED_OID`; offer `zord-multi-agent-review pr <number> --no-loop` when they differ, and whenever no review ran at all (the common "finish this PR" case). A fix round is not a review of the fixes: findings closed is a different claim from code reviewed, and the agent that just applied the fixes is not a second pair of eyes on them.
 
 `reviewDecision` cannot answer this: it is empty on an unreviewed PR and cannot be `APPROVED` on a solo repo, so the gate passes silently on a PR nobody read. Neither can `gh pr view --json reviews,comments`, which omits inline review comments entirely — a PR carrying real line-by-line feedback reads as untouched. Count all three surfaces:
 
@@ -146,7 +146,7 @@ gh api "repos/$REPO/pulls/<number>/reviews" \
 gh api "repos/$REPO/pulls/<number>/comments" \
   --jq '.[] | "\(.user.login)\t\(.commit_id)\t\(.path)"'
 # issue-level comments — where an agent review usually lands. No commit_id field here:
-# the OID has to come from the report body's `Reviewed at:` line (multi-agent-review §5A.6)
+# the OID has to come from the report body's `Reviewed at:` line (zord-multi-agent-review §5A.6)
 gh api "repos/$REPO/issues/<number>/comments" \
   --jq '.[] | "\(.user.login)\t\(.created_at)\t\(.body[0:200])"'
 ```
@@ -316,6 +316,6 @@ Each of these cost a review round or a dry run:
 - Reading `gh pr checks` exit 1 as "CI failed" in a repo with no CI.
 - Letting a still-pending check delay reporting one that's already failed — exit 1 means a failure exists now, regardless of what else is still running.
 - Relying on `git branch -d` as a merged-ness check.
-- Naming `multi-agent-review pr <ref>` as a *pre*-PR gate — no PR exists yet, and that target mutates.
+- Naming `zord-multi-agent-review pr <ref>` as a *pre*-PR gate — no PR exists yet, and that target mutates.
 - Reading a `gh` failure as "no PR exists" and creating a duplicate.
 - Answering "is this ready to merge?" by merging it.
