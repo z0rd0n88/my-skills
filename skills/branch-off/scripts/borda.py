@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Judge mode for agenthub-plus: correctness gate, anonymised candidates, Borda tally.
+"""Judge mode for branch-off: correctness gate, anonymised candidates, Borda tally.
 
 Borda-count judging is adapted from qiao/horse-race (MIT); see LICENSES/horse-race.txt.
 Unlike horse-race, entries that fail the gate command are disqualified before any judge
