@@ -1,6 +1,6 @@
 ---
 name: finding-fixer
-description: Turn review findings into applied edits without letting a wrong one through. Read-only agents adjudicate each finding against the sources that decide it, then one writer applies only what survives. Use whenever a review returns findings that need fixing.
+description: Use whenever review findings need fixing, especially about code written this session. Read-only agents adjudicate each finding before one writer applies supported edits.
 ---
 
 # finding-fixer
@@ -17,8 +17,7 @@ skill.
 
 Turns a list of review findings into applied edits without letting a wrong finding through.
 Read-only agents rule on each finding against the real sources first, then one writer applies
-only what survived, proving each behaviour change with a test that fails before the edit. Reach for it when the findings came from a reviewer that read the diff but
-not the whole system, and skip it when you already know the fix.
+only what survived, proving each behaviour change with a test that fails before the edit.
 
 | Option | Values | Default | Effect |
 |---|---|---|---|
@@ -29,11 +28,14 @@ not the whole system, and skip it when you already know the fix.
 A review just handed back findings and someone wants them fixed. That is the trigger, whatever
 produced them.
 
-Skip it and just fix the thing when any of these hold:
+Always adjudicate findings about code you wrote in this session, including small mechanical
+fixes. Independent adjudication checks the assumptions that produced the code before they
+shape its repair.
+
+For code you did not write in this session, fix directly only when either of these holds:
 
 - Two or three findings, all mechanical, all in one file. Four agents to fix a typo is waste.
-- You already read the code and know each finding is correct. Adjudication buys nothing.
-- The findings are yours from this session. You have the context the adjudicators would go get.
+- You did the reviewing yourself and checked the deciding sources for each finding.
 
 Reach for it when the reviewer did not have the whole picture: it read a diff, a spec, or a PR,
 and its findings assert things about code it never opened. That gap is what this skill closes.
