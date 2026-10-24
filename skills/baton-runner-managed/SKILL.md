@@ -28,8 +28,8 @@ Either of these holds on this machine — both did for the `maker-lab-3-5` run
 (#615, #618, #619):
 
 - **`Workflow` is blocked inside subagents** by the user-scope
-  `nested-fanout-guard` hook, so a unit can run neither `ClaudesMods:dw-review`
-  nor `ClaudesMods:finding-fixer` — both are Workflow skills.
+  `nested-fanout-guard` hook, so a unit can run neither `dw-review`
+  nor `finding-fixer` — both are Workflow skills.
 - **The phase-closing gate outlasts a subagent.** `GATE_PROFILE=full
   scripts/gate.sh` runs 10–20 minutes; a subagent's foreground Bash caps at
   600 s, and its backgrounded task is killed the moment the unit returns
@@ -77,8 +77,8 @@ If neither holds, use `baton-runner` — it spends fewer units per phase.
 |---|---|
 | **work-unit** | Implements a phase's acceptance criteria via `superpowers:test-driven-development`, recording the actual RED output as evidence. |
 | **review-unit** | Independent of the implementer. Runs `GATE_PROFILE=fast scripts/gate.sh` in the **foreground** and verifies each criterion + the RED evidence against the diff. Runs **no** fan-out review and **no** `Workflow`. Emits `VERDICT: GATE-OK \| ISSUES`. |
-| **dw-review** | The manager's own `Workflow` run of `ClaudesMods:dw-review` — three lanes picked from the diff plus a `critical-thinking` skeptic. A repo-tuned `<repo>-dw-review` variant wins when the worktree has one. Counts as one unit. |
-| **finding-fixer** | The manager's own `Workflow` run of `ClaudesMods:finding-fixer` — read-only adjudicators rule each CONFIRMED finding against the sources that decide it, then one writer applies only what survives. One round, no re-review. Counts as one unit. |
+| **dw-review** | The manager's own `Workflow` run of `dw-review` — three lanes picked from the diff plus a `critical-thinking` skeptic. A repo-tuned `<repo>-dw-review` variant wins when the worktree has one. Counts as one unit. |
+| **finding-fixer** | The manager's own `Workflow` run of `finding-fixer` — read-only adjudicators rule each CONFIRMED finding against the sources that decide it, then one writer applies only what survives. One round, no re-review. Counts as one unit. |
 | **fix-unit** | A subagent, used **only** for fast-gate and full-gate failures — never for review findings, which go through `finding-fixer`. |
 | **closing-unit** | Told the full gate already passed and must not re-run it. Re-verifies each criterion after the fixes, writes the durable review record from the two persisted JSONs, writes the phase-exit digest. Emits `VERDICT: CLEAN \| ISSUES`. |
 | **baton / digest** | `baton-pass` file carrying unit state (updated incrementally) / terse map of public surface + conventions threaded to later phases. |
@@ -88,8 +88,8 @@ If neither holds, use `baton-runner` — it spends fewer units per phase.
 - [ ] **`scripts/gate.sh` present on `origin/main`.** Absent → stop and tell the
       user to merge the PR that introduces it first.
 - [ ] **Fresh single worktree**; confirm `baton-pass`,
-      `superpowers:test-driven-development`, `ClaudesMods:dw-review` and
-      `ClaudesMods:finding-fixer` resolve there.
+      `superpowers:test-driven-development`, `dw-review` and
+      `finding-fixer` resolve there.
       **There is no skill named `tdd`**, and do not substitute the project's
       `kotlin-testing` skill — it teaches Kotest/MockK and this repo tests with
       `kotlin.test` (`@Test`, `assertEquals`, backtick names).
@@ -258,4 +258,4 @@ block, the dw-review Workflow template and JSON extractor, the finding-fixer
 args, gate mechanics, branch/PR mechanics, the review record, audit trail,
 budgets, failure handling.
 Depends on `baton-pass`, `superpowers:test-driven-development`,
-`ClaudesMods:dw-review` and `ClaudesMods:finding-fixer`.
+`dw-review` and `finding-fixer`.

@@ -89,9 +89,9 @@ repository would the resulting commit land in?* That repo is the project.
 
 Judge by the **deliverable** — the thing being changed. Specifically **not**:
 
-- **Not the instrument.** *"Run `multi-agent-review pr 272 --yes` on BotHaus and force a
-  merge/park decision"* → **BotHaus**. `multi-agent-review` is the tool used, not the thing
-  changed. A first-tool-name-wins scan would wrongly say ClaudesMods.
+- **Not the instrument.** *"Run `zord-multi-agent-review pr 272 --yes` on BotHaus and force a
+  merge/park decision"* → **BotHaus**. `zord-multi-agent-review` is the tool used, not the thing
+  changed. A first-tool-name-wins scan would wrongly say Z0rd0nZords.
 - **Not the evidence.** An issue row whose Body states a cross-repo policy but whose Evidence
   column cites specific PRs belongs to the repo the *policy* lands in, not the cited repos.
   The concrete per-PR actions are separate items belonging to those repos.
@@ -101,7 +101,7 @@ When the commit target is genuinely unclear, fall through these in order, first 
 | # | Deliverable touches | → Project |
 |---|---|---|
 | 1 | `CLAUDE.md`, `rules/`, `guides/`, `agents/`, hooks, `settings.json`, issue labels, `~/.claude/**` | ClaudeConfig |
-| 2 | A skill, plugin, `SKILL.md`, command shim, or a named ClaudesMods plugin | ClaudesMods |
+| 2 | A skill, plugin, `SKILL.md`, command shim, or a named Z0rd0nZords plugin | Z0rd0nZords |
 | 3 | Nothing identifiable — a process or habit item naming no artifact and no repo | ClaudeConfig |
 
 Rule 3 is deliberate, not a dumping ground: ClaudeConfig is the process-of-record repo, so a
@@ -118,7 +118,7 @@ a spec under its own name — do not force it into one of the four.
 one requirement per project, each scoped to that project's slice. Never copy a whole item into
 two specs. Example: *"file the issue rows … consider extending the `weekly-wrapup` plugin with
 an opt-in filing pass"* → the filing habit becomes a ClaudeConfig FR, the plugin change a
-ClaudesMods FR. A bundled item may split three or more ways, and two of its slices may both
+Z0rd0nZords FR. A bundled item may split three or more ways, and two of its slices may both
 land in the *same* spec as separate FRs — both are fine.
 
 **Alternatives are not splits.** *"Add a CLAUDE.md rule **or** a `daily-loop` step"* offers two
@@ -187,7 +187,7 @@ the FR citation format).
 - **A project with zero items gets no file.** Do not emit an empty or placeholder spec, and
   do not invent items to justify one.
 - **Specs may reference each other by filename**, and should whenever step 3 split an item:
-  name the sibling slice in the Non-goals (*"not the plugin half — see `ClaudesMods-spec.md`"*).
+  name the sibling slice in the Non-goals (*"not the plugin half — see `Z0rd0nZords-spec.md`"*).
   This is what stops split work being done twice by two agents that each see only one spec.
 - Re-running overwrites an existing spec for that week. Specs are derived artifacts; the
   wrapup is the source of truth.
