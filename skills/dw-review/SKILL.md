@@ -130,7 +130,7 @@ strength of signal.
 | Raw SQL, indexes, query shape | Engine semantics, constraint correctness, index/selectivity |
 | Concurrency, async, channels, locks | Structured concurrency, races, framework behaviour that differs from its docs |
 | Error paths, fallbacks, `catch`, defaults | Swallowed errors, fail-open where fail-closed was intended |
-| ADRs, design docs, agent instruction files | Prose a newer decision superseded; claims no code enforces |
+| ADRs, design docs, agent instruction files | Prose a newer decision superseded; claims no code enforces. For an edit to instruction text an agent obeys (rules, `CLAUDE.md`/`AGENTS.md`, `SKILL.md`, agent prompts), meaning drift: scope words and qualifiers the edit dropped, behaviour the new wording now forbids or requires, and conflicts with the rest of the always-loaded instructions |
 | Dockerfile, build scripts, service-loader files | Host build green, shipped artifact broken |
 | User input, external calls, API surface | OWASP, injection, SSRF, secrets in logs (auth *logic* belongs to the signing/keys lane) |
 | Tests added or changed | **Tautology hunt** — a test that passes with the thing it names deleted |

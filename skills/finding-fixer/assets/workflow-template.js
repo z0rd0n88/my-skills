@@ -67,11 +67,11 @@ const ADJUDICATE_SCHEMA = {
           },
           rejectsValidInput: {
             type: 'string',
-            description: 'What correct input this fix now rejects, and which document teaches a human to produce that input. "none" is a valid answer only after you checked. Verdicts carrying no edits answer "n/a - no fix proposed".',
+            description: 'What correct input this fix now rejects, and which document teaches a human to produce that input. For an edit to instruction text an agent obeys: what legitimate behaviour the new wording now forbids or requires, and which other always-loaded instruction it now contradicts. "none" is a valid answer only after you checked. Verdicts carrying no edits answer "n/a - no fix proposed".',
           },
           testProof: {
             type: 'string',
-            description: 'How a test proves this fix, named not run - you are read-only. For a behaviour change: the test file and the assertion, phrased so it FAILS against the code as it stands and passes after these edits. For a weak-test finding: the mutation the current test survives, which the replacement must catch. "n/a - <why>" when nothing executable changes: prose, comments, an annotation-only edit, or a verdict carrying no edits. A config value that a code path reads is a behaviour change: name the test, or say why no test can reach it.',
+            description: 'How a test proves this fix, named not run - you are read-only. For a behaviour change: the test file and the assertion, phrased so it FAILS against the code as it stands and passes after these edits. For a weak-test finding: the mutation the current test survives, which the replacement must catch. "n/a - <why>" when nothing executable changes: prose, comments, an annotation-only edit, or a verdict carrying no edits. A config value that a code path reads is a behaviour change: name the test, or say why no test can reach it. Instruction text an agent obeys (rules files, CLAUDE.md/AGENTS.md, SKILL.md, agent definitions, prompts) is a behaviour change no test reads: answer "ledger: " followed by every instruction, qualifier, exception and named entity in the text being replaced, each marked preserved, changed, dropped or added by the edit.',
           },
           edits: {
             type: 'array',
@@ -109,7 +109,7 @@ const APPLY_SCHEMA = {
           summary: { type: 'string' },
           red: {
             type: 'string',
-            description: 'The verbatim failing output captured BEFORE this edit was applied, proving the test the adjudicator named does fail. Not a description of it. "n/a - <why>" only where testProof was n/a.',
+            description: 'The verbatim failing output captured BEFORE this edit was applied, proving the test the adjudicator named does fail. Not a description of it. "n/a - <why>" only where testProof was n/a. Where testProof was a "ledger:", the ledger re-checked against the text as applied: each entry with its applied wording quoted.',
           },
         },
         required: ['findingId', 'file', 'summary', 'red'],
@@ -175,7 +175,9 @@ the very inputs it used to accept, and the run still reports every finding close
 input the fix rejects, or state there is none - after checking, not by default. Then answer the
 second half: DOES ANY DOCUMENT TELL A HUMAN HOW TO PRODUCE THAT INPUT? A gate tightened without
 its producing procedure means every correctly-followed run of that procedure now fails. Name the
-document. A verdict proposing no edits answers "n/a - no fix proposed".
+document. For an edit to instruction text an agent obeys, the same question reads: WHAT LEGITIMATE
+BEHAVIOUR DOES THE NEW WORDING NOW FORBID OR REQUIRE, AND WHICH OTHER ALWAYS-LOADED INSTRUCTION
+DOES IT NOW CONTRADICT? A verdict proposing no edits answers "n/a - no fix proposed".
 
 Every verdict also answers "testProof": HOW WOULD A TEST PROVE THIS? You are
 read-only, so you name it rather than run it. For a behaviour change, name the test file and the
@@ -188,6 +190,11 @@ before the edit; a whole green suite is not a proof. Answer "n/a - <why>" when n
 changes: prose, comments, an annotation for real-but-decided-elsewhere. A config value that a code
 path reads is a behaviour change: name the test, or say in the "n/a - <why>" why no test can reach
 it. Do not invent a test for a documentation edit; a test that cannot fail is worse than no test.
+Instruction text an agent obeys (rules files, CLAUDE.md/AGENTS.md, SKILL.md, agent definitions,
+prompts) is the exception: it is behaviour that no test reads. Answer "ledger: " followed by every
+instruction, qualifier, exception and named entity in the text being replaced, each marked
+preserved, changed, dropped or added by your edit. Scope words ("when", "only when", "already",
+"and others") are what a rewording drops without anyone noticing.
 A verdict carrying no edits answers "n/a - no fix proposed".
 
 Return exactly one verdict object per finding listed above, carrying that finding's own id. A
@@ -255,9 +262,10 @@ APPLY THESE EDITS:
 ${editBlocks}
 
 How to apply:
-1. TEST FIRST, wherever the adjudicator named one. For every edit block whose "Test proof" does
-   not begin with "n/a": write or adjust that test BEFORE touching the code it covers, run it,
-   and copy its verbatim failing output into "red" for that finding. A weak-test finding proves
+1. TEST FIRST, wherever the adjudicator named one. For every edit block whose "Test proof" begins
+   with neither "n/a" nor "ledger:": write or adjust that test BEFORE touching the code it
+   covers, run it, and copy its verbatim failing output into "red" for that finding. A weak-test
+   finding proves
    it the other way round - apply the mutation the adjudicator named, show the current test
    passing anyway, then write the replacement and show it failing on that same mutation, and
    revert the mutation before moving on.
@@ -266,6 +274,10 @@ How to apply:
    "skipped" and leave that code alone.
    Authoring that test, and the temporary mutation above that you revert in the same step, are
    the only reasons to create or edit a file the edit blocks do not list. Nothing else.
+   A "Test proof" that begins with "ledger:" is checked after the edit instead: re-read the
+   changed text, check every ledger entry against it, and quote each entry with its applied
+   wording in "red". If any entry does not hold - a qualifier the ledger kept is gone, a scope
+   widened or narrowed - restore the original text and record the finding in "skipped".
 2. Work in the order given. Locate CURRENT by exact string match and replace it with REPLACEMENT.
    A short python3 heredoc that asserts exactly one match before replacing is the safest tool.
    If CURRENT does not match byte-for-byte, do not guess: re-read the file around the anchor and
