@@ -17,7 +17,8 @@ skill.
 
 Turns a list of review findings into applied edits without letting a wrong finding through.
 Read-only agents rule on each finding against the real sources first, then one writer applies
-only what survived, proving each behaviour change with a test that fails before the edit.
+only what survived, proving each behaviour change with a test that fails before the edit, or,
+for instruction text, a ledger re-checked after it.
 
 | Option | Values | Default | Effect |
 |---|---|---|---|
@@ -72,6 +73,13 @@ should catch, show it passing anyway, then show the replacement failing on it. P
 annotation edits get no test, and inventing one for them costs a run and proves nothing. A config
 value a code path reads is a behaviour change and gets a test like any other.
 
+Instruction text an agent obeys is not prose here: rules files, `CLAUDE.md`/`AGENTS.md`,
+`SKILL.md`, agent definitions and prompts are behaviour that no test reads, so a green `verify`
+proves nothing about them. Their proof is a **ledger**: every instruction, qualifier, exception
+and named entity in the text the edit replaces, each marked preserved, changed or dropped, plus
+every instruction the replacement adds, marked added, re-checked against the text as applied. Scope words ("when", "only when", "already", "and
+others") are what a rewording drops without anyone noticing.
+
 ## Step 1. Collect four inputs
 
 These are the four keys of the `args` object, in the order the script reads them. The workflow
@@ -106,6 +114,16 @@ decided. A real example:
 Rule 4 in that list was written after a run added a required field and silently broke the
 examples. That is the shape of a good house rule: a real failure, stated as a constraint.
 
+When the findings are about instruction files, the rest of the always-loaded instructions (the
+root `CLAUDE.md`/`AGENTS.md` and every rules file without `paths:` frontmatter) are what an edit
+must not contradict. Name them in each group's `sources`, and put only the specific lines that
+could conflict into `houseRules`, which every agent prompt repeats. Add one rule: a line that
+reached `origin/<default>` in the last 30 days through a commit outside the change under review
+is a decision, so a finding that removes it is `real-but-decided-elsewhere` with no edit unless
+the user says otherwise. An always-loaded file is not annotated; every session would pay for the
+annotation. Check age with `git blame --since=30.days`, after deepening a shallow clone
+(`git fetch --shallow-since=60.days origin <default>`), or every line looks new.
+
 ## Step 2. Group the findings
 
 Batch by **which sources settle the finding**, not one agent per finding and not by severity.
@@ -126,14 +144,18 @@ costs. A tool that survived real use can be hardened into one that refuses the v
 it used to accept, and the run still reports every finding closed. The verdict names the valid
 input the fix rejects, or states there is none. Ask the second half too — **does any document
 tell a human how to produce this input?** A gate tightened without its producing procedure
-means every correctly-followed run of that procedure now fails.
+means every correctly-followed run of that procedure now fails. For instruction files the same
+question reads: **what legitimate behaviour does the new wording forbid or require, and which
+other always-loaded instruction does it now contradict?**
 
 And one more: **how would a test prove this?** The adjudicator is the one that read the file, so
 it is the one that can name the test that fails before the edit and passes after — or, for a weak
 test, the mutation the current one survives. It never runs that test; naming it is the whole job,
 and the writer executes what it named. A finding that changes no executable behaviour answers
 "n/a", and a named test that turns out to pass on its first run stops the fix rather than hiding
-in it.
+in it. An edit to instruction text answers with a `ledger:` instead, which the writer re-checks
+against the applied text and reverts on any mismatch. A verdict that changes both code and
+instruction text names the test, then appends the `ledger:`.
 
 Each group needs a `label` (`adjudicate:<what>`), the `findings` text verbatim, and `sources`:
 the specific files, ADRs and symbols to read before ruling. Be concrete. "Read the relevant
@@ -183,13 +205,22 @@ The apply agent reports on its own work. Read the diff before you believe it.
 - Re-run `verify` yourself. The agent may have reported output from before its last edit.
 - **Read `red` before `verification`.** A finding whose `testProof` named a real test but whose
   `red` says "n/a" was applied without proof: the writer skipped the test-first step, and a green
-  suite at the end says nothing about that finding.
+  suite at the end says nothing about that finding. A `ledger:` proof whose `red` is not the
+  ledger quoted against the applied wording was applied without proof too.
 - **A fix that ships a because-clause ships an assertion for it.** A rationale nobody tested is
   as likely to be wrong as the bug it justifies, and it will outlive the session as a comment
   or a commit message that future readers trust. If the test disproves the reason, the change
   itself goes back on the table: rewriting the comment and keeping the code leaves behind code
   whose only remaining justification was written after the fact. Decide keep or delete, and say
   which.
+- **Re-check every claim the fix ships.** Re-measure each number where it claims to be measured
+  ("before" on `origin/<default>`, "after" on the head) and quote the output; back a "no
+  behaviour change" with the ledger or a test. A claim measured on the wrong checkout looks
+  exactly like a correct one.
+- **For instruction edits, get a second ledger.** Have a fresh read-only agent rebuild the ledger
+  from `git diff` alone, without the adjudicator's, and compare. Then read each changed sentence
+  on its own, as someone who never saw the old text: a sentence that parses two ways is a new
+  finding.
 - Grep for anything a house rule bans. It is cheap and it catches the edit that slipped through.
 - Read the `skipped` list. A skip with a good reason is the workflow working. A skip that reads
   like "could not find the text" means a stale anchor, and that finding is still open.
@@ -208,7 +239,8 @@ F2  real-but-decided-elsewhere  applied   annotated; auth spec D16 owns the dele
 F3  refuted                     no edit   JupiterMints keys are unique; collision is unreachable
 ```
 
-Then the failing `red` run for every finding that named a test, and the verbatim `verify` output.
+Then the failing `red` run for every finding that named a test, the re-checked ledger for every
+instruction edit, and the verbatim `verify` output.
 Say plainly which findings are still open and why, including any the writer skipped and anything
 `coverage.unreported` names. A finding
 ruled `refuted` is a result worth stating, not a gap. A finding skipped because its test passed

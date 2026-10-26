@@ -67,11 +67,11 @@ const ADJUDICATE_SCHEMA = {
           },
           rejectsValidInput: {
             type: 'string',
-            description: 'What correct input this fix now rejects, and which document teaches a human to produce that input. "none" is a valid answer only after you checked. Verdicts carrying no edits answer "n/a - no fix proposed".',
+            description: 'What correct input this fix now rejects, and which document teaches a human to produce that input. For an edit to instruction text an agent obeys: what legitimate behaviour the new wording now forbids or requires, and which other always-loaded instruction it now contradicts. "none" is a valid answer only after you checked. Verdicts carrying no edits answer "n/a - no fix proposed".',
           },
           testProof: {
             type: 'string',
-            description: 'How a test proves this fix, named not run - you are read-only. For a behaviour change: the test file and the assertion, phrased so it FAILS against the code as it stands and passes after these edits. For a weak-test finding: the mutation the current test survives, which the replacement must catch. "n/a - <why>" when nothing executable changes: prose, comments, an annotation-only edit, or a verdict carrying no edits. A config value that a code path reads is a behaviour change: name the test, or say why no test can reach it.',
+            description: 'How a test proves this fix, named not run - you are read-only. For a behaviour change: the test file and the assertion, phrased so it FAILS against the code as it stands and passes after these edits. For a weak-test finding: the mutation the current test survives, which the replacement must catch. "n/a - <why>" when nothing executable changes: prose, comments, an annotation-only edit, or a verdict carrying no edits. A config value that a code path reads is a behaviour change: name the test, or say why no test can reach it. Instruction text an agent obeys (rules files, CLAUDE.md/AGENTS.md, SKILL.md, agent definitions, prompts) is a behaviour change no test reads: answer "ledger: " followed by every instruction, qualifier, exception and named entity in the text being replaced, each marked preserved, changed or dropped, plus every instruction the replacement adds, marked added. A verdict that changes both code and instruction text names the test first, then appends "ledger: " and the ledger.',
           },
           edits: {
             type: 'array',
@@ -109,7 +109,7 @@ const APPLY_SCHEMA = {
           summary: { type: 'string' },
           red: {
             type: 'string',
-            description: 'The verbatim failing output captured BEFORE this edit was applied, proving the test the adjudicator named does fail. Not a description of it. "n/a - <why>" only where testProof was n/a.',
+            description: 'The verbatim failing output captured BEFORE this edit was applied, proving the test the adjudicator named does fail. Not a description of it. "n/a - <why>" only where testProof was n/a. Where testProof contains a "ledger:", also the ledger re-checked against the text as applied: each entry with its applied wording quoted.',
           },
         },
         required: ['findingId', 'file', 'summary', 'red'],
@@ -175,7 +175,9 @@ the very inputs it used to accept, and the run still reports every finding close
 input the fix rejects, or state there is none - after checking, not by default. Then answer the
 second half: DOES ANY DOCUMENT TELL A HUMAN HOW TO PRODUCE THAT INPUT? A gate tightened without
 its producing procedure means every correctly-followed run of that procedure now fails. Name the
-document. A verdict proposing no edits answers "n/a - no fix proposed".
+document. For an edit to instruction text an agent obeys, the same question reads: WHAT LEGITIMATE
+BEHAVIOUR DOES THE NEW WORDING NOW FORBID OR REQUIRE, AND WHICH OTHER ALWAYS-LOADED INSTRUCTION
+DOES IT NOW CONTRADICT? A verdict proposing no edits answers "n/a - no fix proposed".
 
 Every verdict also answers "testProof": HOW WOULD A TEST PROVE THIS? You are
 read-only, so you name it rather than run it. For a behaviour change, name the test file and the
@@ -188,6 +190,13 @@ before the edit; a whole green suite is not a proof. Answer "n/a - <why>" when n
 changes: prose, comments, an annotation for real-but-decided-elsewhere. A config value that a code
 path reads is a behaviour change: name the test, or say in the "n/a - <why>" why no test can reach
 it. Do not invent a test for a documentation edit; a test that cannot fail is worse than no test.
+Instruction text an agent obeys (rules files, CLAUDE.md/AGENTS.md, SKILL.md, agent definitions,
+prompts) is the exception: it is behaviour that no test reads. Answer "ledger: " followed by every
+instruction, qualifier, exception and named entity in the text being replaced, each marked
+preserved, changed or dropped, plus every instruction your replacement adds, marked added. Scope
+words ("when", "only when", "already", "and others") are what a rewording drops without anyone
+noticing. A verdict that changes both code and instruction text names the test first, then
+appends "ledger: " and the ledger.
 A verdict carrying no edits answers "n/a - no fix proposed".
 
 Return exactly one verdict object per finding listed above, carrying that finding's own id. A
@@ -231,7 +240,7 @@ phase('Apply')
 
 const editBlocks = actionable.map(v =>
   `### ${v.findingId}, verdict: ${v.verdict}\nEvidence: ${v.evidence}\n` +
-  `Test proof to produce first: ${v.testProof}\n\nEdits:\n` +
+  `Test proof: ${v.testProof}\n\nEdits:\n` +
   v.edits.map((e, i) =>
     `--- edit ${v.findingId}.${i + 1} in ${e.file}\nanchor: ${e.anchor}\nrationale: ${e.rationale}\n` +
     `CURRENT:\n<<<\n${e.current}\n>>>\nREPLACEMENT:\n<<<\n${e.replacement}\n>>>`
@@ -255,10 +264,10 @@ APPLY THESE EDITS:
 ${editBlocks}
 
 How to apply:
-1. TEST FIRST, wherever the adjudicator named one. For every edit block whose "Test proof" does
-   not begin with "n/a": write or adjust that test BEFORE touching the code it covers, run it,
-   and copy its verbatim failing output into "red" for that finding. A weak-test finding proves
-   it the other way round - apply the mutation the adjudicator named, show the current test
+1. TEST FIRST, wherever the adjudicator named one. For every edit block whose "Test proof" begins
+   with neither "n/a" nor "ledger:": write or adjust that test BEFORE touching the code it
+   covers, run it, and copy its verbatim failing output into "red" for that finding. A weak-test
+   finding proves it the other way round - apply the mutation the adjudicator named, show the current test
    passing anyway, then write the replacement and show it failing on that same mutation, and
    revert the mutation before moving on.
    A test that passes on its first run has proved nothing. Do not paper over it: either the
@@ -266,6 +275,12 @@ How to apply:
    "skipped" and leave that code alone.
    Authoring that test, and the temporary mutation above that you revert in the same step, are
    the only reasons to create or edit a file the edit blocks do not list. Nothing else.
+   A "Test proof" that contains "ledger:" is also checked after the edit: re-read the changed
+   text and check every ledger entry against it. An entry holds when the applied text matches
+   its mark, so a scope the ledger marks changed is expected to change. Also flag any difference
+   between CURRENT and the applied text that no entry accounts for. Quote each entry with its
+   applied wording in "red". If an entry does not hold, or a difference is unaccounted for,
+   restore the original text and record the finding in "skipped".
 2. Work in the order given. Locate CURRENT by exact string match and replace it with REPLACEMENT.
    A short python3 heredoc that asserts exactly one match before replacing is the safest tool.
    If CURRENT does not match byte-for-byte, do not guess: re-read the file around the anchor and
@@ -282,7 +297,8 @@ Then run the verification command and put its raw output in the "verification" f
 
 If it fails, fix what your own edits broke and run it again. Report the final output verbatim,
 including a failure you could not fix. A summary of the output is not the output. The same holds
-for "red": it is the failing run you captured before the edit, quoted, and a green suite at the
+for "red": it is the failing run you captured before the edit (or, for a ledger proof, the
+ledger re-checked after it), quoted, and a green suite at the
 end does not stand in for it.
 
 Every finding id in the edit blocks above must appear in exactly one of "applied" or "skipped".

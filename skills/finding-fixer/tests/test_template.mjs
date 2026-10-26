@@ -113,7 +113,8 @@ const applyOf = (id) => ({ findingId: id, file: 'src/x.ts', summary: `guard adde
   assert.ok(adj.includes('F1 and F2 claim the guard is missing.'), 'group findings reach the adjudicator')
   assert.ok(adj.includes('SENTINEL-VERIFY-CMD'), 'the adjudicator is shown the command its test must run under')
   assert.ok(apply.includes('test/x.test.ts asserts parse(null) throws'), 'testProof reaches the writer')
-  assert.ok(!/Test proof to produce first:\s*(undefined|$)/m.test(apply), 'testProof never renders as undefined')
+  assert.ok(apply.includes('Test proof: '), 'the writer prompt carries the Test proof label')
+  assert.ok(!/Test proof:\s*(undefined|$)/m.test(apply), 'testProof never renders as undefined')
 }
 
 // --- 7. the arg guard still rejects bad input --------------------------------------
