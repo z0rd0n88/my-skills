@@ -1,6 +1,6 @@
 ---
 name: finding-fixer
-description: Use whenever review findings need fixing, especially about code written this session. Read-only agents adjudicate each finding before one writer applies supported edits.
+description: Use whenever review findings need fixing, especially about code written this session, or when a brief or plan names finding-fixer for the fix step, findings need SUPPORTED or REFUTED verdicts between review rounds, or a hand-run or inline reviewer fan-out returned a findings list. Read-only agents adjudicate each finding before one writer applies supported edits.
 ---
 
 # finding-fixer
