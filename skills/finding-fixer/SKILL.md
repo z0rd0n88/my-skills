@@ -90,7 +90,7 @@ mistake here costs a relaunch rather than a bad edit.
 |---|---|---|
 | `cwd` | absolute path of the worktree every agent must stay inside | Interpolated into every prompt. Wrong or absent, and the writer resolves paths against the wrong tree |
 | `houseRules` | the project invariants an edit must not break | Without them an agent "improves" a deliberate constraint |
-| `verify` | one shell command that proves nothing broke **and that a correct input still passes** | A test command, a linter, a build — but one that drives at least one valid input through the changed path. Re-running the existing suite proves the new gates exist, not that anything can get past them. Not "check it looks right" |
+| `verify` | one shell command that proves nothing broke **and that a correct input still passes** | A test command, a linter, a build — but one that drives at least one valid input through the changed path. Re-running the existing suite proves the new gates exist, not that anything can get past them. Not "check it looks right". When every finding is instruction text, no shell command covers the changed path: run the edited skill's evals (`skill-creator` runs an `evals/evals.json`) if it has any, and otherwise report `verify` as not covering the changed paths, never as a pass |
 | `groups` | findings batched by what decides them, each with `label`, `findings` and `sources` | Drives how many adjudicators run |
 
 The findings text is not a top-level input. It lives on each group as `groups[].findings`, which
@@ -114,7 +114,10 @@ decided. A real example:
 Rule 4 in that list was written after a run added a required field and silently broke the
 examples. That is the shape of a good house rule: a real failure, stated as a constraint.
 
-When the findings are about instruction files, the rest of the always-loaded instructions (the
+When the findings are about instruction files, put this rule in `houseRules` by default: rewrite
+the wrong sentence in place, add no net sentences, and keep each rule in one place, pointing to it
+elsewhere. Every added clarification is new text for the next review round to find ambiguous.
+The rest of the always-loaded instructions (the
 root `CLAUDE.md`/`AGENTS.md` and every rules file without `paths:` frontmatter) are what an edit
 must not contradict. Name them in each group's `sources`, and put only the specific lines that
 could conflict into `houseRules`, which every agent prompt repeats. Add one rule: a line that
@@ -166,7 +169,7 @@ code" produces a shallow verdict; naming the ADR and the class produces evidence
 Copy the template out of the skill so the run script is editable, then fill in `args`:
 
 ```bash
-cp "$HOME/.agents/skills/finding-fixer/assets/workflow-template.js" \
+cp "<directory of the SKILL.md you read>/assets/workflow-template.js" \
    "<scratchpad>/finding-fixer-run.js"
 ```
 
@@ -217,8 +220,9 @@ The apply agent reports on its own work. Read the diff before you believe it.
   ("before" on `origin/<default>`, "after" on the head) and quote the output; back a "no
   behaviour change" with the ledger or a test. A claim measured on the wrong checkout looks
   exactly like a correct one.
-- **For instruction edits, get a second ledger.** Have a fresh read-only agent rebuild the ledger
-  from `git diff` alone, without the adjudicator's, and compare. Then read each changed sentence
+- **For instruction edits, get a second ledger, every pass.** A later review round does not
+  stand in for it, least of all on the last pass before a merge. Have a fresh read-only agent
+  rebuild the ledger from `git diff` alone, without the adjudicator's, and compare. Then read each changed sentence
   on its own, as someone who never saw the old text: a sentence that parses two ways is a new
   finding.
 - Grep for anything a house rule bans. It is cheap and it catches the edit that slipped through.
@@ -240,7 +244,8 @@ F3  refuted                     no edit   JupiterMints keys are unique; collisio
 ```
 
 Then the failing `red` run for every finding that named a test, the re-checked ledger for every
-instruction edit, and the verbatim `verify` output.
+instruction edit, and the verbatim `verify` output, labelled as not covering the changed paths
+when it touched none of them.
 Say plainly which findings are still open and why, including any the writer skipped and anything
 `coverage.unreported` names. A finding
 ruled `refuted` is a result worth stating, not a gap. A finding skipped because its test passed
@@ -251,7 +256,9 @@ failed, so the skip reason has to say whether the finding or the test is the thi
 
 If the verification fails in a way the writer could not fix, do not re-run from scratch. Edit the
 copied script and pass `resumeFromRunId` with the prior run id: unchanged `agent()` calls replay
-from cache and only what you edited runs again. Stop the prior run with `TaskStop` first.
+from cache and only what you edited runs again. Stop the prior run with `TaskStop` first. A
+worker restart moves the scratchpad, and `Workflow` refuses a `scriptPath` in the old one: copy
+the script into the current scratchpad before resuming.
 
 Adjudication verdicts are usually the part worth keeping. It is the apply prompt that needs
 another pass.

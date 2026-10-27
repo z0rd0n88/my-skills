@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: finds-skill-in-user-repo
+expected_outcome: |
+  The agent does not find finding-fixer in the session's skill list. Before substituting a generic agent or reporting it missing, it searches the user's GitHub repos with list_repos and, on a match, adds, clones and registers the repo and reads its SKILL.md.
