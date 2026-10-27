@@ -108,7 +108,9 @@ fetch it hands the lanes the base branch's own commits as deletions this branch 
 **Name what freezes at merge.** Every repo has a class of change that cannot be corrected after
 it lands: a forward-only migration, a published API or wire format, a data-retention trigger,
 anything written to a ledger or a third party, a release version or tag that a registry
-caches and will not accept again. Read the repo's `CLAUDE.md` / `AGENTS.md` /
+caches and will not accept again. An added file only the repo itself reads stays editable,
+however frozen it looks: a gitignored or regenerated artifact with a schema version and no outside
+consumer is not in the class. Read the repo's `CLAUDE.md` / `AGENTS.md` /
 contributing docs and the `--diff-filter=A` list, and write down which added files are in that
 class. The severity rubric turns on it and Step 3 injects it.
 
@@ -532,5 +534,9 @@ of record. Report which one you used, and its URL or path.
   result; check `journal.jsonl` in the transcript dir before assuming a cached result is empty.
 - N clean rounds means the reviewer *shape* is exhausted, not that the diff is clean. Change
   the lanes before running again.
+- A review-fix loop over instruction text rarely comes back clean either, because each fix adds
+  text the next round can find ambiguous. Before its round 2, offer a stop rule (fix the
+  must-fix-before-merge findings, run one final round, file the rest as an issue), and report
+  each round's finding count and which findings the last fix pass introduced.
 - A repo with its own tuned variant (a project-scope `<repo>-dw-review` skill carrying that
   repo's lane table and facts) wins over this one. This is the generic fallback.
