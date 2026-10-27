@@ -33,6 +33,8 @@ Stop at the first step that finds the skill, then read its `SKILL.md` in full an
    `add_repo`, then one shallow clone with a long timeout (`git clone --depth 1 <url>
    /home/user/<repo>`, about 10 minutes, never two clones of the same repo at once), then
    `register_repo_root`. Then `find /home/user/<repo> -iname SKILL.md` and match as in step 1.
+   That clone fetches only the default branch; to push a branch from it, first run `git remote
+   set-branches origin '*'`, or the pushed branch gets no `origin/<branch>` ref and looks unpushed.
    Skills often sit deep, e.g. `plugins/<plugin>/skills/<name>/SKILL.md`.
 
 Paths the skill refers to (`$HOME/.agents/skills/<name>/assets/...`) assume an installed copy. In
