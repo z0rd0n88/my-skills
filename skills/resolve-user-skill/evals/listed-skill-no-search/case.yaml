@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: listed-skill-no-search
+expected_outcome: |
+  code-review is in the session's available-skills list, so the agent invokes it directly and makes no repo search.

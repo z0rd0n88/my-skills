@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: fuzzy-names-skill-and-repo
+expected_outcome: |
+  The agent treats 'reeflect' as reflect and 'lil-pstackc' as a repo-name fragment, queries list_repos with a fragment like 'pstack', then clones the match and finds reflect's SKILL.md under it.

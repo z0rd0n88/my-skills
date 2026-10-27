@@ -1,6 +1,6 @@
 ---
 name: finding-fixer-codex
-description: Use when review findings need fixing but their validity or ownership is uncertain. Codex subagents adjudicate them before one writer applies test-proven edits.
+description: Use whenever review findings need fixing, especially about code written this session. Read-only Codex subagents adjudicate each finding before one writer applies test-proven edits.
 ---
 
 # finding-fixer-codex
@@ -14,12 +14,26 @@ output only this help section and stop:
 > preserve unrelated changes and follow the repository's branch and scope rules.
 
 Adjudicate review findings against their deciding sources, then apply supported
-fixes with a failing test first. Use it when findings are uncertain or span
-different sources; fix a small, already-understood issue directly.
+fixes with a failing test first.
 
 | Option | Values | Default | Effect |
 |---|---|---|---|
 | findings | Review text or a path to it | Required | Findings to adjudicate, each with a stable ID. |
+
+## When this fires
+
+A review just handed back findings and someone wants them fixed. That is the
+trigger, whatever produced them.
+
+Always adjudicate findings about code you wrote in this session, including small
+mechanical fixes. Independent adjudication checks the assumptions that produced
+the code before they shape its repair.
+
+For code you did not write in this session, fix directly only when either of
+these holds:
+
+- Two or three findings, all mechanical, all in one file. Four agents to fix a typo is waste.
+- You did the reviewing yourself and checked the deciding sources for each finding.
 
 ## Run boundary
 

@@ -160,7 +160,7 @@ unit → commit → re-run, bounded by the per-phase thrash alarm.
 ## The dw-review Workflow
 
 Run by the **manager**, once per phase, after the review baton is written and
-`git status --porcelain` is empty. It is `ClaudesMods:dw-review` — or the repo's
+`git status --porcelain` is empty. It is `dw-review` — or the repo's
 own tuned `<repo>-dw-review` variant when the worktree has one, which wins
 because it carries that repo's lane table and facts. Follow that skill's
 Steps 1–3 and take its Step 3 script as-is with these five deltas. Do not fork
@@ -238,7 +238,7 @@ well-formed empty result — not as a clean phase.
 ## The finding-fixer Workflow
 
 Run by the **manager**, once per phase, over every CONFIRMED finding in
-`review-phase-<N>-dw.json`. It is `ClaudesMods:finding-fixer`: follow that
+`review-phase-<N>-dw.json`. It is `finding-fixer`: follow that
 skill's Step 3 to copy its template into the scratchpad, then call `Workflow`
 with `scriptPath` and `args`. Do not fork the template into this file.
 
@@ -400,7 +400,7 @@ Phase base branch (for diff): <base-branch>.
    The manager runs the full profile itself later — do NOT run it, and do not
    background anything.
 
-2. Do NOT run /dw-review, /finding-fixer, /multi-agent-review, or the Workflow
+2. Do NOT run /dw-review, /finding-fixer, /zord-multi-agent-review, or the Workflow
    tool. Both the multi-lane review and the fix pass are the manager's steps,
    and Workflow is blocked inside a subagent. Your review is the gate plus
    step 3.
@@ -539,7 +539,7 @@ Managed-specific additions:
 ## Fatal errors (→ PAUSE; `PAUSED`, or `FAILED` if unrecoverable)
 
 - A required skill (`baton-pass`, `superpowers:test-driven-development`,
-  `ClaudesMods:dw-review`, `ClaudesMods:finding-fixer`) or `scripts/gate.sh` is
+  `dw-review`, `finding-fixer`) or `scripts/gate.sh` is
   missing in the worktree.
 - Docker is unavailable when the full gate is due.
 - Test infrastructure cannot run at all (not "tests fail" — that is normal work).
