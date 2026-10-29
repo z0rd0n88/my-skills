@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# run-job: drive one big-next-job to completion with a chain of fresh Claude Code sessions.
+# Each child reads <job-dir>/checkpoint.md, works until the phase ends (or its context gets heavy),
+# rewrites checkpoint.md, and stops. This loop relaunches until status is done or blocked.
+# A crashed, killed, or timed-out child costs nothing but the work since its last checkpoint.
+# Mechanism borrowed from session-switcher (z0rd0n88/session-switcher): brief as one argv,
+# a Claude Stop hook as the return channel, tmux as the terminal. Needs claude, tmux, python3.
+#
+# Usage:  run-job <job-dir> [workdir]          (job-dir holds brief.md + checkpoint.md)
+#         run-job status <job-dir>             (print the checkpoint header and stop)
+#   env:  CLAUDE_FLAGS=""             extra flags for each child; the owner sets what the run may use
+#         JOB_CHILD_TIMEOUT=14400     seconds one child may run before it is killed and replaced
+#         JOB_MAX_CHILDREN=12         hard stop on relaunches
+#         JOB_SESSION=job-<name>      tmux session name;  JOB_KEEP_WINDOWS=1 leaves finished children open
+# Trust dialogs ("Yes, I trust this folder") are answered for any workdir: the job's worktrees are owner-created.
+# Exit:   0 done · 3 blocked (needs the owner) · 4 child cap reached · 5 two children in a row made no progress
+set -euo pipefail
+
+case "${1:-}" in
+  -h|--help|"") sed -n '2,17p' "$0"; exit 0 ;;
+  status) sed -n '1,/^## /p' "$2/checkpoint.md" | sed '$d'; exit 0 ;;
+esac
+
+JOB="$(cd "$1" && pwd)"
+WORKDIR="$(cd "${2:-$(dirname "$JOB")}" && pwd)"
+TIMEOUT="${JOB_CHILD_TIMEOUT:-14400}"
+MAXC="${JOB_MAX_CHILDREN:-12}"
+SESSION="${JOB_SESSION:-job-$(basename "$WORKDIR")}"
+LOG="$JOB/run.log"
+
+for b in claude tmux python3; do command -v "$b" >/dev/null || { echo "$b not on PATH" >&2; exit 1; }; done
+test -s "$JOB/brief.md" || { echo "missing $JOB/brief.md" >&2; exit 1; }
+test -s "$JOB/checkpoint.md" || { echo "missing $JOB/checkpoint.md" >&2; exit 1; }
+
+status() { sed -n 's/^status: *\([a-z-]*\).*/\1/p' "$JOB/checkpoint.md" | head -1; }
+log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
+fingerprint() { sha256sum "$JOB/checkpoint.md" | cut -c1-16; }
+
+# The child's whole instruction. The brief and checkpoint carry everything else, so this stays
+# constant and the chain never depends on a hand-written handoff.
+PROMPT="Continue the job in $JOB. Read $JOB/checkpoint.md first, then $JOB/brief.md, then follow the brief's Child protocol section exactly. Work from $WORKDIR."
+
+SCRUB=$(env | grep -o '^CLAUDE[A-Z_]*=' | sed 's/=$//; s/^/-u /' || true)
+tmux has-session -t "$SESSION" 2>/dev/null || env $SCRUB tmux new-session -d -s "$SESSION" -c "$WORKDIR"
+
+n=0; stalls=0
+while :; do
+  s="$(status)"
+  case "$s" in
+    done)    log "job done";    exit 0 ;;
+    blocked) log "job blocked; see $JOB/checkpoint.md"; exit 3 ;;
+  esac
+  n=$((n+1)); [ "$n" -le "$MAXC" ] || { log "child cap $MAXC reached"; exit 4; }
+  before="$(fingerprint)"
+
+  DIR=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/job.XXXXXX")
+  printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"cat > %s/done.json"}]}]}}\n' "$DIR" > "$DIR/settings.json"
+  Q="'$(printf '%s' "$PROMPT" | sed "s/'/'\\\\''/g")'"
+  WIN=$(tmux new-window -dP -t "$SESSION" -c "$WORKDIR" -e JOB_DIR="$JOB" -e JOB_CHILD="$n" \
+        "claude ${CLAUDE_FLAGS:-} --settings $DIR/settings.json $Q")
+  log "child $n launched  window=$WIN  (watch: tmux attach -t $SESSION)"
+
+  # Wait for the child's turn to end. A folder Claude has not seen shows a trust dialog; the job's
+  # worktrees are owner-created, so every trust dialog is answered (owner decision 2026-10-28).
+  # Only that dialog's text triggers a keystroke. ponytail: screen scrape; replace if claude grows a --trust flag.
+  for ((i=0; i<TIMEOUT; i++)); do
+    [ -s "$DIR/done.json" ] && break
+    if tmux capture-pane -p -t "$WIN" 2>/dev/null | grep -q "Yes, I trust this folder"; then
+      tmux send-keys -t "$WIN" Down Enter; sleep 2
+    fi
+    sleep 1
+  done
+  if [ -s "$DIR/done.json" ]; then
+    python3 - "$DIR/done.json" "$n" >> "$LOG" <<'PY'
+import json, sys
+ev = json.load(open(sys.argv[1]))
+print(f"child {sys.argv[2]} session={ev.get('session_id')} transcript={ev.get('transcript_path')}")
+print("--- child's last message ---")
+print(ev.get("last_assistant_message") or "(none)")
+print("---")
+PY
+    sed -n "/^child $n session=/,/^---$/p" "$LOG" | tail -n 40
+  else
+    log "child $n timed out after ${TIMEOUT}s; killing it, next child resumes from checkpoint"
+  fi
+  [ -n "${JOB_KEEP_WINDOWS:-}" ] || tmux kill-window -t "$WIN" 2>/dev/null || true
+
+  if [ "$(fingerprint)" = "$before" ]; then
+    stalls=$((stalls+1)); log "child $n left checkpoint.md unchanged (stall $stalls/2)"
+    [ "$stalls" -lt 2 ] || { log "two stalls; stopping"; exit 5; }
+  else
+    stalls=0
+  fi
+done
