@@ -303,7 +303,7 @@ git -C "$PRIMARY" ls-remote --exit-code --heads "$REMOTE" -- "refs/heads/$TARGET
 
 **A hook firing is not consent.** A post-merge teardown hook demands cleanup the moment the merge lands, and it cannot see that the user scoped the run to merge-only. A more recent explicit instruction outranks it. Say out loud that the hook fired and that you are not acting on it — silently ignoring it looks identical to not noticing it.
 
-In `~/.claude` itself, finish with `git -C ~/.claude status -sb`. Detached HEAD or "behind" means the merged rules are not live. That tree is routinely dirty, so `pull --ff-only` may legitimately refuse — report that rather than forcing, and re-check `status -sb` before calling the rules live.
+In `~/.claude` itself, finish with `git -C ~/.claude status -sb`. Detached HEAD or "behind" means the merged rules are not live. That tree is routinely dirty, so a plain `pull --ff-only` can refuse. Save `git -C ~/.claude diff -- settings.json` as a baseline, run `git -C ~/.claude pull --ff-only --autostash`, then compare the diff to the baseline. If the pull refuses, report it rather than forcing. If it says the autostash conflicted (it still exits 0), dirty edits may be only in the stash or the live file may be broken: follow `~/.claude/guides/session-discovered-gotchas.md` now and tell the user. Re-check `status -sb` before calling the rules live.
 
 ## Common Mistakes
 
