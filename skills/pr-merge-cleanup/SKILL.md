@@ -170,7 +170,7 @@ Evaluate **in order**; act on the first match. Several can be true at once.
 
 | # | Signal | Action |
 |---|---|---|
-| 0 | No review record names `$VERIFIED_OID`, **and** any of: the PR body says `Door: one-way` or `**Door:** one-way`; it has no Door line; `gh pr diff <number> --repo "$REPO" --name-only` shows a migration | **Stop.** Say the tip is unreviewed (and, with no Door line, that the door is unknown) and offer the review. Merge only on an explicit "merge without review" given after hearing this; an earlier "merge it" is not that answer. That answer clears this row; continue at row 1 |
+| 0 | No review record names `$VERIFIED_OID` | **Stop.** Say the tip is unreviewed, quote the body's Door line as the author's claim (or say there is none), and offer the review. If that line says two-way and `gh pr diff <number> --repo "$REPO" --name-only` shows no migration, a "merge it" given after hearing this clears the row. Otherwise only an explicit "merge without review" does; an earlier "merge it" is not that answer. The answer holds for this `$VERIFIED_OID` only. Once cleared, continue at row 1 |
 | 1 | `reviewDecision: CHANGES_REQUESTED` | **Stop** — green CI does not override it |
 | 2 | `mergeable: CONFLICTING` / `mergeStateStatus: DIRTY` | Stop — name the conflicting paths and a resolution shape, then ask. Resume path below |
 | 3 | `mergeStateStatus: BLOCKED` / `BEHIND` / `DRAFT` | Stop and report |
