@@ -106,7 +106,7 @@ closed at.
 
 ## 6. Delivery
 
-Commit only the reviewed paths, one logical change per commit, no attribution lines. Push and open
+Deliver only the reviewed paths, one logical change per commit, no attribution lines. Push and open
 a **draft** PR: summary, decisions table, test plan as checkboxes with the exact commands run,
 the review ledger (rounds, finding IDs, dispositions, open lows), `Closes #N` when an issue
 exists. No merge, no deploy. Final `progress.md` entry: what now works, how to try it, what is
