@@ -162,7 +162,7 @@ review.
 **An unanswered caveat is an open gate.** If a prior "is this ready to merge?" answer raised a caveat the user never accepted or declined, restate it here before merging — every one, and worse than when first raised if more commits have landed since. Saying it once at the readiness checkpoint does not discharge it; the user answering does. Record a declined caveat as declined.
 
 ```bash
-gh pr view <number> --repo "$REPO" --json mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,headRefOid
+gh pr view <number> --repo "$REPO" --json body,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,headRefOid
 gh pr checks <number> --repo "$REPO"     # exit code is NOT a pass/fail signal
 ```
 
@@ -170,6 +170,7 @@ Evaluate **in order**; act on the first match. Several can be true at once.
 
 | # | Signal | Action |
 |---|---|---|
+| 0 | No review record names `$VERIFIED_OID` | **Stop.** Say the tip is unreviewed, quote the body's Door line as the author's claim (or say there is none), and offer the review. If that line says two-way and `gh pr diff <number> --repo "$REPO" --name-only` shows no migration, a "merge it" given after hearing this clears the row. Otherwise only an explicit "merge without review" does; an earlier "merge it" is not that answer. The answer holds for this `$VERIFIED_OID` only. Once cleared, continue at row 1 |
 | 1 | `reviewDecision: CHANGES_REQUESTED` | **Stop** — green CI does not override it |
 | 2 | `mergeable: CONFLICTING` / `mergeStateStatus: DIRTY` | Stop — name the conflicting paths and a resolution shape, then ask. Resume path below |
 | 3 | `mergeStateStatus: BLOCKED` / `BEHIND` / `DRAFT` | Stop and report |
@@ -183,7 +184,7 @@ Evaluate **in order**; act on the first match. Several can be true at once.
 | — | `gh pr checks` exits other than 0, 1, 8 (e.g. 4 = auth) | **Stop** |
 | — | anything unlisted | **Stop.** No default-proceed; row 9 is the only exit |
 
-**Row 2's resume path.** Diagnose before asking — a stop that already names the file and the fix costs the user one word instead of a round trip. `git -C "$PRIMARY" fetch --prune "$REMOTE"`, then `git -C "$WORKTREE" merge-tree --write-tree --name-only "$REMOTE/$DEFAULT" HEAD` lists exactly the conflicting paths (exit 1 on conflict; git ≥ 2.38, else compare `diff --name-only` on each side of the merge-base). Propose the resolution shaped to what the file is: a machine-written shared file (a state ledger, a generated map) is **regenerated** from `$REMOTE/$DEFAULT`'s copy with this branch's delta reapplied in code, never hand-merged and never `-X ours`/`-X theirs`; code is named hunk by hunk. Then ask. On approval: rebase in `$WORKTREE` onto `$REMOTE/$DEFAULT`, resolve, `push --force-with-lease "$REMOTE" -- "$TARGET"`. **The tip is new, so `$VERIFIED_OID` is dead.** Re-run State Detection's three identity checks to capture the post-rebase tip as `$VERIFIED_OID`, then this table again from row 1. Pinning `--match-head-commit` to the pre-rebase OID rejects a branch that is otherwise fine.
+**Row 2's resume path.** Diagnose before asking — a stop that already names the file and the fix costs the user one word instead of a round trip. `git -C "$PRIMARY" fetch --prune "$REMOTE"`, then `git -C "$WORKTREE" merge-tree --write-tree --name-only "$REMOTE/$DEFAULT" HEAD` lists exactly the conflicting paths (exit 1 on conflict; git ≥ 2.38, else compare `diff --name-only` on each side of the merge-base). Propose the resolution shaped to what the file is: a machine-written shared file (a state ledger, a generated map) is **regenerated** from `$REMOTE/$DEFAULT`'s copy with this branch's delta reapplied in code, never hand-merged and never `-X ours`/`-X theirs`; code is named hunk by hunk. Then ask. On approval: rebase in `$WORKTREE` onto `$REMOTE/$DEFAULT`, resolve, `push --force-with-lease "$REMOTE" -- "$TARGET"`. **The tip is new, so `$VERIFIED_OID` is dead.** Re-run State Detection's three identity checks to capture the post-rebase tip as `$VERIFIED_OID`, then this table again from row 0. Pinning `--match-head-commit` to the pre-rebase OID rejects a branch that is otherwise fine.
 
 **Row 3's `BEHIND` needs "Require branches to be up to date before merging"** — a repo without that setting cannot report the status, so there row 3 is `BLOCKED`/`DRAFT` only. Do not probe for it: the setting is reachable through both branch protection and rulesets, so no single endpoint answers the question, and seeing `BEHIND` is itself proof it is on. Row 3 matches the value, never the repo's configuration.
 
