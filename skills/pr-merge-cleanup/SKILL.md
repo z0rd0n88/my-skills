@@ -170,6 +170,7 @@ Evaluate **in order**; act on the first match. Several can be true at once.
 
 | # | Signal | Action |
 |---|---|---|
+| 0 | No review record names `$VERIFIED_OID`, **and** the PR body has `Door: one-way` or `gh pr diff <number> --name-only` shows a migration | **Stop.** Say the tip is unreviewed and offer the review. Merge only on an explicit "merge without review" given after hearing this; an earlier "merge it" is not that answer |
 | 1 | `reviewDecision: CHANGES_REQUESTED` | **Stop** — green CI does not override it |
 | 2 | `mergeable: CONFLICTING` / `mergeStateStatus: DIRTY` | Stop — name the conflicting paths and a resolution shape, then ask. Resume path below |
 | 3 | `mergeStateStatus: BLOCKED` / `BEHIND` / `DRAFT` | Stop and report |

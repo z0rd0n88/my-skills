@@ -42,9 +42,9 @@ the source files below. No whole-document dumps. Write the pack into `findings.m
 4. **Conflicts** between spec, docs and code, each written as options with a recommendation.
    Put them to the user in one decision packet before building; never resolve one silently.
 
-The brief also fixes the exact tracked-file target set and the phase table, one "done when" per
-phase. The target set is the scope-confirmation set: confirm it before touching more than three
-files.
+The brief also fixes the exact tracked-file target set and the phase table: each phase has one
+"done when" and, directly after it, its own review row. The target set is the scope-confirmation
+set: confirm it before touching more than three files.
 
 ## 4. Build in thin vertical slices
 
@@ -91,12 +91,18 @@ reason, and you fall through to the next. Record the final pick.
 Give every finding a stable ID. For anything above low, run `finding-fixer` (fallback: adjudicate
 each finding yourself in writing, fix the supported in-scope ones with a failing-then-passing
 check for every behavior change, record the rest as refuted or out of scope with the reason),
-then re-review. At most five rounds. A round with nothing above low closes the phase. Its lows
+then re-review. At most five rounds; anything above low still open after the fifth stops the run
+for the user. A round with nothing above low closes the phase. Its lows
 you may still fix after closing without another round when the fix is small and a test covers
 it; log each as `post-review low fix, test-covered` in the ledger, and leave the rest listed as
 open. Only when the whole ladder is blocked is the phase's review recorded as blocked; never
 replace it with a self-review called clean. Report findings to the user in full, verbatim,
 before your own take.
+
+**Phase close.** In unattended runs too, the next phase's first edit comes after `git status --short`
+lists no target-set path, the closing review ran on that committed work (or the review is recorded
+as blocked), and `task_plan.md` and `progress.md` show the phase closed and name the commit it
+closed at.
 
 ## 6. Delivery
 
