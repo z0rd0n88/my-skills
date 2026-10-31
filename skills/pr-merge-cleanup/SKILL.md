@@ -303,7 +303,7 @@ git -C "$PRIMARY" ls-remote --exit-code --heads "$REMOTE" -- "refs/heads/$TARGET
 
 **A hook firing is not consent.** A post-merge teardown hook demands cleanup the moment the merge lands, and it cannot see that the user scoped the run to merge-only. A more recent explicit instruction outranks it. Say out loud that the hook fired and that you are not acting on it — silently ignoring it looks identical to not noticing it.
 
-In `~/.claude` itself, finish with `git -C ~/.claude status -sb`. Detached HEAD or "behind" means the merged rules are not live. That tree is routinely dirty, so `pull --ff-only` may legitimately refuse. Copy `~/.claude/settings.json` into a `mktemp -d` folder, save `git -C ~/.claude diff HEAD -- settings.json` there, run `git -C ~/.claude pull --ff-only`, and add `--autostash` only if it says local changes would be overwritten. Report any other refusal rather than forcing. If the autostash conflicts (it can still exit 0), `settings.json` is invalid, or its diff gained any line, keep the copy and any stash entry, restore invalid JSON as `~/.claude/guides/session-discovered-gotchas.md` says, then stop and tell the user. Re-check `status -sb` before calling the rules live.
+In `~/.claude` itself, finish with `git -C ~/.claude status -sb`. Detached HEAD or "behind" means the merged rules are not live. That tree is routinely dirty, so land with `python3 ~/.claude/scripts/land_config.py` rather than a bare pull. If it exits non-zero, tell the user what it printed and stop, rather than forcing. Re-check `status -sb` before calling the rules live.
 
 ## Common Mistakes
 
