@@ -6,4 +6,6 @@ Personal agent skills. Install: `npx skills add z0rd0n88/my-skills -g -a claude-
 
 `skills/branch-off` is a fork of [agenthub](https://github.com/alirezarezvani/claude-skills) with judge voting adapted from [horse-race](https://github.com/qiao/horse-race). Both are MIT; notices are in `LICENSES/agenthub.txt` and `LICENSES/horse-race.txt`.
 
+`skills/iron-ham-split` is a copy of [Iron-Ham/split](https://github.com/Iron-Ham/split) (MIT), renamed with an `iron-ham-` prefix. Its README names the source commit; the notice is in `LICENSES/iron-ham-split.txt`.
+
 Claude Code mods moved to [claude-mod-ity](https://github.com/z0rd0n88/claude-mod-ity).
