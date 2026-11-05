@@ -75,7 +75,7 @@ If neither holds, use `baton-runner` — it spends fewer units per phase.
 
 | Term | Meaning |
 |---|---|
-| **work-unit** | Implements a phase's acceptance criteria via `superpowers:test-driven-development`, recording the actual RED output as evidence. |
+| **work-unit** | Implements a phase's acceptance criteria via `addyosmani-test-driven-development`, recording the actual RED output as evidence. |
 | **review-unit** | Independent of the implementer. Runs `GATE_PROFILE=fast scripts/gate.sh` in the **foreground** and verifies each criterion + the RED evidence against the diff. Runs **no** fan-out review and **no** `Workflow`. Emits `VERDICT: GATE-OK \| ISSUES`. |
 | **dw-review** | The manager's own `Workflow` run of `dw-review` — three lanes picked from the diff plus a `critical-thinking` skeptic. A repo-tuned `<repo>-dw-review` variant wins when the worktree has one. Counts as one unit. |
 | **finding-fixer** | The manager's own `Workflow` run of `finding-fixer` — read-only adjudicators rule each CONFIRMED finding against the sources that decide it, then one writer applies only what survives. One round, no re-review. Counts as one unit. |
@@ -88,7 +88,7 @@ If neither holds, use `baton-runner` — it spends fewer units per phase.
 - [ ] **`scripts/gate.sh` present on `origin/main`.** Absent → stop and tell the
       user to merge the PR that introduces it first.
 - [ ] **Fresh single worktree**; confirm `baton-pass`,
-      `superpowers:test-driven-development`, `dw-review` and
+      `addyosmani-test-driven-development`, `dw-review` and
       `finding-fixer` resolve there.
       **There is no skill named `tdd`**, and do not substitute the project's
       `kotlin-testing` skill — it teaches Kotest/MockK and this repo tests with
@@ -257,5 +257,5 @@ same phase:
 block, the dw-review Workflow template and JSON extractor, the finding-fixer
 args, gate mechanics, branch/PR mechanics, the review record, audit trail,
 budgets, failure handling.
-Depends on `baton-pass`, `superpowers:test-driven-development`,
+Depends on `baton-pass`, `addyosmani-test-driven-development`,
 `dw-review` and `finding-fixer`.

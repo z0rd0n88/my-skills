@@ -371,7 +371,7 @@ Continuity (what already exists — honor it, don't duplicate or contradict):
   <accumulated phase-exit digest paths, or "none — phase 1">.
 [If continuation:] Resume from this baton (your full context): <baton path>.
 
-Use the `superpowers:test-driven-development` skill. This repo tests with
+Use the `addyosmani-test-driven-development` skill. This repo tests with
 kotlin.test (@Test, assertEquals, backtick names) — NOT Kotest, and NOT the
 project's `kotlin-testing` skill, which teaches the wrong framework.
 For EACH acceptance criterion: write the test first, run it, and RECORD THE
@@ -429,7 +429,7 @@ Scope (your ONLY scope): these failing checks and nothing else —
   <check names + their log paths under baton-runner/<run-id>/gate-phase-<N>-*/>.
 Do not fix anything the gate did not flag; unrelated cleanup is scope creep.
 
-Use `superpowers:test-driven-development`: capture RED first, then fix. For any
+Use `addyosmani-test-driven-development`: capture RED first, then fix. For any
 failure about TEST STRENGTH, the RED must be mutation-proven — show the mutation
 that the old test survived and the new one catches.
 
@@ -538,7 +538,7 @@ Managed-specific additions:
 
 ## Fatal errors (→ PAUSE; `PAUSED`, or `FAILED` if unrecoverable)
 
-- A required skill (`baton-pass`, `superpowers:test-driven-development`,
+- A required skill (`baton-pass`, `addyosmani-test-driven-development`,
   `dw-review`, `finding-fixer`) or `scripts/gate.sh` is
   missing in the worktree.
 - Docker is unavailable when the full gate is due.

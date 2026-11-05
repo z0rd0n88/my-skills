@@ -1,6 +1,6 @@
 ---
 name: daily-loop
-description: "Session-start routing table (auto-triggered): feature → brainstorming+plans+tdd; returning → recall; 3+ steps → planning-with-files; pre-merge → zord-multi-agent-review pr <ref> --yes."
+description: "Session-start routing table (auto-triggered): feature → addy-code; returning → recall; 3+ steps → planning-with-files; pre-merge → zord-multi-agent-review pr <ref> --yes."
 ---
 
 # Daily Loop — Workflow Routing Table
@@ -39,7 +39,7 @@ doesn't need.
 
 | Situation | Required skill chain |
 |-----------|----------------------|
-| New feature or new functionality | `superpowers:brainstorming` → `superpowers:writing-plans` → `superpowers:test-driven-development` |
+| New feature or new functionality | `addy-code` (interview → plan on disk → context pack → thin slices with `addyosmani-test-driven-development` → review loop → draft PR). A heavier workflow (`zord-multi-agent-developer`, `zord-code-rinse-repeat`, `baton-runner`, `big-next-job`, `build-lil-things`) only when the user names it or the brief calls for it |
 | Returning to in-progress work | Check `memory/MEMORY.md` + recent session summaries in `~/.claude/session-data/` first, then resume |
 | Any task with 3+ tool calls or steps | `planning-with-files` (create task_plan.md before touching code) |
 | Pre-merge / pre-PR | `zord-multi-agent-review pr <ref> --yes` as the quality gate before opening a PR |
@@ -50,12 +50,12 @@ doesn't need.
 | Goal | Use |
 |------|-----|
 | New product, business direction, or research angle | `idea-panel` |
-| Scope or design a feature | `superpowers:brainstorming` |
+| Scope or design a feature | `addyosmani-interview-me` (vague ask) → `addyosmani-spec-driven-development` |
 | Attack an existing plan or proposal | `grill-with-docs` |
 
 ## Rules
 
-1. **Never skip brainstorming for creative work.** "Let me just start" → use `superpowers:brainstorming` first.
+1. **Never skip scoping for creative work.** "Let me just start" → use `addyosmani-interview-me` first (addy-code step 0), then `addyosmani-spec-driven-development` for a feature.
 2. **Never skip plans for multi-step work.** 3+ steps → `planning-with-files` before the first edit.
 3. **Never merge without a review.** Feature branch → `zord-multi-agent-review pr <ref> --yes` before opening PR.
 4. **Returning work → recall first.** Read `memory/MEMORY.md` and the latest entry in `session-data/` before asking what was last done.
