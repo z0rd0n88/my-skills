@@ -14,16 +14,16 @@ skill.
 Session-start routing table that maps a situation — new feature, returning
 work, a multi-step task, pre-merge, or being stuck — to the required skill
 chain, so workflow decisions are enforced rather than left to advice. It has
-no slash command and no arguments of its own; it activates automatically via
-context sensing at the start of a session.
+no slash command and no arguments of its own; a SessionStart hook injects its
+routing tables at the start of a session.
 
 | Option | Values | Default | Effect |
 |---|---|---|---|
-| *(none — auto-triggered)* | n/a | n/a | Activates from session context at start; not invoked with explicit arguments |
+| *(none — auto-triggered)* | n/a | n/a | Injected by the SessionStart hook; not invoked with explicit arguments |
 
 This skill encodes the standard workflow routing decisions so they are harness-enforceable rather than advice. Apply this at the start of every session to pick the right chain.
 
-**This skill is not user-invocable.** It has no slash command; it activates via context sensing at session start and shapes the assistant's default chain, rather than firing on `/daily-loop`.
+**This skill is not user-invocable.** It has no slash command; `~/.claude/hooks/daily-loop-inject.sh` injects its routing tables at SessionStart (set `DAILY_LOOP_INJECT=0` for unattended children whose brief owns the routing), rather than firing on `/daily-loop`.
 
 ## Session-Start Ritual
 
@@ -43,7 +43,7 @@ doesn't need.
 | Returning to in-progress work | Check `memory/MEMORY.md` + recent session summaries in `~/.claude/session-data/` first, then resume |
 | Any task with 3+ tool calls or steps | `planning-with-files` (create task_plan.md before touching code) |
 | Pre-merge / pre-PR | `zord-multi-agent-review pr <ref> --yes` as the quality gate before opening a PR |
-| Stuck / uncertain which model/approach | `thinking-skills:thinking-model-router` |
+| Stuck / uncertain which approach | `lateral` (diagnoses the symptom, picks the technique) |
 
 ## Brainstorm Routing
 
@@ -59,7 +59,7 @@ doesn't need.
 2. **Never skip plans for multi-step work.** 3+ steps → `planning-with-files` before the first edit.
 3. **Never merge without a review.** Feature branch → `zord-multi-agent-review pr <ref> --yes` before opening PR.
 4. **Returning work → recall first.** Read `memory/MEMORY.md` and the latest entry in `session-data/` before asking what was last done.
-5. **Stuck → model-router, not a thinking lens at random.** `thinking-skills:thinking-model-router` selects the right mental model for the problem type.
+5. **Stuck → `lateral`, not a thinking lens at random.** It diagnoses the symptom and picks the technique.
 6. **Delegate for breadth, never to check your own work.** Spawn subagents for large, genuinely independent, parallelisable tracks. Do not spawn one to verify, re-check, or second-guess work you just did — that is the current model's default behaviour already, and paying an agent for it buys a second opinion on your own reasoning rather than a new one.
 7. **Blind-spot pass before implementation.** After the plan, before the first edit, answer in the transcript: "what are the unknown-unknowns here — what would someone with more context on this codebase or domain flag that the plan missed?" Address or explicitly park each answer. (R13, ClaudeConfig#172.)
 8. **Comprehension check before merging a large change.** Before `gh pr merge` on a diff spanning many files or an unfamiliar subsystem, state in the transcript, in your own words, what changed and why. Unable to → re-read the diff first; the check is of understanding, not of the code (rule 3's review already covered that). (R13.)
