@@ -90,7 +90,7 @@ If neither holds, use `baton-runner` — it spends fewer units per phase.
 - [ ] **Fresh single worktree**; confirm `baton-pass`,
       `addyosmani-test-driven-development`, `dw-review` and
       `finding-fixer` resolve there.
-      **There is no skill named `tdd`**, and do not substitute the project's
+      Do not substitute the user-scope `tdd` skill, and do not substitute the project's
       `kotlin-testing` skill — it teaches Kotest/MockK and this repo tests with
       `kotlin.test` (`@Test`, `assertEquals`, backtick names).
 - [ ] **Run id matches `^[a-z0-9][a-z0-9-]*$`.** It is interpolated into shell

@@ -14,16 +14,15 @@ skill.
 Session-start routing table that maps a situation — new feature, returning
 work, a multi-step task, pre-merge, or being stuck — to the required skill
 chain, so workflow decisions are enforced rather than left to advice. It has
-no slash command and no arguments of its own; a SessionStart hook injects its
-routing tables at the start of a session.
+no slash command and no arguments of its own.
 
 | Option | Values | Default | Effect |
 |---|---|---|---|
-| *(none — auto-triggered)* | n/a | n/a | Injected by the SessionStart hook; not invoked with explicit arguments |
+| *(none — auto-triggered)* | n/a | n/a | Not invoked with explicit arguments |
 
 This skill encodes the standard workflow routing decisions so they are harness-enforceable rather than advice. Apply this at the start of every session to pick the right chain.
 
-**This skill is not user-invocable.** It has no slash command; `~/.claude/hooks/daily-loop-inject.sh` injects its routing tables at SessionStart (set `DAILY_LOOP_INJECT=0` for unattended children whose brief owns the routing), rather than firing on `/daily-loop`.
+**This skill is not user-invocable.** It has no slash command. In Claude Code, `~/.claude/hooks/daily-loop-inject.sh` injects the three routing sections below at SessionStart (`DAILY_LOOP_INJECT=0` opts a session out); other harnesses read this file as installed.
 
 ## Session-Start Ritual
 
@@ -51,7 +50,7 @@ doesn't need.
 |------|-----|
 | New product, business direction, or research angle | `ThinkTime:idea-nebula` |
 | Scope or design a feature | `addyosmani-interview-me` (vague ask) → `addyosmani-spec-driven-development` |
-| Attack an existing plan or proposal | `grill-with-docs` |
+| Attack an existing plan or proposal | `grill-with-docs` (user-run only: ask the user to invoke it) |
 
 ## Rules
 
