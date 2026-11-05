@@ -55,7 +55,7 @@ doesn't need.
 
 ## Rules
 
-1. **Never skip scoping for anything that is not a bugfix.** "Let me just start" → use `addyosmani-interview-me` first (addy-code step 0), then `addyosmani-spec-driven-development` for a feature.
+1. **Never skip scoping for anything that is not a trivial bugfix.** "Let me just start" → use `addyosmani-interview-me` first (addy-code step 0), then `addyosmani-spec-driven-development` for a feature.
 2. **Never skip plans for multi-step work.** 3+ steps → `planning-with-files` before the first edit.
 3. **Never merge without a review.** Feature branch → `zord-multi-agent-review pr <ref> --yes` before opening PR.
 4. **Returning work → recall first.** Read `memory/MEMORY.md` and the latest entry in `session-data/` before asking what was last done.
