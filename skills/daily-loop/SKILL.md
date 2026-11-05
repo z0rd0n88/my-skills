@@ -49,7 +49,7 @@ doesn't need.
 
 | Goal | Use |
 |------|-----|
-| New product, business direction, or research angle | `idea-panel` |
+| New product, business direction, or research angle | `ThinkTime:idea-nebula` |
 | Scope or design a feature | `addyosmani-interview-me` (vague ask) → `addyosmani-spec-driven-development` |
 | Attack an existing plan or proposal | `grill-with-docs` |
 
