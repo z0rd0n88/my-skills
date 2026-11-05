@@ -40,7 +40,7 @@ doesn't need.
 | Situation | Required skill chain |
 |-----------|----------------------|
 | New feature or new functionality | `addy-code` (interview → plan on disk → context pack → thin slices with `addyosmani-test-driven-development` → review loop → draft PR). A heavier workflow (`zord-multi-agent-developer`, `zord-code-rinse-repeat`, `baton-runner`, `big-next-job`, `build-lil-things`) only when the user names it or the brief calls for it |
-| Returning to in-progress work | Check `memory/MEMORY.md` + recent session summaries in `~/.claude/session-data/` first, then resume |
+| Returning to in-progress work | `mempalace_search` the palace (deeper: `mempalace-recall`), then `memory/MEMORY.md` and the latest `~/.claude/session-data/` summary, then resume |
 | Any task with 3+ tool calls or steps | `planning-with-files` (create task_plan.md before touching code) |
 | Pre-merge / pre-PR | `zord-multi-agent-review pr <ref> --yes` as the quality gate before opening a PR |
 | Stuck / uncertain which approach | stuck → `lateral` (diagnoses the symptom, picks the technique); choosing between approaches → `ThinkTime:idea-panel` (parallel mental-model lenses, ranked) |
@@ -58,7 +58,7 @@ doesn't need.
 1. **Never skip scoping for anything that is not a trivial bugfix.** "Let me just start" → use `addyosmani-interview-me` first (addy-code step 0), then `addyosmani-spec-driven-development` for a feature.
 2. **Never skip plans for multi-step work.** 3+ steps → `planning-with-files` before the first edit.
 3. **Never merge without a review.** Feature branch → `zord-multi-agent-review pr <ref> --yes` before opening PR.
-4. **Returning work → recall first.** Read `memory/MEMORY.md` and the latest entry in `session-data/` before asking what was last done.
+4. **Returning work → recall first.** Search the palace (`mempalace_search`; `mempalace_kg_query` for who/when facts), then `memory/MEMORY.md` and the latest `session-data/` entry, before asking what was last done. Quote what is stored; nothing there → say so.
 5. **Stuck → `lateral`, approach choice → `ThinkTime:idea-panel`; never a thinking lens at random.** `lateral` diagnoses the symptom and picks the technique; `idea-panel` runs the mental-model lenses in parallel and ranks the result.
 6. **Delegate for breadth, never to check your own work.** Spawn subagents for large, genuinely independent, parallelisable tracks. Do not spawn one to verify, re-check, or second-guess work you just did — that is the current model's default behaviour already, and paying an agent for it buys a second opinion on your own reasoning rather than a new one.
 7. **Blind-spot pass before implementation.** After the plan, before the first edit, answer in the transcript: "what are the unknown-unknowns here — what would someone with more context on this codebase or domain flag that the plan missed?" Address or explicitly park each answer. (R13, ClaudeConfig#172.)
