@@ -257,8 +257,15 @@ code on its last line, and wait for the background task to finish before reading
 Never run it inside a subagent (rule 7), and never treat a timed-out gate as a pass.
 
 ```bash
-( cd "$F" && ./gradlew build --console=plain > "$STATE_DIR/gate.log" 2>&1; echo "GATE_EXIT=$?" >> "$STATE_DIR/gate.log" )
+( cd "$F" && ./gradlew build --console=plain --max-workers=2 > "$STATE_DIR/gate.log" 2>&1; echo "GATE_EXIT=$?" >> "$STATE_DIR/gate.log" )
 ```
+
+Downloads go to Google's Maven Central mirror through `~/.gradle/init.d/maven-central-mirror.gradle`
+(and a copy in `~/.gradle/vista-testkit/init.d/` for the nested TestKit builds), which the
+environment's setup script writes. Maven Central itself answers cloud sessions' download bursts
+with HTTP 429. A gate that fails with `Received status code 429` is an environment failure, not
+the PR's: push no code commits, and say so in the comment. Never edit the repo's build files or
+`gradle/verification-metadata.xml` to get past it.
 
 No JDK 17 under `/usr/lib/jvm/`, or no Docker daemon, means the gate can't run: follow the
 "Gate can't run" branch below.
