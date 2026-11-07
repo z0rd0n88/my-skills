@@ -32,7 +32,7 @@ pass, and posts one comment saying what was found and what was pushed.
 
 | Repo | Checkout | Code review skill | Gate (must pass before a code push) |
 |---|---|---|---|
-| `VistaMarkets/VistaMobileBE` | `VistaMobileBE/` | `vista-dw-review` (repo-local; picks Vista's reviewer agents) | `./gradlew build` (needs JDK 17 and Docker; both are skipped when `VISTA_CLOUD_LIGHT=true`) |
+| `VistaMarkets/VistaMobileBE` | `VistaMobileBE/` | `vista-dw-review` (repo-local; picks Vista's reviewer agents) | `./gradlew build` (needs JDK 17, installed by the environment's setup script, and a running Docker daemon for Testcontainers; see Step 6) |
 | `VistaMarkets/Flutter-mobile-app` | `Flutter-mobile-app/` | `dw-review` (generic) | `flutter analyze` and `flutter test` in each package the PR touches |
 
 Find a checkout by its remote, not by guessing a path:
@@ -235,6 +235,22 @@ Run the class's fix passes in this order. Each one makes **one commit** with the
 Run the repo's gate (Repos table) in `$F` on the final tree. For Flutter, run `flutter analyze`
 and `flutter test` in each package from 4b (about 3–4 minutes for `vista/app`).
 
+VistaMobileBE's own `SessionStart` hook does not run in a multi-repo session: it only runs when
+`VistaMobileBE/` is the project directory, so nothing has started Docker. Start it before the
+gate, clearing pidfiles a dead daemon left behind (the same steps as
+`VistaMobileBE/.claude/hooks/session-start-cloud.sh`):
+
+```bash
+if ! docker info >/dev/null 2>&1; then
+  for p in /var/run/docker.pid /run/docker/containerd/containerd.pid; do
+    [ -f "$p" ] && ! kill -0 "$(cat "$p" 2>/dev/null)" 2>/dev/null && rm -f "$p"
+  done
+  (dockerd >/tmp/dockerd.log 2>&1 &)
+  for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
+fi
+docker info >/dev/null 2>&1 || echo "gate can't run: dockerd did not start (see /tmp/dockerd.log)"
+```
+
 `./gradlew build` takes 10–20 minutes, longer than a foreground Bash call is allowed to run
 (600 s). Run it in the background from this session, writing to the PR's `gate.log` with the exit
 code on its last line, and wait for the background task to finish before reading the verdict.
@@ -243,6 +259,9 @@ Never run it inside a subagent (rule 7), and never treat a timed-out gate as a p
 ```bash
 ( cd "$F" && ./gradlew build --console=plain > "$STATE_DIR/gate.log" 2>&1; echo "GATE_EXIT=$?" >> "$STATE_DIR/gate.log" )
 ```
+
+No JDK 17 under `/usr/lib/jvm/`, or no Docker daemon, means the gate can't run: follow the
+"Gate can't run" branch below.
 
 - **Gate passes:** push fast-forward only.
 
@@ -256,8 +275,7 @@ Never run it inside a subagent (rule 7), and never treat a timed-out gate as a p
 - **Gate fails:** drop the newest fix commit locally (`git reset --hard HEAD~1`; this is the
   local worktree, never the remote) and run the gate again, until it passes or nothing is left.
   Push what passes. List each dropped commit and the gate error it caused.
-- **Gate can't run** (for example VistaMobileBE with `VISTA_CLOUD_LIGHT=true`): push no code
-  commits. The description edit from step 5.4 still stands. List the commits that weren't pushed
+- **Gate can't run** (no JDK 17, no Docker daemon, no Flutter SDK): push no code commits. The description edit from step 5.4 still stands. List the commits that weren't pushed
   and why.
 
 Then remove the fix worktree and its local branch.
