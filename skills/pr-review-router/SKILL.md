@@ -66,6 +66,14 @@ No checkout for a repo means skip it and say so in the summary. Never clone a re
    `gh api repos/{owner}/{repo}/…` (and the GitHub MCP tools when a REST write is refused).
 6. **Never fake a review.** If the main review fails or returns no report, post nothing and push
    nothing for that PR, and list it under "failed" in the summary.
+7. **Run every step in this session; never hand a PR to a subagent.** This session is the
+   manager, as in `baton-runner-managed`, for the same two reasons. `dw-review` and
+   `vista-dw-review` are `Workflow` skills, and a subagent may not be able to run `Workflow`
+   (a user-scope `nested-fanout-guard` hook blocks it on some machines, and subagent-of-subagent
+   dispatch is not guaranteed anywhere). And a gate can outlast a subagent: its foreground Bash
+   stops at 600 s and its background tasks die when it returns. The skills may still spawn their
+   own agents (`dw-review`'s lanes, thermo-nuclear's reviewers, `zord-multi-agent-review`'s
+   orchestrator); that is one layer down from here, which they are built for.
 
 ## Step 1 — candidates
 
@@ -138,6 +146,19 @@ also run `audit-numeric-types` on the PR diff and attach its PASS/FAIL section.
 
 Run every skill from inside that repo's checkout, so repo-local skills and `.claude/agents/`
 resolve.
+
+## Keep state on disk
+
+Three PRs of reviews and fix passes will not fit in one context window, and compaction can drop
+anything held only in conversation. So, per PR, keep everything under
+`$SCRATCH/router/<repo-slug>-<N>/`:
+
+- `state.md`: one line per finished step (`4a done verdict=… report=4a.md`), written as soon as
+  the step ends. After a compaction, read `state.md` and carry on from the first step not listed.
+- one file per output: `4a.md` (main report), `thermo/` (the thermo-nuclear layered report),
+  `4d.md`, `analyze.txt`, `gate.log`, `pushed.txt`, `needs-author.md`.
+
+Hold only verdict lines and file paths in context. Step 7 builds the comment from the files.
 
 ## Step 4 — review phase (read-only, at the PR head)
 
@@ -212,7 +233,16 @@ Run the class's fix passes in this order. Each one makes **one commit** with the
 ## Step 6 — gate, then push
 
 Run the repo's gate (Repos table) in `$F` on the final tree. For Flutter, run `flutter analyze`
-and `flutter test` in each package from 4b.
+and `flutter test` in each package from 4b (about 3–4 minutes for `vista/app`).
+
+`./gradlew build` takes 10–20 minutes, longer than a foreground Bash call is allowed to run
+(600 s). Run it in the background from this session, writing to the PR's `gate.log` with the exit
+code on its last line, and wait for the background task to finish before reading the verdict.
+Never run it inside a subagent (rule 7), and never treat a timed-out gate as a pass.
+
+```bash
+( cd "$F" && ./gradlew build --console=plain > "$STATE_DIR/gate.log" 2>&1; echo "GATE_EXIT=$?" >> "$STATE_DIR/gate.log" )
+```
 
 - **Gate passes:** push fast-forward only.
 
