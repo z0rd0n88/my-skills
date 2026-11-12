@@ -2,12 +2,12 @@
 
 <!-- Angle-bracket slots are filled in. Comments like this one are instructions: follow them, then delete them. -->
 
-**Written <<YYYY-MM-DD>>** against `<<remote/branch>>` @ `<<short SHA>>`. A plan plus a
-baseline. Slice status lives in the tables below; each finished slice links its report.
-Until they are committed, this plan and everything under `<<audit folder, from the repo
-root>>/` exist only as untracked files in the worktree at `<<worktree path>>`, so that
-worktree is never removed with `--force`. Commands written as `cleaver.py ...` are the
-code-cleaver skill's helper script.
+**Written <<YYYY-MM-DD>>** against `<<remote/branch>>` @ `<<short SHA>>`. Slice status
+lives in the tables below; each finished slice links its report. Until they are committed,
+this plan and everything under `<<audit folder, from the repo root>>/` exist only as
+untracked files in the worktree at `<<worktree path>>`, so that worktree is never removed
+with `--force`. Commands written as `cleaver.py ...` are the code-cleaver skill's helper
+script.
 
 ## Summary
 
@@ -82,8 +82,8 @@ The checklist is what reviewers receive, so a lens is changed there and nowhere 
   roster stays automatic; `--reviewers` replaces the whole roster, so it is passed only with
   every seat listed.
 - **Refutation.** Slices marked `yes` under Refuted run with `--adversarial`. The tool's
-  help puts that at about <<multiple>> times a run's token cost; it is not measured here. Findings
-  its refuter budget does not reach come back UNVERIFIED and are recorded that way.
+  help puts that at about <<multiple>> times a run's token cost; it is not measured here.
+  Findings its refuter budget does not reach come back UNVERIFIED and are recorded that way.
 - Every slice audits a worktree cut from `<<remote/branch>>`, and its report records the
   SHA it audited.
 
@@ -148,8 +148,7 @@ Run <<YYYY-MM-DD>> on `<<short SHA>>`. These are leads for the slices named, not
 
 **Red at baseline on `<<short SHA>>`.** <<Each failing test with its file, name and the
 assertion that fails, and each other gate that is red, with the cause where a log shows it
-and the tracking issue if one exists. These are fixed as their own step before the first
-fix PR. If every gate is green, say so in one line.>>
+and the tracking issue if one exists. If every gate is green, say so in one line.>>
 
 ## Risks
 

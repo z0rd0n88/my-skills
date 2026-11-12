@@ -67,15 +67,10 @@ records, so anyone can re-measure it. Remove a number that has no command behind
 and time are where this slips, because one tracer run invites a multiplied total. Where the
 plan states a judgement, such as which trees are high-risk, it says it is one.
 
-The plan also records progress. Stage 5 creates it and later stages fill it in, so a resumed
-run reads it to find where the last one stopped.
-
 ## Review tool limits
 
-Slicing rests on five figures from `zord-multi-agent-review`. These are from version 2.3.0.
-Stage 1 checks them against the installed copy, and the installed values are the ones used
-and written into the plan. `cleaver.py` carries the first and last as `MAX_FILES_DEFAULT` and
-`PRELUDE_CAP`.
+Five figures from `zord-multi-agent-review` 2.3.0, checked against the installed copy in
+stage 1. `cleaver.py` carries the first and last as `MAX_FILES_DEFAULT` and `PRELUDE_CAP`.
 
 | Figure | 2.3.0 |
 |---|---|
@@ -218,8 +213,7 @@ Check: three option labels recorded, with any note the user typed.
 3. Fill the checklist's lenses from the repo's own rules: quote the rule and name the file
    it lives in. A lens the repo says nothing about keeps its generic text. The seven lens
    names stay fixed, and lens 5 is written for whatever this code presents.
-4. Keep lens wording in the checklist only. The plan names the lenses and links to it, so
-   the two cannot drift apart.
+4. Keep lens wording in the checklist only, so it and the plan cannot drift apart.
 5. Leave the checklist's `This run` slots in place; each slice fills them in its own copy.
 6. Fill the plan's tool-figure slots from Review tool limits, as checked in stage 1.
 
@@ -259,8 +253,7 @@ slots are `This run` and the test-status bullet that stage 6 fills.
    over- or under-counts. Each row is a **lead**, routed to the slice that owns the file.
 6. Fill the checklist's test bullet, then run
    `python3 $C verify --worktree <worktree> --plan <plan> --audit-dir <audit folder>`,
-   both paths from the repo root. It checks that every code file sits in exactly one slice
-   row, that each row's Code lines matches the tree, and that no slot is left.
+   both paths from the repo root.
 
 Check: every baseline row has a command and a measured result, or `not run:` and the reason;
 and `verify` prints `VERIFY: PASS`.
@@ -269,8 +262,7 @@ and `verify` prints `VERIFY: PASS`.
 
 1. Copy `checklist.md` to `<id>-checklist.md` and fill `This run`. Note the start time.
 2. Invoke `Z0rd0nZords:zord-multi-agent-review` and follow it, with the target and flags
-   the plan's `How a slice is run` section sets for the tracer's row. A tracer run is an
-   ordinary slice run, so that section is the one place the flags are written.
+   the plan's `How a slice is run` section sets for the tracer's row.
 3. When it returns, check the report before believing it: the file exists, its Coverage
    Report says `Reviewers: n/n returned` with equal numbers, and `Reviewed at:` is the
    audited SHA. Open the cited lines of every CRITICAL and HIGH and confirm the code says
