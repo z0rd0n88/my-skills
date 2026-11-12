@@ -42,11 +42,10 @@ The checklist is what reviewers receive, so a lens is changed there and nowhere 
 ## What every slice produces
 
 - **Report:** `<<audit folder, from the repo root>>/<slice-id>-<name>.md`, committed as
-  answer 1 says. Every finding carries its lens, severity (CRITICAL: security vulnerability
-  or data-loss risk; HIGH: bug or significant quality issue; MEDIUM: maintainability
-  concern; LOW: style or minor suggestion), `file:line`, the evidence, and a proposed fix.
-  The report is the tool's merged synthesis: duplicates are folded into one row and nothing
-  is dropped for being minor. A secret is named by `file:line` and kind, never quoted.
+  answer 1 says, in the form the checklist's `How to report` sets: lens, severity,
+  `file:line`, evidence and a proposed fix for every finding. The report is the tool's
+  merged synthesis: duplicates are folded into one row and nothing is dropped for being
+  minor.
 - **Fix PRs, after triage.** Triage confirms each finding's severity and decides whether it
   is fixed or stays, with the reason. Then at most two per slice, each on its own branch:
   `fix/audit-<slice-id>-behaviour` and `fix/audit-<slice-id>-simplify`.
@@ -68,20 +67,22 @@ The checklist is what reviewers receive, so a lens is changed there and nowhere 
 ## How a slice is run
 
 - One slice is one `zord-multi-agent-review` run on **one or two directories**: `dir` for
-  one, `slices` for two. By the tool's own help (`zord-multi-agent-review -h`), it runs the
-  whole roster once per directory and hard-fails when roster times directories passes 16,
-  and the automatic roster is usually five or six seats. A directory with more than 50
-  tracked files passes `--max-files <n>`. A smaller named roster fits more directories;
-  that trade is the owner's (see Open questions).
+  one, `slices` for two. The tool runs the whole roster once per directory and hard-fails
+  when roster times directories passes <<limit>>, and its automatic roster is <<seats>>
+  seats. A directory with more than <<file cap>> tracked files passes `--max-files <n>`.
+  These are the tool's own figures, version <<version, and whether checked against the
+  installed copy>>. A smaller named roster fits more directories; that trade is the owner's
+  (see Open questions).
 - A slice's files that sit outside its directories (an entry-point file, a build file) are
   named in its checklist's `This run` block, and reviewers are told to read them. This
   delivery is unproven until a report's coverage notes list those files as read.
 - Every run passes `--prompt-prelude` (the slice's own copy of the checklist, `This run`
   filled in), `--write-to` (the report path) and `--high-cap off`, as absolute paths inside
-  the audit worktree. The roster stays automatic; `--reviewers` replaces the whole roster,
-  so it is passed only with every seat listed.
+  the audit worktree. The cap is off because "every HIGH fixed" needs the uncapped list. The
+  roster stays automatic; `--reviewers` replaces the whole roster, so it is passed only with
+  every seat listed.
 - **Refutation.** Slices marked `yes` under Refuted run with `--adversarial`. The tool's
-  help puts that at about 4.3 times a run's token cost; it is not measured here. Findings
+  help puts that at about <<multiple>> times a run's token cost; it is not measured here. Findings
   its refuter budget does not reach come back UNVERIFIED and are recorded that way.
 - Every slice audits a worktree cut from `<<remote/branch>>`, and its report records the
   SHA it audited.
@@ -120,8 +121,9 @@ reported once, there. <<Where this repo's tests live and how each slice finds it
 
 <<Filled by the tracer stage. Why this slice was the tracer. The run exactly as invoked,
 wall-clock minutes, the token figure the tool reported and what it does or does not cover,
-the finding counts, whether lens tags came through, what the report's own audit section
-raised. No total is extrapolated to the slices that remain.>>
+the finding counts, each CRITICAL and HIGH with whether its cited lines say what the finding
+says, whether lens tags came through and extra files were read, what the report's own audit
+section raised. No total is extrapolated to the slices that remain.>>
 
 ## Baseline (slice S0)
 

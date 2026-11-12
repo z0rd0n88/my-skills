@@ -70,31 +70,50 @@ plan states a judgement, such as which trees are high-risk, it says it is one.
 The plan also records progress. Stage 5 creates it and later stages fill it in, so a resumed
 run reads it to find where the last one stopped.
 
+## Review tool limits
+
+Slicing rests on five figures from `zord-multi-agent-review`. These are from version 2.3.0.
+Stage 1 checks them against the installed copy, and the installed values are the ones used
+and written into the plan. `cleaver.py` carries the first and last as `MAX_FILES_DEFAULT` and
+`PRELUDE_CAP`.
+
+| Figure | 2.3.0 |
+|---|---|
+| Tracked files in one directory before `--max-files` is needed | 50 |
+| Roster times directories, past which a `slices` run hard-fails | 16 |
+| Seats in the automatic roster | up to 6 |
+| Token cost of `--adversarial`, as a multiple of a plain run | about 4.3 |
+| Size of a `--prompt-prelude` file | 16 KB |
+
 Nine stages, in order. Each ends on a check; move on when the check holds.
 
 ## 1. Preflight
 
-1. Confirm this is a top-level session. The review skills dispatch their own two layers of
-   agents, and from inside a subagent that becomes three, which the tool does not support.
-   In a subagent, stop and say code-cleaver must be run from the main session.
+1. Confirm this is a top-level session; in a subagent, stop and say code-cleaver must be
+   run from the main session. The review skills dispatch two layers of agents of their own,
+   and the tool supports no third.
 2. Confirm `Z0rd0nZords:zord-multi-agent-review`, `Z0rd0nZords:zord-reasoned-review` and
    `finding-fixer` are in this session's skill list. If one is absent, stop with
    `code-cleaver needs <name>, which is not installed in this session.` Leave installing to
    the user. Use the session's installed skills even where the repo vendors its own copy,
-   and note a version difference under Open questions.
+   and note a version difference under Open questions. Then check the figures under Review
+   tool limits against the installed tool's `-h` output and `references/`, and use the
+   installed values from here on.
 3. `git fetch`, then resolve the default branch
    (`git symbolic-ref --short refs/remotes/origin/HEAD`) and its SHA. With no remote, use
    the local default branch and record that in the plan header.
-4. `gh auth status`. A failure is not a stop: open PRs and issues will be `unknown`.
+4. `gh auth status`. On failure, continue: open PRs and issues are recorded as `unknown`.
 5. Look for an earlier run: `git worktree list` for a `chore/audit-plan` branch, and a
-   `*-audit-plan.md` inside that worktree. If one exists, read it, resume at the first
-   stage whose section is unfilled, and keep every existing report as it is.
+   `*-audit-plan.md` inside that worktree. With a plan, read it, resume at the first stage
+   whose section is unfilled, and keep every existing report as it is. With a worktree and
+   no plan, start again at stage 2 in that worktree.
 6. Otherwise `git worktree add --no-track -b chore/audit-plan <path> <remote>/<default>`,
    with `<path>` beside the repo's other worktrees, or `.worktrees/audit-plan` when it has
-   none. Work there with absolute paths. The primary checkout may be stale or dirty; read
-   nothing from it.
+   none. Work there with absolute paths, and read all repo state from it: the primary
+   checkout may be stale or dirty.
 
-Check: `git -C <worktree> rev-parse HEAD` prints the SHA resolved in step 3.
+Check: `git -C <worktree> rev-parse HEAD` prints the SHA resolved in step 3, or on a resumed
+run the SHA in the plan header.
 
 ## 2. Measure
 
@@ -103,8 +122,8 @@ Check: `git -C <worktree> rev-parse HEAD` prints the SHA resolved in step 3.
    It counts code by file extension, so markup, workflows and container files land in
    `other` and go to the platform slice.
 2. `python3 $C overlap --root <worktree> --units <scratch>/units.json` for the open PRs
-   that change files in each unit. `UNKNOWN` is a valid result and is carried forward as
-   the word `unknown`, never replaced by a guess.
+   that change files in each unit. `UNKNOWN` is a valid result: every In flight cell then
+   reads `unknown`.
 3. Read what the repo says about itself. In full: agent and contributor rule files, a
    constraints or standards file, the README, CI workflows, any release or rollout plan,
    and any notice that the project is paused or archived. Titles and summaries only:
@@ -120,24 +139,23 @@ Check: `git -C <worktree> rev-parse HEAD` prints the SHA resolved in step 3.
      from the top until they hold a third of the code lines;
    - trees that are not this product's code (agent and editor config, vendored copies,
      mirrors), which become Left out rows. Hooks and scripts that gate this repo's own
-     commits and builds are platform, not left out.
+     commits and builds belong to the platform slice.
 
-Check: each top-level code tree's files, lines and last code change are on hand from
-`measure`'s output, and the release steps are named or recorded as none found.
+Check: every unit `measure` printed is marked high-risk, ordinary or left out, and the
+release steps are named or recorded as none found.
 
 ## 3. Cut the slices
 
-A **slice** is the unit of review: a bounded set of code that gets the seven lenses, one
-report and at most two fix PRs. Slices are cut by area, never by audit type, because a
-repo-wide "security pass" yields a report and a fix PR nobody can review.
+A **slice** is the unit of review: a bounded area of code that gets the seven lenses, one
+report and at most two fix PRs.
 
 1. Build slices from the units. Each slice is **one directory or two**: one review run
-   takes one (`dir`) or fans the whole roster out per directory (`slices`), and the tool
-   hard-fails when roster times directories passes 16, with an automatic roster of about
-   six. Pair small neighbours. A slice may run up to a quarter over the budget when the
-   alternative is several tiny ones, and a unit `measure` marks as over budget with nothing
-   to split on is one slice at whatever size it is. Where a directory mixes product code and
-   tests, cut at the code directory (`module/src/main`, not `module`).
+   takes one (`dir`) or fans the whole roster out per directory (`slices`), and roster
+   times directories has to stay inside the tool's limit. Pair small neighbours. A slice
+   may run up to a quarter over the budget when the alternative is several tiny ones, and a
+   unit `measure` marks as over budget with nothing to split on is one slice at whatever
+   size it is. Where a directory mixes product code and tests, cut at the code directory
+   (`module/src/main`, not `module`).
 2. Attach loose files (code sitting directly in a directory whose children are slices) and
    stray small units to the slice they wire up or belong beside. The review tool takes
    directories, so these reach reviewers through the slice's checklist, and its Paths cell
@@ -147,15 +165,16 @@ repo-wide "security pass" yields a report and a fix PR nobody can review.
    files and directories that no code slice covers. Size it with
    `git ls-files -- <its paths> | wc -l`. Its run target is the directory holding most of
    those files, and the rest go through its checklist. Name lock files and other generated
-   manifests there as checked for pins and known-bad versions, not read in full.
-4. Put trees that are not this product's code in the Left out table, each with its reason
-   and who decides.
+   manifests there as checked for pins and known-bad versions only.
+4. Give each left-out tree from stage 2 a row in the Left out table, with its reason and
+   who decides.
 5. Group slices into phases ordered by what a bug costs. The usual order is money and
    data-loss paths, then identity and platform, then other features, then shared code; move
    shared code up when it holds the costly logic.
 6. Fill `In flight` from the overlap map and `Refuted` as `yes` for slices holding a
-   high-risk unit, or the high-risk files of a unit split between slices. A slice where open PRs change a fifth or more of the files defaults to
-   waiting for the merge, and that choice goes under Open questions.
+   high-risk unit, or the high-risk files of a unit split between slices. A slice where
+   open PRs change a fifth or more of the files defaults to waiting for the merge, and that
+   choice goes under Open questions.
 7. Pick the **tracer**: the smallest first-phase slice that is one directory, at least
    half the budget and no more than a quarter over it, exercised by tests named by path,
    and untouched by any open PR (when overlap is `unknown`, say so). When no first-phase
@@ -163,8 +182,9 @@ repo-wide "security pass" yields a report and a fix PR nobody can review.
    one-directory slice nearest the budget and say in the plan which condition it misses. A
    tracer marked refuted runs with refutation, as its row says.
 
-Check: every slice is listed with its paths, and every unit `measure` printed, or each
-file of a unit split by file, is assigned to one slice or one Left out row.
+Check: every slice is listed with its paths; every unit `measure` printed, or each file of
+a unit split by file, is assigned to one slice or one Left out row; and one slice is named
+the tracer.
 
 ## 4. Ask the three policy questions
 
@@ -176,14 +196,15 @@ its release steps, how many slices are marked for refutation and which.
 |---|---|
 | When do slice reports go into git? They name unfixed security findings by file and line. | `With the fix PR`; `Never, plan only`; `Redacted index only`; `Immediately` |
 | What does an open CRITICAL or HIGH block? | `Block release` (a CRITICAL stops the slice queue; an open CRITICAL or HIGH blocks the release step for that slice's code; other slices continue); `Fix before next slice`; `Only CRITICAL stops`; `Nothing` |
-| Which slices get adversarial refutation, at about 4.3 times a run's token cost by the tool's own figure? | `High-risk slices only`; `None, verify at fix time`; `Every slice`; `No extra verification` |
+| Which slices get adversarial refutation, at the cost multiple under Review tool limits? | `High-risk slices only`; `None, verify at fix time`; `Every slice`; `No extra verification` |
 
 When no release step was found, say so in the second question: the rule then binds from
 the day one exists. When there are several in sequence, name them all, and the recommended
-option blocks the next one that slice's code has not passed. The three answers are decided from here on: later stages reproduce them
-and never reopen them. After the third answer, run to the end without asking anything else.
-A decision met later goes under the plan's Open questions, with enough context to answer
-cold.
+option blocks the next one that slice's code has not passed.
+
+The three answers are **decided**: later stages reproduce them as given. From the third
+answer on, every decision met goes under the plan's Open questions, with enough context to
+answer cold, and the run continues.
 
 Check: three option labels recorded, with any note the user typed.
 
@@ -200,10 +221,7 @@ Check: three option labels recorded, with any note the user typed.
 4. Keep lens wording in the checklist only. The plan names the lenses and links to it, so
    the two cannot drift apart.
 5. Leave the checklist's `This run` slots in place; each slice fills them in its own copy.
-6. The plan template quotes four figures from the review tool: the 50-file cap, the limit
-   of 16 on roster times directories, the usual roster size, and the 4.3 times cost of
-   refutation. Check each against the installed skill's own `SKILL.md` and `references/`
-   and correct the plan where they differ.
+6. Fill the plan's tool-figure slots from Review tool limits, as checked in stage 1.
 
 Check: the plan holds the slice tables and the Decided section, and the checklist's only
 slots are `This run` and the test-status bullet that stage 6 fills.
@@ -222,9 +240,10 @@ slots are `This run` and the test-status bullet that stage 6 fills.
    failure is not reported as the repo's. Red gates become their own step in the plan, ahead
    of the first fix PR, because no fix can show a gate green until then.
 3. `python3 $C secrets --root <worktree>`. It prints kind and `file:line`. Read each line
-   to rule out a test value or placeholder, and keep the value out of every file and out
-   of this conversation. Its pattern list is short, so add a `git grep -n` for the kinds of
-   secret this repo handles that the list lacks, and print only `file:line` from it.
+   to rule out a test value or placeholder. Record a lead as kind and `file:line`; the value
+   stays in its file, out of everything written and out of this conversation. Its pattern
+   list is short, so add a `git grep -n` for the kinds of secret this repo handles that the
+   list lacks, and print only `file:line` from it.
 4. Scan for leads with patterns written for this repo's languages, choosing what fits the
    kind of software:
    - everywhere: suppression comments and unimplemented stubs; handlers that swallow an
@@ -237,7 +256,7 @@ slots are `This run` and the test-status bullet that stage 6 fills.
      to a shell, unpinned versions.
 5. Write the results into the plan's Baseline table, each command in the numbered list
    under it (a pattern containing `|` would break a table cell). Record what each pattern
-   over- or under-counts. These are leads for the slice that owns the file, not findings.
+   over- or under-counts. Each row is a **lead**, routed to the slice that owns the file.
 6. Fill the checklist's test bullet, then run
    `python3 $C verify --worktree <worktree> --plan <plan> --audit-dir <audit folder>`,
    both paths from the repo root. It checks that every code file sits in exactly one slice
@@ -249,11 +268,9 @@ and `verify` prints `VERIFY: PASS`.
 ## 7. Run the tracer
 
 1. Copy `checklist.md` to `<id>-checklist.md` and fill `This run`. Note the start time.
-2. Invoke `Z0rd0nZords:zord-multi-agent-review` and follow it:
-   `dir <abs dir> --prompt-prelude <abs id-checklist> --write-to <abs report> --high-cap off`,
-   plus `--adversarial` when the tracer is marked refuted, and `--max-files <n>` with the
-   tracked-file count `measure` gave when it is over 50. Leave the roster automatic.
-   `--high-cap` is off because the plan's "every HIGH fixed" rule needs the uncapped list.
+2. Invoke `Z0rd0nZords:zord-multi-agent-review` and follow it, with the target and flags
+   the plan's `How a slice is run` section sets for the tracer's row. A tracer run is an
+   ordinary slice run, so that section is the one place the flags are written.
 3. When it returns, check the report before believing it: the file exists, its Coverage
    Report says `Reviewers: n/n returned` with equal numbers, and `Reviewed at:` is the
    audited SHA. Open the cited lines of every CRITICAL and HIGH and confirm the code says
@@ -263,13 +280,13 @@ and `verify` prints `VERIFY: PASS`.
 5. Fill the plan's `Tracer result` and the tracer's Status cell from the report.
 
 Check: the tracer row links the report, each count in it can be re-counted from the report
-file, and `verify --stage final` passes.
+file, the Tracer result says for every CRITICAL and HIGH whether its cited lines match, and
+`verify --stage final` passes.
 
 ## 8. Review the plan, then fix it
 
-A first-draft plan reads fine and fails in use. The run this skill was built from had twelve
-HIGH problems in its first draft, and none showed until reviewers set the plan against the
-tracer report and the tool's real limits.
+A first-draft plan reads fine and fails in use: the run this skill came from had twelve HIGH
+problems that showed only when reviewers set the plan against the tracer report.
 
 1. Invoke `Z0rd0nZords:zord-reasoned-review` on the plan's absolute path, asking it to
    forward `--write-to <abs audit folder>/plan-review.md`. If the report lands in the tool's
@@ -286,26 +303,7 @@ tracer report and the tool's real limits.
    - `groups`: two to four, batched by what settles them (how the review tool behaves; the
      state of the tree and open PRs; the repo's written rules and the baseline), each
      pointing at the stamped findings file and listing its ids;
-   - `houseRules`: the block below, with the three answers written in.
-
-```
-1. WRITE SCOPE. Edit only the plan and checklist.md. A fix that belongs in any other file
-   is ruled on normally and reported open with its proposed text. No commit, stage or push.
-2. DECIDED BY THE OWNER. <answer 1>. <answer 2>. <answer 3>. Reproduce these. A finding one
-   of them resolves is fix-here; a finding that wants a different answer is
-   real-but-decided-elsewhere, owner: the repo owner.
-3. OWNER DECISIONS. A finding that needs a decision the three answers do not cover adds one
-   bullet to the plan's Open questions and decides nothing.
-4. GROUND TRUTH. Repo state is the audit worktree at <SHA>. Never read it from the primary
-   checkout.
-5. MEASURED NUMBERS. A number written into the plan comes from a command run and quoted in
-   the verdict. If it cannot be measured, the fix removes or qualifies the claim.
-6. SHORT PLAN. Rewrite the wrong sentence or cell in place. No section per finding, no
-   changelog. State each rule once. Lens wording lives in checklist.md only.
-7. SLICE MODEL. Slices by area, seven lenses, one report, at most two fix PRs, one or two
-   directories per run. A finding may correct this model, not replace it.
-```
-
+   - `houseRules`: the text of `assets/house-rules.md`, its four slots filled.
 5. Then do finding-fixer's own step 4 yourself: read the whole edited plan, re-run `verify`,
    and re-measure a sample of the numbers the run wrote in.
 
@@ -318,8 +316,8 @@ Send the plan, the tracer report and the plan review to the user as files. Then 
 this order:
 
 1. Where the files are, and that nothing is committed.
-2. The tracer: counts per severity and the title of every CRITICAL and HIGH. Under the
-   recommended second answer a CRITICAL stops the queue, so it leads the message.
+2. The tracer: counts per severity and the title of every CRITICAL and HIGH. A CRITICAL
+   leads the message.
 3. The plan review: how many findings were applied, left open and refuted, and each open
    one with the file its fix belongs in.
 4. The baseline's red items: failing gates and any secret lead.
