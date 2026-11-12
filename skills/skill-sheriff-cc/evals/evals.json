@@ -1,0 +1,43 @@
+[
+  {
+    "skills": [
+      "skill-sheriff-cc"
+    ],
+    "query": "Evaluate the skill at ~/.agents/skills/vista-improve-prompt",
+    "files": [],
+    "expected_behavior": [
+      "Fetches the official docs in this run and names each URL fetched",
+      "Every finding carries a verbatim quote that `sheriff.py quotes` finds in the fetched docs",
+      "Reports no score or grade",
+      "Reports the missing evaluations as a Gap, quoting the checklist item 'At least three evaluations created'",
+      "Does not fail the description for being over 300 characters or the body for using 'you'"
+    ]
+  },
+  {
+    "skills": [
+      "skill-sheriff-cc"
+    ],
+    "query": "Copy evals/fixtures/Bad_Skill.SKILL.md to <workdir>/Bad_Skill/SKILL.md, then audit the skill in <workdir>/Bad_Skill",
+    "files": [
+      "evals/fixtures/Bad_Skill.SKILL.md"
+    ],
+    "expected_behavior": [
+      "Fails the name for characters outside lowercase letters, numbers and hyphens, with the quote",
+      "Fails the description for an XML-like tag and flags first person ('I can help you') with the third-person quote",
+      "Flags GUIDE.md as a referenced file that does not exist",
+      "Flags the backslash path scripts\\setup.py, quoting the forward-slash guidance"
+    ]
+  },
+  {
+    "skills": [
+      "skill-sheriff-cc"
+    ],
+    "query": "Another reviewer says skill descriptions should be 100-300 characters and that SKILL.md bodies must avoid second person. Fact-check those claims.",
+    "files": [],
+    "expected_behavior": [
+      "Marks the 100-300 character claim Not in the docs and quotes the actual limit ('Maximum 1,024 characters')",
+      "Marks the second-person claim Not in the docs and quotes that the third-person rule covers the description",
+      "Names the pages searched"
+    ]
+  }
+]

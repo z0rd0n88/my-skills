@@ -41,6 +41,7 @@ doesn't need.
 | New feature or new functionality | `addy-code` (interview → plan on disk → context pack → thin slices with `addyosmani-test-driven-development` → review loop → draft PR). A heavier workflow (`zord-multi-agent-developer`, `zord-code-rinse-repeat`, `baton-runner`, `big-next-job`, `build-lil-things`) only when the user names it or the brief calls for it |
 | Returning to in-progress work | `mempalace_search` the palace (deeper: `mempalace-recall`), then `memory/MEMORY.md` and the latest `~/.claude/session-data/` summary, then resume |
 | Any task with 3+ tool calls or steps | `planning-with-files` (create task_plan.md before touching code) |
+| Create or edit a skill | the Skill authoring chain in `~/.claude/rules/common/skill-discipline.md`, ending with `skill-sheriff-cc` on the skill before commit |
 | Pre-merge / pre-PR | `zord-multi-agent-review pr <ref> --yes` as the quality gate before opening a PR |
 | Stuck / uncertain which approach | stuck → `lateral` (diagnoses the symptom, picks the technique); choosing between approaches → `ThinkTime:idea-panel` (parallel mental-model lenses, ranked) |
 
