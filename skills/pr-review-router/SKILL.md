@@ -1,6 +1,6 @@
 ---
 name: pr-review-router
-description: Use when open PRs in VistaMobileBE or Flutter-mobile-app (or one named PR) need a review posted as a PR comment plus cleanup commits pushed to the PR branch, picking the review and fix skills from what the diff touches. Built for unattended scheduled runs; never approves, merges, or force-pushes.
+description: Use when open PRs in VBE (VistaMarkets/vbe) or VFE (VistaMarkets/vfe) (or one named PR) need a review posted as a PR comment plus cleanup commits pushed to the PR branch, picking the review and fix skills from what the diff touches. Built for unattended scheduled runs; never approves, merges, or force-pushes.
 argument-hint: "[<owner>/<repo> <N>] [--max <n>] [--no-push] [--dry-run] | -h"
 ---
 
@@ -32,8 +32,8 @@ pass, and posts one comment saying what was found and what was pushed.
 
 | Repo | Checkout | Code review skill | Gate (must pass before a code push) |
 |---|---|---|---|
-| `VistaMarkets/VistaMobileBE` | `VistaMobileBE/` | `vista-dw-review` (repo-local; picks Vista's reviewer agents) | `./gradlew build` (needs JDK 17, installed by the environment's setup script, and a running Docker daemon for Testcontainers; see Step 6) |
-| `VistaMarkets/Flutter-mobile-app` | `Flutter-mobile-app/` | `dw-review` (generic) | `flutter analyze` and `flutter test` in each package the PR touches |
+| `VistaMarkets/vbe` | `vbe/` | `vista-dw-review` (repo-local; picks Vista's reviewer agents) | `./gradlew build` (needs JDK 17, installed by the environment's setup script, and a running Docker daemon for Testcontainers; see Step 6) |
+| `VistaMarkets/vfe` | `vfe/` | `dw-review` (generic) | `flutter analyze` and `flutter test` in each package the PR touches |
 
 Find a checkout by its remote, not by guessing a path:
 
@@ -123,8 +123,8 @@ Take the **first** class that matches. Each row lists everything that runs on th
 |---|---|---|---|---|---|---|
 | 1 | Spec / design doc | Every changed file is Markdown under `docs/`, or named like `*spec*`, `*prd*`, `*design*`, `adr*`, **and** none is an instruction file | `Z0rd0nZords:zord-reasoned-review` on the changed docs | — | — | `babysit`, `unslop`, `make-pr-easy-to-review` |
 | 2 | Large | More than 40 files, or more than 1500 changed lines | `Z0rd0nZords:zord-multi-agent-review pr <N> --no-loop --no-comment --adversarial` | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
-| 3 | VistaMobileBE code | Repo is `VistaMarkets/VistaMobileBE` | `vista-dw-review pr <N>` | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
-| 4 | Flutter code | Repo is `VistaMarkets/Flutter-mobile-app` | `dw-review pr <N>`, plus Step 4b | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
+| 3 | VBE code | Repo is `VistaMarkets/vbe` | `vista-dw-review pr <N>` | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
+| 4 | Flutter code | Repo is `VistaMarkets/vfe` | `dw-review pr <N>`, plus Step 4b | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
 
 Skills without a namespace in the last three columns come from the lil-pstack plugin: call them as
 `lil-pstack:<name>`. A skill that is not installed is reported as "not run (not installed)",
@@ -235,10 +235,10 @@ Run the class's fix passes in this order. Each one makes **one commit** with the
 Run the repo's gate (Repos table) in `$F` on the final tree. For Flutter, run `flutter analyze`
 and `flutter test` in each package from 4b (about 3–4 minutes for `vista/app`).
 
-VistaMobileBE's own `SessionStart` hook does not run in a multi-repo session: it only runs when
-`VistaMobileBE/` is the project directory, so nothing has started Docker. Start it before the
+VBE's own `SessionStart` hook does not run in a multi-repo session: it only runs when
+`vbe/` is the project directory, so nothing has started Docker. Start it before the
 gate, clearing pidfiles a dead daemon left behind (the same steps as
-`VistaMobileBE/.claude/hooks/session-start-cloud.sh`):
+`vbe/.claude/hooks/session-start-cloud.sh`):
 
 ```bash
 if ! docker info >/dev/null 2>&1; then

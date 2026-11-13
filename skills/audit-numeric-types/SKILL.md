@@ -38,10 +38,10 @@ If asked to fix what you find, output the suggested replacement as text and stop
 | Repo | Language | Correct type | Forbidden |
 |---|---|---|---|
 | VistaTrader | Kotlin / Ktor | `java.math.BigDecimal` | `Float`, `Double` |
-| VistaMobileBE | Kotlin + TS wire layer | `BigDecimal` / `Decimal` (decimal.js) | `Double`, `number` |
+| VBE | Kotlin + TS wire layer | `BigDecimal` / `Decimal` (decimal.js) | `Double`, `number` |
 | TradingBots (Bot 0 risk core) | Python | `decimal.Decimal`, explicit rounding mode | `float`, binary FP literals |
 
-Do not hardcode one repo's module names. Discover the financial module roots first (VistaTrader: `Aggro/`, `Traitor/`, `core/`; TradingBots: the Bot 0 deterministic risk core; VistaMobileBE: server + wire modules), then apply the contract to whatever roots exist.
+Do not hardcode one repo's module names. Discover the financial module roots first (VistaTrader: `Aggro/`, `Traitor/`, `core/`; TradingBots: the Bot 0 deterministic risk core; VBE: server + wire modules), then apply the contract to whatever roots exist.
 
 ## The Forbidden-Arithmetic Contract
 
