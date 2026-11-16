@@ -1,21 +1,23 @@
 ---
 name: ci-parity-run
-description: Use when asked to run a repo's CI checks locally or to confirm a branch or the base branch is green before a PR — "run what CI runs", "run the tests and analysis", "confirm the checks pass", "run the gate", "does main build here". Covers choosing the commit to test without moving the session's branch, using the repo's documented gate, running the exact CI commands, and reporting what was and wasn't covered. Not for fixing a failing GitHub check on an open PR.
+description: Use when asked to run a repo's CI checks locally or to confirm locally that a branch or the base branch would pass CI before a PR — "run what CI runs", "run CI locally", "run the CI tests and analysis here", "would CI pass on this", "does main build here". Covers choosing the commit to test without moving the session's branch, running the CI job list and the repo's documented gate, and reporting what was and wasn't covered. Not for fixing or checking a GitHub check on an open PR, and not for a workflow's own gate step.
 ---
 
 # ci-parity-run
 
-The goal is a result the user can trust as "CI would agree": same commands, same commit, and an honest list of what wasn't run.
+The goal is a result the user can trust as "CI would agree": the CI job list, run on the commit CI would test, with an honest list of what wasn't run.
 
-## 1. Find the real gate
+## 1. Find what CI runs, and what the repo calls its gate
 
-- Read the repo's agent docs (CLAUDE.md, AGENTS.md, CONTRIBUTING) first. If they name a local gate script ("use it, don't write another"), that is the command to run. It often does more than the `ci.yml` step that is easiest to find with grep: clean test runs with the cache off, shell tests, docs checks, smoke tests.
-- Then read every job in `.github/workflows/*.yml` (or the repo's CI config), including steps after the main build: coverage floors, guard scripts, image builds, secrets scans. Note each job's working directory, toolchain version pins and required services.
+- Read every job in `.github/workflows/*.yml` (or the repo's CI config), including steps after the main build: coverage floors, guard scripts, docs checks, image builds, secrets scans. Note each job's working directory, toolchain version pins and required services. This list is the definition of "what CI runs".
+- Read the repo's agent docs (CLAUDE.md, AGENTS.md, CONTRIBUTING) for a documented local gate script. A gate is usually broader than one CI step and narrower than all of CI. Diff its checks against the CI job list before trusting it as a stand-in, and run the CI checks it doesn't cover.
 
 ## 2. Pick the commit without moving the session branch
 
 - Check where the branch stands: `git fetch origin <base>`, then `git merge-base --is-ancestor origin/<base> HEAD` and `git rev-list --left-right --count origin/<base>...HEAD`. Do this *before* running any check that diffs against the base (guard scripts, "lockfile unchanged" checks); on a stale branch they compare the wrong range.
-- To test the current base, use a detached checkout or a worktree: `git worktree add --detach ../<repo>-ci origin/<base>`. Don't fast-forward the session's working branch to do it. That creates "unpushed commits" for stop hooks to chase and leaves empty copies of the base on the remote.
+- PR CI tests the branch merged into the base. When the branch is behind, test that merge: make a detached worktree, merge the base into it there, and run the checks on that. To test the base alone, check out `origin/<base>` detached.
+- Put the worktree where the repo's conventions say (some repos keep them under a gitignored `.claude/worktrees/`), otherwise in the scratchpad. A worktree has no installed dependencies, so install them as CI does. Remove it with `git worktree remove` when done.
+- Don't fast-forward or reset the session's own branch to test something else. That creates "unpushed commits" for stop hooks to chase. Never push a branch with no changes against its base just to quiet a hook; say why the hook fired instead.
 - Record the commit you tested. If the base moves while you work, say which results are now stale.
 
 ## 3. Match the environment
@@ -32,8 +34,8 @@ The goal is a result the user can trust as "CI would agree": same commands, same
 
 ## 5. Report
 
-One table: CI step → command → result, with counts (tests run, failed, skipped, and why the skips happened). After it, always list:
+One table: CI job/step → command → result, with counts (tests run, failed, skipped, and why the skips happened). Mark which rows came from the CI file and which from the gate. After it, always list:
 
 - **Not covered:** jobs or steps you didn't run, and why (secrets scan, image build, deploy, live-credential tests).
 - **Drift:** version or environment differences from CI that could change a result.
-- **Commit tested** and whether it is still the tip of the base.
+- **Commit tested:** the branch tip, the base, or the merge of the two, and whether the base has moved since.

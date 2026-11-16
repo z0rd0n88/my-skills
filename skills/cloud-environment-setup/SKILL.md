@@ -1,39 +1,41 @@
 ---
 name: cloud-environment-setup
-description: Use before changing a Claude Code cloud environment (its setup script, environment variables or network) or making a tool, service or cache available in every cloud session — Docker for Testcontainers, a JDK or SDK, package installs, warmed build caches. Also use when a cloud session is missing something a repo normally sets up for itself, when the container disagrees with its own setup script, or before saving anything that depends on repo or folder names. Triggers include "save the setup", "add it to the setup script", "make X start every session", "why isn't Docker running", "set up the environment", get_environment / update_environment / create_environment.
+description: Use before changing a Claude Code cloud environment (its setup script, environment variables or network) or making a tool, service or cache available in every cloud session — Docker for Testcontainers, a JDK or SDK, package installs, warmed build caches. Also use when a cloud session is missing something a repo normally sets up for itself, when a cloud session holds several repo checkouts and you are about to edit one of them, when the container disagrees with its own setup script, or before saving anything that depends on repo or folder names. Triggers include "save the setup", "add it to the setup script", "make X start every session", "set up the environment", get_environment / update_environment / create_environment.
 ---
 
 # cloud-environment-setup
 
-A cloud session runs in a container built from an environment: a setup script, environment variables, a network policy and the repositories attached to it. Changes to an environment touch every future session that uses it, so a wrong change fails quietly and repeatedly. This skill is the order of checks that keeps that from happening.
+A cloud session runs in a container built from an environment: a setup script, environment variables, a network policy and the repositories attached to it. Changes to an environment touch every future session that uses it, so a wrong change fails quietly and repeatedly. This skill is the order of checks that keeps that from happening. For writing a SessionStart hook that is committed to a repo, use the built-in startup-hook skill instead.
 
-## 1. Before adding anything, find out why it's missing
+## 1. Find out what the repo's own config is doing in this session
 
 If the container lacks something a repo normally provides (a running daemon, a toolchain, generated config), assume first that the repo's own setup *didn't run*, not that nobody wrote it.
 
-- List each checkout's committed hooks: `.claude/settings.json` (and any `hooks/` it points at), for every repo in the session.
-- Compare the session's working directory with each repo root. Project hooks load for the project the session is rooted in. A session rooted in the folder *above* several checkouts loads none of them.
-- That disables the repo's **guard hooks** too (PreToolUse checks, Stop checks), not just its setup. Tell the user which guards are inert in this layout; that is usually more important than the missing tool.
-- Whether user-level SessionStart hooks run in cloud sessions has been reported as "no". Check it on this platform before relying on it either way.
+- **What loads depends on where the session is rooted.** In a session rooted in the folder *above* several checkouts, each repo's `CLAUDE.md` and skills still load, so the session looks fully configured. Its committed hooks (`.claude/settings.json`) do not. Hook commands written as `"$CLAUDE_PROJECT_DIR/.claude/hooks/…"` would point at the wrong folder anyway.
+- **That switches off the guards, not just the setup.** PreToolUse and Stop hooks that block dangerous edits, secrets or unsafe commands are inert too. Test one in 30 seconds: feed a command the guard should refuse to the hook script directly (`echo '{"tool_name":"Bash","tool_input":{"command":"…"}}' | python3 <repo>/.claude/hooks/<guard>.py; echo $?`), then run the same harmless command through the Bash tool. If the script blocks it and the session doesn't, the guard is off.
+- **Git hooks are usually off too:** cloud checkouts don't set `core.hooksPath`, so a repo's `.githooks/` won't run.
+- **Environment variables can switch a repo hook off.** Check `get_environment` variable names against the flags the hook reads before concluding it is broken.
+- **Hooks that do run** come from the platform's launcher settings and from enabled plugins. Whether hooks in a user-level `~/.claude/settings.json` run in cloud sessions is untested; don't rely on it either way.
 
-Prefer reusing the repo's own setup logic (call its script from the setup script, or root the session in that repo) over writing a parallel mechanism. Two mechanisms for the same job drift apart, and you will have to switch one off to test the other.
+**Don't edit a guarded repo from a parent-rooted session.** Review it, test it, run its build, but make edits in a session rooted in that repo, where its guards load. Tell the user when a session they started is in this layout.
+
+When a repo's hook already does the setup, the usual fix is to root the session in that repo (the user starts a new session; an agent can't re-root one), not a second mechanism. A hook that starts daemons or writes to `CLAUDE_ENV_FILE` can't be called from a setup script. If a parallel copy is unavoidable, call it a stopgap and record the duplication where the repo tracks work.
 
 ## 2. Diagnose before editing
 
-When the container contradicts the setup script (a pinned version is not the one installed, a step's output is absent), explain why before changing the script. If the current script didn't take effect, your edited one probably won't either. Common causes: the container was cached or restored rather than built fresh, a step's guard skipped it, or the image already shipped something.
+When the container contradicts the setup script (a pinned version is not the one installed, a step's output is absent), explain why before changing the script. If the current script didn't take effect, your edited one probably won't either. Possible causes to rule out: the container was restored rather than built fresh, a step's guard skipped it, or the image already shipped something.
 
 ## 3. Config that depends on names
 
 Before saving a script, variable or brief that names repos or folders:
 
 - Confirm current names: `list_repos`, each checkout's `git remote get-url origin`, the repo links in loaded CLAUDE.md / AGENTS.md, and recent `git log` for renames.
-- Accept every live spelling of each repo (renamed name, old name, lowercase clone name): `for d in new-name Old-Name old-name; do [ -d "$d" ] && { X=$d; break; }; done`.
-- A silent `[ -d repo ] && …` guard cannot tell "repo not attached" from "repo renamed". End the script with a short ran/skipped line per step so a skip is visible in the session log.
+- Accept both the old and new spelling of a renamed repo: `for d in new-name Old-Name; do [ -d "$d" ] && { X=$d; break; }; done`.
 - Read the environment again with `get_environment` right before every write. The user can rename it or change it from another session in between.
 
 ## 4. Writing the setup script
 
-- The setup script runs as root before the session starts and must not leave daemons running. For a service a session needs (e.g. Docker), install an idempotent starter and trigger it on demand, from the build tool (a Gradle init script on test tasks, a test-runner hook) or the repo's own hook.
+- The setup script runs as root before the session starts and must not leave daemons running. A service a session needs (e.g. Docker) is started on demand: by the repo's own hook where it runs, otherwise by an idempotent starter triggered from the build tool (e.g. a Gradle init script on test tasks). The second is a stopgap whenever the repo already has a starter.
 - An idempotent starter checks the service first, removes stale pidfiles only when the PID they name is dead (restored containers keep pidfiles but not processes), then starts the service and waits for it.
 - Keep failures loud for anything the session can't work without. Use `|| echo WARN` only for true conveniences such as cache warm-ups.
 - Never put secrets in the script or in variables. They are stored in plain text.
@@ -42,7 +44,7 @@ Before saving a script, variable or brief that names repos or folders:
 
 - Run the whole script from the folder that holds the checkouts, the way a fresh session does, with `bash -x`, and check each step *ran*. A step that skipped also exits 0.
 - Test name variants in a scratch parent folder of symlinks (`old-layout/`, `new-layout/`), never by renaming real checkouts.
-- Prefer a child session or scratch container for steps that delete or replace things (`rm -rf` an SDK, reinstall a toolchain). Running them in the working container invalidates results you already reported. If you did, say which earlier results ran on what the script replaced, and rerun them or mark them stale.
+- Running the script in the working container changes it: it can replace a toolchain your earlier results ran on, and it installs whatever it copies (draft skills included) in a way a later run may not refresh. Prefer a child session or scratch container for steps that delete or replace things. If you did run it here, say which earlier results are now stale, and rerun them.
 
 ## 6. Proving a mechanism works
 
