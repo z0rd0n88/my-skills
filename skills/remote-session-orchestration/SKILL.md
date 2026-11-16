@@ -1,11 +1,11 @@
 ---
 name: remote-session-orchestration
-description: Use when working with other Claude Code Remote sessions (not in-session subagents) — starting one (create_session), briefing or redirecting it (send_message), checking on it (get_session, list_events, get_event), or recommending or taking archive_session / interrupt_session. Also before relaying a sibling session's conclusions to the user as fact. Triggers include "start a session for that", "check on the other session", "archive it".
+description: Checks to run before acting on, briefing or relaying another Remote session. Use when working with other Claude Code Remote sessions (not in-session subagents) — starting one (create_session), briefing or redirecting it (send_message), checking on it (get_session, list_events, get_event), or recommending or taking archive_session / interrupt_session. Also before relaying a sibling session's conclusions to the user as fact. Triggers include "start a session for that", "check on the other session", "archive it".
 ---
 
 # remote-session-orchestration
 
-Sibling sessions are separate workers the user can also talk to directly. Their state changes without you, and their summaries describe the work from their own point of view. These rules keep you from acting on a stale or second-hand picture.
+Sibling sessions change without you and the user can talk to them directly, so check their state yourself rather than trusting their summaries.
 
 ## Before recommending archive or interrupt
 

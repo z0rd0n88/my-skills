@@ -1,6 +1,6 @@
 ---
 name: ci-parity-run
-description: Use when asked to run a repo's CI checks locally, or to confirm locally before a PR that a branch or its base would pass CI — "run what CI runs", "would CI pass on this", "does main build here". Not for fixing or checking a GitHub check on an open PR, and not for a workflow's own gate step.
+description: Runs a repo's CI job list locally on the commit CI would test and reports what was and wasn't covered. Use when asked to run a repo's CI checks locally, or to confirm locally before a PR that a branch or its base would pass CI — "run what CI runs", "would CI pass on this", "does main build here". Not for fixing or checking a GitHub check on an open PR, and not for a workflow's own gate step.
 ---
 
 # ci-parity-run

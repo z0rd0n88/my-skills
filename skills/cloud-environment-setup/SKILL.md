@@ -1,11 +1,11 @@
 ---
 name: cloud-environment-setup
-description: Use before changing a Claude Code cloud environment (setup script, environment variables, network) or making a tool, service or cache available in every cloud session — Docker for Testcontainers, a JDK or SDK, packages, warmed build caches. Also when a cloud session lacks something a repo normally sets up, when a session holding several checkouts is about to edit one, when the container disagrees with its setup script, or before saving config that names repos or folders. Triggers include "add it to the setup script", "make X start every session", get_environment / update_environment / create_environment.
+description: Checks to run before changing a cloud environment and while editing repos in a multi-repo cloud session. Use before changing a Claude Code cloud environment (setup script, environment variables, network) or making a tool, service or cache available in every cloud session — Docker for Testcontainers, a JDK or SDK, packages, warmed build caches. Also when a cloud session lacks something a repo normally sets up, when a session holding several checkouts is about to edit one, when the container disagrees with its setup script, or before saving config that names repos or folders. Triggers include "add it to the setup script", "make X start every session", get_environment / update_environment / create_environment.
 ---
 
 # cloud-environment-setup
 
-A cloud session runs in a container built from an environment: a setup script, environment variables, a network policy and the repositories attached to it. Changes to an environment touch every future session that uses it, so a wrong change fails quietly and repeatedly. For writing a SessionStart hook that is committed to a repo, use the built-in startup-hook skill instead.
+For writing a SessionStart hook that is committed to a repo, use the built-in startup-hook skill instead.
 
 ## 1. Find out what the repo's own config is doing in this session
 
