@@ -1,6 +1,6 @@
 ---
 name: ci-parity-run
-description: Use when asked to run a repo's CI checks locally or to confirm locally that a branch or the base branch would pass CI before a PR — "run what CI runs", "run CI locally", "run the CI tests and analysis here", "would CI pass on this", "does main build here". Covers choosing the commit to test without moving the session's branch, running the CI job list and the repo's documented gate, and reporting what was and wasn't covered. Not for fixing or checking a GitHub check on an open PR, and not for a workflow's own gate step.
+description: Use when asked to run a repo's CI checks locally, or to confirm locally before a PR that a branch or its base would pass CI — "run what CI runs", "would CI pass on this", "does main build here". Not for fixing or checking a GitHub check on an open PR, and not for a workflow's own gate step.
 ---
 
 # ci-parity-run
@@ -17,7 +17,7 @@ The goal is a result the user can trust as "CI would agree": the CI job list, ru
 - Check where the branch stands: `git fetch origin <base>`, then `git merge-base --is-ancestor origin/<base> HEAD` and `git rev-list --left-right --count origin/<base>...HEAD`. Do this *before* running any check that diffs against the base (guard scripts, "lockfile unchanged" checks); on a stale branch they compare the wrong range.
 - PR CI tests the branch merged into the base. When the branch is behind, test that merge: make a detached worktree, merge the base into it there, and run the checks on that. To test the base alone, check out `origin/<base>` detached.
 - Put the worktree where the repo's conventions say (some repos keep them under a gitignored `.claude/worktrees/`), otherwise in the scratchpad. A worktree has no installed dependencies, so install them as CI does. Remove it with `git worktree remove` when done.
-- Don't fast-forward or reset the session's own branch to test something else. That creates "unpushed commits" for stop hooks to chase. Never push a branch with no changes against its base just to quiet a hook; say why the hook fired instead.
+- Leave the session's own branch where it is; moving it to test something else creates "unpushed commits" for stop hooks to chase. When a hook fires on a branch with no changes against its base, tell the user why it fired; push only real changes.
 - Record the commit you tested. If the base moves while you work, say which results are now stale.
 
 ## 3. Match the environment

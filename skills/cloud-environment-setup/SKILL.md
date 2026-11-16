@@ -1,23 +1,23 @@
 ---
 name: cloud-environment-setup
-description: Use before changing a Claude Code cloud environment (its setup script, environment variables or network) or making a tool, service or cache available in every cloud session — Docker for Testcontainers, a JDK or SDK, package installs, warmed build caches. Also use when a cloud session is missing something a repo normally sets up for itself, when a cloud session holds several repo checkouts and you are about to edit one of them, when the container disagrees with its own setup script, or before saving anything that depends on repo or folder names. Triggers include "save the setup", "add it to the setup script", "make X start every session", "set up the environment", get_environment / update_environment / create_environment.
+description: Use before changing a Claude Code cloud environment (setup script, environment variables, network) or making a tool, service or cache available in every cloud session — Docker for Testcontainers, a JDK or SDK, packages, warmed build caches. Also when a cloud session lacks something a repo normally sets up, when a session holding several checkouts is about to edit one, when the container disagrees with its setup script, or before saving config that names repos or folders. Triggers include "add it to the setup script", "make X start every session", get_environment / update_environment / create_environment.
 ---
 
 # cloud-environment-setup
 
-A cloud session runs in a container built from an environment: a setup script, environment variables, a network policy and the repositories attached to it. Changes to an environment touch every future session that uses it, so a wrong change fails quietly and repeatedly. This skill is the order of checks that keeps that from happening. For writing a SessionStart hook that is committed to a repo, use the built-in startup-hook skill instead.
+A cloud session runs in a container built from an environment: a setup script, environment variables, a network policy and the repositories attached to it. Changes to an environment touch every future session that uses it, so a wrong change fails quietly and repeatedly. For writing a SessionStart hook that is committed to a repo, use the built-in startup-hook skill instead.
 
 ## 1. Find out what the repo's own config is doing in this session
 
 If the container lacks something a repo normally provides (a running daemon, a toolchain, generated config), assume first that the repo's own setup *didn't run*, not that nobody wrote it.
 
-- **What loads depends on where the session is rooted.** In a session rooted in the folder *above* several checkouts, each repo's `CLAUDE.md` and skills still load, so the session looks fully configured. Its committed hooks (`.claude/settings.json`) do not. Hook commands written as `"$CLAUDE_PROJECT_DIR/.claude/hooks/…"` would point at the wrong folder anyway.
+- **What loads depends on where the session is rooted.** In a *parent-rooted* session (rooted in the folder above several checkouts), each repo's `CLAUDE.md` and skills still load, so the session looks fully configured. Its committed hooks (`.claude/settings.json`) do not. Hook commands written as `"$CLAUDE_PROJECT_DIR/.claude/hooks/…"` would point at the wrong folder anyway.
 - **That switches off the guards, not just the setup.** PreToolUse and Stop hooks that block dangerous edits, secrets or unsafe commands are inert too. Test one in 30 seconds: feed a command the guard should refuse to the hook script directly (`echo '{"tool_name":"Bash","tool_input":{"command":"…"}}' | python3 <repo>/.claude/hooks/<guard>.py; echo $?`), then run the same harmless command through the Bash tool. If the script blocks it and the session doesn't, the guard is off.
 - **Git hooks are usually off too:** cloud checkouts don't set `core.hooksPath`, so a repo's `.githooks/` won't run.
 - **Environment variables can switch a repo hook off.** Check `get_environment` variable names against the flags the hook reads before concluding it is broken.
 - **Hooks that do run** come from the platform's launcher settings and from enabled plugins. Whether hooks in a user-level `~/.claude/settings.json` run in cloud sessions is untested; don't rely on it either way.
 
-**Don't edit a guarded repo from a parent-rooted session.** Review it, test it, run its build, but make edits in a session rooted in that repo, where its guards load. Tell the user when a session they started is in this layout.
+**Edit a guarded repo only from a session rooted in that repo**, where its guards load. From a parent-rooted session, review it, test it and run its build. Tell the user when a session they started is parent-rooted.
 
 When a repo's hook already does the setup, the usual fix is to root the session in that repo (the user starts a new session; an agent can't re-root one), not a second mechanism. A hook that starts daemons or writes to `CLAUDE_ENV_FILE` can't be called from a setup script. If a parallel copy is unavoidable, call it a stopgap and record the duplication where the repo tracks work.
 
