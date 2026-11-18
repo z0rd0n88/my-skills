@@ -15,11 +15,17 @@ Sets up a PreToolUse hook that intercepts and blocks dangerous git commands befo
 - `git branch -D`
 - `git checkout .` / `git restore .`
 
-When blocked, Claude sees a message telling it that it does not have authority to access these commands.
+These match with any spacing, after git's global options (`-C <path>`, `-c <k=v>`, `--git-dir=`, `--no-pager`), and with combined flags (`git clean -xdf`, `git branch --delete --force`). The hook also blocks when `jq` is missing or the input can't be read, rather than letting the command through.
+
+When blocked, Claude sees `BLOCKED: <reason> The user has prevented you from doing this.` on stderr.
+
+This is a speed bump, not a security boundary: a git call hidden inside `sh -c`, `eval` or a shell alias still gets through.
 
 ## Steps
 
-### 1. Ask scope
+### 1. Check jq, then ask scope
+
+The hook requires `jq`. Run `command -v jq`. If it prints nothing, stop and tell the user to install `jq` first: the hook blocks every Bash call when `jq` is missing, not just git ones.
 
 Ask the user: install for **this project only** (`.claude/settings.json`) or **all projects** (`~/.claude/settings.json`)?
 
@@ -93,3 +99,9 @@ echo '{"tool_input":{"command":"git push origin main"}}' | <path-to-script>
 ```
 
 Should exit with code 2 and print a BLOCKED message to stderr.
+
+Check the settings file still parses and holds the hook: `jq -e '.hooks.PreToolUse' <settings-file>` prints the array and exits 0.
+
+Run the bundled self-check against the installed copy (paths are relative to this SKILL.md's folder): `bash scripts/test-block-dangerous-git.sh <path-to-installed-script>`. It prints `all checks pass`. A failure for a pattern the user removed on purpose in step 4 is expected.
+
+If any check fails, fix the script or the settings file and re-run the checks until they pass.
