@@ -11,34 +11,34 @@ Sets up a PreToolUse hook that intercepts and blocks dangerous git commands befo
 
 - `git push` (all variants including `--force`)
 - `git reset --hard`
-- `git clean -f` / `git clean -fd`
-- `git branch -D`
-- `git checkout .` / `git restore .`
+- `git clean` unless it has `-n` / `--dry-run`
+- `git branch -D`, and `-d` combined with `-f`
+- `git checkout .` / `git restore .` (also `:/` and `*`)
 
-These match with any spacing, after git's global options (`-C <path>`, `-c <k=v>`, `--git-dir=`, `--no-pager`), and with combined flags (`git clean -xdf`, `git branch --delete --force`). The hook also blocks when `jq` is missing or the input can't be read, rather than letting the command through.
+The command is split into words the way a shell would (Python `shlex`), so these are caught after `;`, `&&`, `|` or inside `( )`, `` ` ` `` and `$( )`; inside `sh -c '...'`, `bash -lc "..."` and `eval`; with quoted words (`git 'push'`), line continuations, git's global options (`-C <path>`, `-c <k=v>`, `--no-pager`), abbreviated long options (`--har`), and bundled or split flags (`-xdf`, `-d -f`). The hook also blocks when `python3` is missing, the guard crashes, the input can't be read, or the command has unbalanced quotes, rather than letting the command through.
 
 When blocked, Claude sees `BLOCKED: <reason> The user has prevented you from doing this.` on stderr.
 
-This is a speed bump, not a security boundary: a git call hidden inside `sh -c`, `eval` or a shell alias still gets through.
+This is a speed bump, not a security boundary: a git alias, a script that calls git, or a command built from a variable at run time (`$CMD`) still gets through.
 
 ## Steps
 
-### 1. Check jq, then ask scope
+### 1. Check python3, then ask scope
 
-The hook requires `jq`. Run `command -v jq`. If it prints nothing, stop and tell the user to install `jq` first: the hook blocks every Bash call when `jq` is missing, not just git ones.
+The hook requires `python3`. Run `command -v python3`. If it prints nothing, stop and tell the user to install `python3` first: the hook blocks every Bash call when `python3` is missing, not just git ones.
 
 Ask the user: install for **this project only** (`.claude/settings.json`) or **all projects** (`~/.claude/settings.json`)?
 
 ### 2. Copy the hook script
 
-The bundled script is at: [scripts/block-dangerous-git.sh](scripts/block-dangerous-git.sh)
+The hook is two bundled files that must sit in the same folder: [scripts/block-dangerous-git.sh](scripts/block-dangerous-git.sh) (the entry point) and [scripts/block-dangerous-git.py](scripts/block-dangerous-git.py) (the checks).
 
-Copy it to the target location based on scope:
+Copy both to the target folder based on scope:
 
-- **Project**: `.claude/hooks/block-dangerous-git.sh`
-- **Global**: `~/.claude/hooks/block-dangerous-git.sh`
+- **Project**: `.claude/hooks/`
+- **Global**: `~/.claude/hooks/`
 
-Make it executable with `chmod +x`.
+Make `block-dangerous-git.sh` executable with `chmod +x`.
 
 ### 3. Add hook to settings
 
@@ -88,7 +88,7 @@ If the settings file already exists, merge the hook into the existing `hooks.Pre
 
 ### 4. Ask about customization
 
-Ask if user wants to add or remove any patterns from the blocked list. Edit the copied script accordingly.
+Ask if user wants to add or remove any patterns from the blocked list. Edit `dangerous_git()` in the copied `block-dangerous-git.py` accordingly.
 
 ### 5. Verify
 
@@ -100,7 +100,7 @@ echo '{"tool_input":{"command":"git push origin main"}}' | <path-to-script>
 
 Should exit with code 2 and print a BLOCKED message to stderr.
 
-Check the settings file still parses and holds the hook: `jq -e '.hooks.PreToolUse' <settings-file>` prints the array and exits 0.
+Check the settings file still parses and holds the hook: `python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["hooks"]["PreToolUse"])' <settings-file>` prints the array and exits 0.
 
 Run the bundled self-check against the installed copy (paths are relative to this SKILL.md's folder): `bash scripts/test-block-dangerous-git.sh <path-to-installed-script>`. It prints `all checks pass`. A failure for a pattern the user removed on purpose in step 4 is expected.
 

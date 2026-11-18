@@ -1,37 +1,11 @@
 #!/bin/bash
-# ponytail: regex speed bump, not a security boundary. A git call hidden in
-# `sh -c`, `eval` or an alias still gets through; a full shell parser would close that.
-set -o pipefail
-
+# PreToolUse hook. The checking lives in block-dangerous-git.py next to this file;
+# this wrapper makes a missing python3 or a crash block instead of allowing.
 # exit 2 = Claude Code's PreToolUse hook blocks the tool call and shows stderr to Claude.
 block() { echo "BLOCKED: $1 The user has prevented you from doing this." >&2; exit 2; }
 
-command -v jq >/dev/null || block "jq is missing, so the command could not be checked."
-INPUT=$(cat)
-COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty') || block "the hook input could not be parsed."
-[ -n "$COMMAND" ] || block "the command was empty."
-
-# `git`, then any global options (-C <path>, -c <k=v>, --git-dir=<d>, --no-pager, -p ...), then the subcommand.
-G='git([[:space:]]+(-C|-c|--git-dir|--work-tree|--namespace)([[:space:]]+|=)[^[:space:]]+|[[:space:]]+--?[a-zA-Z][a-zA-Z-]*(=[^[:space:]]+)?)*[[:space:]]+'
-ARGS='([[:space:]]+[^;&|]*)?[[:space:]]+'   # other arguments before the flag, same command only
-END='([[:space:];&|()<>]|$)'           # a word ends at a space or a shell separator
-
-DANGEROUS_PATTERNS=(
-  "${G}push"
-  "${G}reset${ARGS}--hard"
-  "${G}clean${ARGS}(-[a-zA-Z]*f[a-zA-Z]*|--force)${END}"
-  "${G}branch${ARGS}(-[a-zA-Z]*D[a-zA-Z]*${END}|--delete${ARGS}--force|--force${ARGS}--delete)"
-  "${G}checkout${ARGS}\.${END}"
-  "${G}restore${ARGS}\.${END}"
-  "push[[:space:]]+(.*[[:space:]])?--force"
-  "reset[[:space:]]+(.*[[:space:]])?--hard"
-)
-
-for pattern in "${DANGEROUS_PATTERNS[@]}"; do
-  # bash's own regex match, not a pipe: with pipefail, `grep -q` exiting early would SIGPIPE printf and read as no match.
-  if [[ $COMMAND =~ $pattern ]]; then
-    block "'$COMMAND' matches a dangerous git pattern."
-  fi
-done
-
-exit 0
+command -v python3 >/dev/null || block "python3 is missing, so the command could not be checked."
+python3 -I "$(dirname "$0")/block-dangerous-git.py"
+status=$?
+[ "$status" = 0 ] || [ "$status" = 2 ] || block "the git guard crashed (exit $status)."
+exit "$status"
