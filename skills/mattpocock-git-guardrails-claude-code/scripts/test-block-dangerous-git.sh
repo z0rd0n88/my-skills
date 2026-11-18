@@ -25,7 +25,7 @@ BLOCK=(
   "sh -c 'git push'" "bash -lc \"git reset --hard\"" "eval git push" 'echo `git push`'
   'echo $(git reset --hard)' "git commit -m 'unbalanced"
   # review round 4: quoted substitutions, sh -c options, valued flags, inline aliases, unknown options
-  'echo "$(git push)"' 'echo "`git reset --hard`"' "bash -c -- 'git push'" "sh -c -x 'git push'"
+  'echo "$(git push)"' 'echo "`git reset --hard`"' "bash -c -- 'git push'" "sh -c -x 'git push'" "bash -c -- '-x; git push'"
   "git clean -fen" "git clean -e n -f" "git clean -f -- -n" "git branch -d -u x -f y"
   "git -c alias.x=push x" "git --config-env=alias.x=VAR x" "git -c Alias.X=push x" "git --frobnicate push"
   # git-free forms

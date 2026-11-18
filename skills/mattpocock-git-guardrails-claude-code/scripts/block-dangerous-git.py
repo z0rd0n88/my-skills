@@ -147,9 +147,8 @@ def check(command: str, depth: int = 0) -> None:
                 if reason:
                     block(f"'{command}' runs {reason}.")
             elif name in SHELLS and any("c" in short_flags(w) for w in seg[j + 1:]):
-                for script in seg[j + 1:]:  # sh -c [--] '...': check every word that follows
-                    if not script.startswith("-"):
-                        check(script, depth + 1)
+                for script in seg[j + 1:]:  # sh -c [--] '...': check every word, even ones starting with -
+                    check(script, depth + 1)
             elif word == "eval":
                 check(" ".join(seg[j + 1:]), depth + 1)
         # git-free forms the original also caught, e.g. an alias: `g push --force`, `g reset --hard`
