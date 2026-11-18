@@ -24,6 +24,10 @@ BLOCK=(
   "git 'push'" "\"git\" push" $'git \\\npush' "/usr/bin/git push" "env FOO=1 git push"
   "sh -c 'git push'" "bash -lc \"git reset --hard\"" "eval git push" 'echo `git push`'
   'echo $(git reset --hard)' "git commit -m 'unbalanced"
+  # review round 4: quoted substitutions, sh -c options, valued flags, inline aliases, unknown options
+  'echo "$(git push)"' 'echo "`git reset --hard`"' "bash -c -- 'git push'" "sh -c -x 'git push'"
+  "git clean -fen" "git clean -e n -f" "git clean -f -- -n" "git branch -d -u x -f y"
+  "git -c alias.x=push x" "git --config-env=alias.x=VAR x" "git -c Alias.X=push x" "git --frobnicate push"
   # git-free forms
   "g push --force" "g reset --hard"
   "$(printf 'echo %.0s' {1..20000}) ; git push"
@@ -33,6 +37,8 @@ ALLOW=(
   "git checkout main" "git checkout ./src/file.ts" "git checkout .gitignore"
   "git restore --staged src/a.ts" "git reset --soft HEAD~1" "git log --grep push"
   "git commit -m \"fix: don't git push yet\"" "grep -r 'git push' docs" "echo pushd" "ls -la"
+  "git clean -nfd" "git --no-pager log" "git -c color.ui=false status" "git --git-dir=.git status"
+  "git branch -u origin/main" "git checkout -- src/a.ts" "echo \"\$(git status)\""
 )
 for c in "${BLOCK[@]}"; do check 2 "$c"; done
 for c in "${ALLOW[@]}"; do check 0 "$c"; done

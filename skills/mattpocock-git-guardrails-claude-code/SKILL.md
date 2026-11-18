@@ -15,11 +15,11 @@ Sets up a PreToolUse hook that intercepts and blocks dangerous git commands befo
 - `git branch -D`, and `-d` combined with `-f`
 - `git checkout .` / `git restore .` (also `:/` and `*`)
 
-The command is split into words the way a shell would (Python `shlex`), so these are caught after `;`, `&&`, `|` or inside `( )`, `` ` ` `` and `$( )`; inside `sh -c '...'`, `bash -lc "..."` and `eval`; with quoted words (`git 'push'`), line continuations, git's global options (`-C <path>`, `-c <k=v>`, `--no-pager`), abbreviated long options (`--har`), and bundled or split flags (`-xdf`, `-d -f`). The hook also blocks when `python3` is missing, the guard crashes, the input can't be read, or the command has unbalanced quotes, rather than letting the command through.
+The command is split into words the way a shell would (Python `shlex`), so these are caught after `;`, `&&`, `|` or inside `( )`, `` ` ` `` and `$( )`; inside `sh -c '...'`, `bash -lc "..."` and `eval`; with quoted words (`git 'push'`), line continuations, git's global options (`-C <path>`, `-c <k=v>`, `--no-pager`), abbreviated long options (`--har`), and bundled or split flags (`-xdf`, `-d -f`). The body of every `` ` ` `` and `$( )` is checked too, even inside quotes. The hook also blocks inline aliases (`git -c alias.x=push x`), git global options it doesn't know, and any case where `python3` is missing, the guard crashes, the input can't be read, or the command has unbalanced quotes, rather than letting the command through.
 
 When blocked, Claude sees `BLOCKED: <reason> The user has prevented you from doing this.` on stderr.
 
-This is a speed bump, not a security boundary: a git alias, a script that calls git, or a command built from a variable at run time (`$CMD`) still gets through.
+This is a speed bump, not a security boundary: a git alias defined in a config file, a script that calls git, or a command built from a variable at run time (`$CMD`) still gets through.
 
 ## Steps
 
