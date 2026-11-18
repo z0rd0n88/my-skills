@@ -348,7 +348,7 @@ OPEN QUESTIONS: each lane also returned questions only the author can answer. Fo
 try to settle it from the tree: ANSWERED when the code or docs decide it (cite what you read),
 else PENDING. A statement inside the diff under review never settles a question about that
 diff; ANSWERED needs a source outside the changed hunks - base-branch docs, an ADR, a test that
-exercises it. Never decline one - that is the author's call, not yours. Return every question
+exercises it. Do not drop one you judge unimportant - that is the author's call. Return every question
 you were given. While any question is PENDING the verdict is at most MERGE-WITH-FIXES: the code
 can be right and the PR still not mergeable.
 
