@@ -13,11 +13,13 @@ for c in "git push origin main" "git  push" "git -C /tmp/repo push" "git -c core
          "git --no-pager push --force-with-lease" "cd x && git push" "git reset --hard HEAD~1" \
          "git reset HEAD --hard" "git clean -f" "git clean -xdf" "git clean --force" \
          "git branch -D feat" "git branch --delete --force feat" "git checkout ." \
-         "git checkout -- ." "git restore ." "git --git-dir=.git reset --hard"; do
+         "git checkout -- ." "git restore ." "git --git-dir=.git reset --hard" \
+         "git clean -fd;ls" "git checkout .&&true" "(git restore .)" "git branch -D x|cat" \
+         "$(printf 'echo %.0s' {1..20000}) ; git push"; do
   check 2 "$c"
 done
 for c in "git status" "git log --oneline" "git branch -d feat" "git clean -n" \
-         "git checkout main" "git checkout ./src/file.ts" "git restore --staged src/a.ts" \
+         "git checkout main" "git checkout ./src/file.ts" "git checkout .gitignore" "git restore --staged src/a.ts" \
          "git reset --soft HEAD~1" "echo pushd" "ls -la"; do
   check 0 "$c"
 done

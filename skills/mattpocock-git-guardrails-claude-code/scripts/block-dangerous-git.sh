@@ -14,7 +14,7 @@ COMMAND=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty') || block 
 # `git`, then any global options (-C <path>, -c <k=v>, --git-dir=<d>, --no-pager, -p ...), then the subcommand.
 G='git([[:space:]]+(-C|-c|--git-dir|--work-tree|--namespace)([[:space:]]+|=)[^[:space:]]+|[[:space:]]+--?[a-zA-Z][a-zA-Z-]*(=[^[:space:]]+)?)*[[:space:]]+'
 ARGS='([[:space:]]+[^;&|]*)?[[:space:]]+'   # other arguments before the flag, same command only
-END='([[:space:]]|$)'
+END='([[:space:];&|()<>]|$)'           # a word ends at a space or a shell separator
 
 DANGEROUS_PATTERNS=(
   "${G}push"
@@ -28,7 +28,8 @@ DANGEROUS_PATTERNS=(
 )
 
 for pattern in "${DANGEROUS_PATTERNS[@]}"; do
-  if printf '%s' "$COMMAND" | grep -qE "$pattern"; then
+  # bash's own regex match, not a pipe: with pipefail, `grep -q` exiting early would SIGPIPE printf and read as no match.
+  if [[ $COMMAND =~ $pattern ]]; then
     block "'$COMMAND' matches a dangerous git pattern."
   fi
 done
