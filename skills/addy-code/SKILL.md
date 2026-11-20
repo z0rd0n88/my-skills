@@ -84,7 +84,7 @@ reason, and you fall through to the next. Record the final pick.
 1. `vista-dw-review` when the repo ships it and the target is a committed branch or PR there.
 2. `dw-review` for a committed branch or PR in any repo (findings are adversarially refuted
    before you see them).
-3. `Z0rd0nZords:zord-multi-agent-review` for a staged or working diff, a spec, or a directory,
+3. `zord-multi-agent-review` for a staged or working diff, a spec, or a directory,
    or when the user asked to loop review and fix.
 4. `addyosmani-code-review-and-quality` (single-agent, multi-axis) when nothing above can run.
 
