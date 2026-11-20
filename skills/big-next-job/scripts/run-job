@@ -3,8 +3,10 @@
 # Each child reads <job-dir>/checkpoint.md, works until the phase ends (or its context gets heavy),
 # rewrites checkpoint.md, and stops. This loop relaunches until status is done or blocked.
 # A crashed, killed, or timed-out child costs nothing but the work since its last checkpoint.
-# Mechanism borrowed from session-switcher (z0rd0n88/session-switcher): brief as one argv,
+# Mechanism borrowed from session-switcher (z0rd0n88/session-stickler): brief as one argv,
 # a Claude Stop hook as the return channel, tmux as the terminal. Needs claude, tmux, python3.
+# Children show up in `session-relay list`, and `session-airspace` can hold them under memory
+# pressure; time a child spends held does not count toward JOB_CHILD_TIMEOUT.
 #
 # Usage:  run-job <job-dir> [workdir]          (job-dir holds brief.md + checkpoint.md)
 #         run-job status <job-dir>             (print the checkpoint header and stop)
@@ -56,15 +58,23 @@ while :; do
   DIR=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/job.XXXXXX")
   printf '{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"cat > %s/done.json"}]}]}}\n' "$DIR" > "$DIR/settings.json"
   Q="'$(printf '%s' "$PROMPT" | sed "s/'/'\\\\''/g")'"
-  WIN=$(tmux new-window -dP -t "$SESSION" -c "$WORKDIR" -e JOB_DIR="$JOB" -e JOB_CHILD="$n" \
-        "claude ${CLAUDE_FLAGS:-} --settings $DIR/settings.json $Q")
-  log "child $n launched  window=$WIN  (watch: tmux attach -t $SESSION)"
+  # `; :` keeps the pane's shell as claude's parent. If claude were the pane process, tmux would
+  # SIGCONT it the moment session-airspace held it, so the hold could never stick.
+  WIN=$(tmux new-window -dP -t "$SESSION" -n "child-$n" -c "$WORKDIR" -e JOB_DIR="$JOB" -e JOB_CHILD="$n" \
+        "claude ${CLAUDE_FLAGS:-} --settings $DIR/settings.json $Q; :")
+  PANE=$(tmux display -p -t "$WIN" '#{pane_pid}')
+  log "child $n launched  window=$SESSION:child-$n  (watch: session-relay read $SESSION:child-$n)"
 
   # Wait for the child's turn to end. A folder Claude has not seen shows a trust dialog; the job's
   # worktrees are owner-created, so every trust dialog is answered (owner decision 2026-10-28).
   # Only that dialog's text triggers a keystroke. ponytail: screen scrape; replace if claude grows a --trust flag.
   for ((i=0; i<TIMEOUT; i++)); do
     [ -s "$DIR/done.json" ] && break
+    # A child held by session-airspace (state T) is paused, not stuck: stop its clock.
+    CPID=$(pgrep -P "$PANE" | head -1 || true)
+    if [ -n "$CPID" ] && [ "$(awk '/^State:/ {print $2}' "/proc/$CPID/status" 2>/dev/null)" = T ]; then
+      i=$((i-1)); sleep 1; continue
+    fi
     if tmux capture-pane -p -t "$WIN" 2>/dev/null | grep -q "Yes, I trust this folder"; then
       tmux send-keys -t "$WIN" Down Enter; sleep 2
     fi

@@ -128,8 +128,13 @@ cap (exit 4), so a confused job cannot spin.
 
 Then tell the owner, in this order: the phase table with the first phase's "will happen" list;
 `tail -f <worktree>/.big-next-job/run.log` for the chain's log and each child's closing summary;
-`tmux attach -t job-<worktree-name>` to watch a child live; `<skill-dir>/scripts/run-job status
-<worktree>/.big-next-job` for the current phase and next action. End your turn.
+`session-relay list` and `session-relay read job-<worktree-name>:child-<n>` to watch a child (they
+work from Claude Desktop too; in a terminal, `tmux attach -t job-<worktree-name>` also works);
+`<skill-dir>/scripts/run-job status <worktree>/.big-next-job` for the current phase and next
+action. If several jobs or sessions run at once, suggest `session-airspace guard` in a spare
+terminal: it holds the largest child when RAM passes 85% and releases it as memory frees up, and
+held time does not count toward `JOB_CHILD_TIMEOUT`. Both tools come from z0rd0n88/session-stickler;
+mention them only if they are on PATH. End your turn.
 
 To resume after anything stopped the chain, run the same command again; it reads the checkpoint
 and continues. Nothing is re-done.
