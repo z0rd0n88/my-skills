@@ -10,4 +10,6 @@ Personal agent skills. Install: `npx skills add z0rd0n88/my-skills -g -a claude-
 
 `skills/mattpocock-*` are copies of [mattpocock/skills](https://github.com/mattpocock/skills) at commit `c55ee46`, by Matt Pocock, renamed with a `mattpocock-` prefix (cross-skill references updated to match). MIT licensed; notice in `LICENSES/mattpocock-skills.txt`. One local change: `mattpocock-git-guardrails-claude-code` checks commands with a Python `shlex` parser (`scripts/block-dangerous-git.py`) instead of regexes, fails closed, and has a self-check in `test-block-dangerous-git.sh`.
 
+`skills/zord-*`, `refs/multi-agent/` and `commands/zord-total-review-init.md` came from [z0rd0n88/Z0rd0nZords](https://github.com/z0rd0n88/Z0rd0nZords) at `8f28f91`, which is now retired. `scripts/check-zord-skills.sh` carries over its `-h`/`--help` and size checks.
+
 Claude Code mods moved to [claude-mod-ity](https://github.com/z0rd0n88/claude-mod-ity).
