@@ -12,4 +12,6 @@ Personal agent skills. Install: `npx skills add z0rd0n88/my-skills -g -a claude-
 
 `skills/zord-*`, `refs/multi-agent/` and `commands/zord-total-review-init.md` came from [z0rd0n88/Z0rd0nZords](https://github.com/z0rd0n88/Z0rd0nZords) at `8f28f91`, which is now retired. `scripts/check-zord-skills.sh` carries over its `-h`/`--help` and size checks.
 
+`skills/workflow-router` is written from the workflow-automation guide in [sickn33/agentic-awesome-skills](https://github.com/sickn33/agentic-awesome-skills/blob/main/skills/workflow-automation/references/detailed-guide.md) at `4b1fe9d` (MIT; the guide credits vibeship-spawner-skills, Apache 2.0). It keeps the guide's patterns, platform notes and sharp edges, reworded as a routing procedure, and leaves out its code samples, which the guide itself marks as version-mixed.
+
 Claude Code mods moved to [claude-mod-ity](https://github.com/z0rd0n88/claude-mod-ity).
