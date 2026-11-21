@@ -121,20 +121,28 @@ cd <worktree> && CLAUDE_FLAGS="<flags the owner authorized for unattended tools>
 
 Unattended children can only use tools the owner allowed; pass that through `CLAUDE_FLAGS`
 exactly as the owner stated it. `run-job` starts one child, waits for its turn to end, reads the
-checkpoint, and starts the next, until `status:` is `done` or `blocked`. A child that crashes or
-exceeds `JOB_CHILD_TIMEOUT` is killed and the next one resumes from the last checkpoint. Two
-children in a row that leave the checkpoint untouched stop the chain (exit 5), as does the child
-cap (exit 4), so a confused job cannot spin.
+checkpoint, and starts the next, until `status:` is `done` or `blocked`. A child that crashes is
+seen within seconds and one that exceeds `JOB_CHILD_TIMEOUT` is killed; either way the next one
+resumes from the last checkpoint. A child stopped by an API error waits `JOB_API_BACKOFF` (600 s)
+before the next, or `JOB_LIMIT_BACKOFF` (1800 s) for a rate or usage limit; those children are not
+counted as stalls. Two children in a row that leave the checkpoint untouched stop the chain
+(exit 5), as does the child cap (exit 4), so a confused job cannot spin. Only one `run-job` can
+drive a job at a time (a second exits 1), and stopping it closes its child.
 
 Then tell the owner, in this order: the phase table with the first phase's "will happen" list;
 `tail -f <worktree>/.big-next-job/run.log` for the chain's log and each child's closing summary;
-`session-relay list` and `session-relay read job-<worktree-name>:child-<n>` to watch a child (they
-work from Claude Desktop too; in a terminal, `tmux attach -t job-<worktree-name>` also works);
-`<skill-dir>/scripts/run-job status <worktree>/.big-next-job` for the current phase and next
-action. If several jobs or sessions run at once, suggest `session-airspace guard` in a spare
+`tmux -L run-job-<worktree-name> attach -t job-<worktree-name>` to watch a child in a terminal
+(each job runs on its own tmux server); `<skill-dir>/scripts/run-job status <worktree>/.big-next-job`
+for the current phase and next action. If `session-relay` and `session-airspace`
+(z0rd0n88/session-stickler) are on PATH and list run-job children, also mention `session-relay list`
+(works from Claude Desktop) and, when several jobs run at once, `session-airspace guard` in a spare
 terminal: it holds the largest child when RAM passes 85% and releases it as memory frees up, and
-held time does not count toward `JOB_CHILD_TIMEOUT`. Both tools come from z0rd0n88/session-stickler;
-mention them only if they are on PATH. End your turn.
+held time does not count toward `JOB_CHILD_TIMEOUT`. End your turn.
+
+For a multi-phase coding job that must end in tested, committed, CI-green pull requests and should
+survive usage limits on its own, recommend blast-off (z0rd0n88/blast-off) instead: it is this same
+chain under systemd, with receipts, CI checks and automatic resume. `run-job` stays the light
+choice: no systemd, no GitHub token, any job shape.
 
 To resume after anything stopped the chain, run the same command again; it reads the checkpoint
 and continues. Nothing is re-done.
