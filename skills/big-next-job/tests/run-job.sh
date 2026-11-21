@@ -79,6 +79,10 @@ job trustlate trustlate finish; run JOB_TRUST_SECONDS=2
 echo "each job has its own tmux server, with this run's environment"
 job envcheck finish; run
 tmux -L run-job-envcheck has-session 2>/dev/null && bad "server left running after the job" || ok "its tmux server is gone after the job"
+job 'odd name.x' hang; FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 "$RUNJOB" "$J" > "$J/out1" 2>&1 & bg=$!
+for _ in $(seq 1 50); do has "child 1 launched" 2>/dev/null && break; sleep 0.2; done
+tmux -L run-job-odd_name_x has-session -t job-odd_name_x 2>/dev/null && ok "server and session are named run-job-<name> / job-<name>, odd characters as _" || bad "server name ($(ls "$TMUX_TMPDIR"/tmux-*/))"
+kill -TERM "$bg"; wait "$bg" 2>/dev/null
 
 echo "one runner per job, and stopping it closes the child"
 job lock hang; FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 "$RUNJOB" "$J" > "$J/out1" 2>&1 & first=$!

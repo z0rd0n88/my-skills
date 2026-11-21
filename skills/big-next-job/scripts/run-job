@@ -33,7 +33,7 @@ esac
 die() { echo "run-job: $*" >&2; exit 1; }
 JOB="$(cd "$1" && pwd)" || die "no job dir $1"
 WORKDIR="$(cd "${2:-$(dirname "$JOB")}" && pwd)" || die "no workdir ${2:-}"
-NAME="$(basename "$WORKDIR" | tr -c 'A-Za-z0-9_-' '_')"
+NAME="$(basename "$WORKDIR")"; NAME="${NAME//[^A-Za-z0-9_-]/_}"   # tmux socket/session-safe
 SESSION="${JOB_SESSION:-job-$NAME}"
 SOCK="run-job-$NAME"   # this job's own tmux server: tmux -L run-job-<name>
 LOG="$JOB/run.log"
