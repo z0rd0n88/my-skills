@@ -34,6 +34,7 @@ pass, and posts one comment saying what was found and what was pushed.
 |---|---|---|---|
 | `VistaMarkets/vbe` | `vbe/` | `vista-dw-review` (repo-local; picks Vista's reviewer agents) | `./gradlew build` (needs JDK 17, installed by the environment's setup script, and a running Docker daemon for Testcontainers; see Step 6) |
 | `VistaMarkets/vfe` | `vfe/` | `dw-review` (generic) | `flutter analyze` and `flutter test` in each package the PR touches |
+| any other repo, only when named as the target | found by its remote, as below | `code-review` | the repo's own gate command, taken from its `AGENTS.md`, `CLAUDE.md`, `README` or CI workflow; none found means the gate can't run (Step 6) |
 
 Find a checkout by its remote, not by guessing a path:
 
@@ -78,7 +79,7 @@ No checkout for a repo means skip it and say so in the summary. Never clone a re
 ## Step 1 — candidates
 
 With a target, the candidate is that one PR (ignore the Step 2 marker only when the operator asks
-for a re-review). Otherwise, for each repo in the table:
+for a re-review). A repo outside the table is a candidate only when named as the target. Otherwise, for each repo in the table:
 
 ```bash
 gh api "repos/$REPO/pulls?state=open&sort=updated&direction=desc&per_page=50" \
@@ -125,6 +126,7 @@ Take the **first** class that matches. Each row lists everything that runs on th
 | 2 | Large | More than 40 files, or more than 1500 changed lines | `zord-multi-agent-review pr <N> --no-loop --no-comment --adversarial` | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
 | 3 | VBE code | Repo is `VistaMarkets/vbe` | `vista-dw-review pr <N>` | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
 | 4 | Flutter code | Repo is `VistaMarkets/vfe` | `dw-review pr <N>`, plus Step 4b | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
+| 5 | Code in another repo | Named as the target, and the repo is not in the Repos table | `code-review` on the PR | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
 
 Skills without a namespace in the last three columns come from the lil-pstack plugin: call them as
 `lil-pstack:<name>`. A skill that is not installed is reported as "not run (not installed)",
@@ -136,10 +138,10 @@ missed simplifications. `blast-radius` owns breakage outside the diff. Don't bri
 repeat another's job.
 
 **Instruction files** are `AGENTS.md`, `CLAUDE.md`, `SKILL.md`, `REVIEW.md`, and anything under
-`.claude/`, `.agents/`, or `.codex/`. A PR that changes them is code-class (rows 2–4): the
+`.claude/`, `.agents/`, or `.codex/`. A PR that changes them is code-class (rows 2–5): the
 dw-review lanes check instruction drift, but the reasoned-review lenses do not.
 
-**Money add-on, classes 2–4:** if a changed non-test source file (`.kt`, `.kts`, `.sql`, `.dart`,
+**Money add-on, classes 2–5:** if a changed non-test source file (`.kt`, `.kts`, `.sql`, `.dart`,
 `.ts`, `.py`) matches money terms in its patch
 (`price|qty|quantity|amount|fee|balance|notional|slippage|funding|pnl|margin|collateral|order`),
 also run `audit-numeric-types` on the PR diff and attach its PASS/FAIL section.
