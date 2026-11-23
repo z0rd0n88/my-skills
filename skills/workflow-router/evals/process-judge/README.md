@@ -12,7 +12,7 @@ whether the rules are right. When either file changes, check the judge still agr
 
 - `judge.md` is the system prompt. Input: the task in `<task>` tags and optional background in
   `<context>` tags.
-- `cases.jsonl` holds 25 labelled cases. The labels are the judge author's own judgement.
+- `cases.jsonl` holds 27 labelled cases. The labels are the judge author's own judgement.
 - `schema.json` is the JSON schema of the reply.
 - `run.sh <model> <outdir>` runs every case as an isolated `claude -p` call with no tools, with
   the reply constrained to `schema.json`, and prints `ok` or `MISS` per case.
@@ -21,18 +21,18 @@ whether the rules are right. When either file changes, check the judge still agr
 
 | Model | Result |
 |---|---|
-| Sonnet 5.5, author's session | 75/75 over 3 rounds |
-| Haiku 5.5, author's session | 75/75 over 3 rounds |
-| Sonnet 5.5, one round from this repo | 25/25 |
-| Haiku 5.5, one round from this repo | 25/25 |
+| Sonnet 5.5, author's session | 81/81 over 3 rounds |
+| Haiku 5.5, author's session | 81/81 over 3 rounds |
+| Sonnet 5.5, one round from this repo | 27/27 |
+| Haiku 5.5, one round from this repo | 27/27 |
 
-A clean sweep on the first draft suggests the cases are on the easy side. Treat this as a smoke
-test.
+A clean sweep from the first draft on suggests the cases are on the easy side. Treat this as a
+smoke test.
 
 ## Known limits
 
 - Not tested on larger models, with long real conversation context, or against labels from a
   second person.
-- No cases yet for two boundaries: an upgrade whose breaking changes touch many files
+- Two boundaries have one case each: an upgrade whose breaking changes touch many files
   (Dependency Upgrade, then Migration), and a one-line fix to wrong behaviour (Bug Fix, not
-  `none`). `judge.md` lists "a one-line edit" as trivial, which is looser than the router's rule.
+  `none`).

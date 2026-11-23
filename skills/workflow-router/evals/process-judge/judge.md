@@ -20,7 +20,7 @@ Ask these questions in order and take the first one whose answer is yes. The ord
 10. `feature_implementation`: is it new capability, large enough to deserve a plan? This is also where a "bug" belongs when the behaviour was never built.
 11. `tdd_ralph`: a variant of 10. Choose it over `feature_implementation` only when the task or context states all of these: the scope is large and already split into specified tasks, failing tests exist or will be written by a person first, the tests are fast and deterministic, and a sandbox is available. If any of them is missing or unknown, the answer is `feature_implementation`.
 
-`none`: no process workflow applies. Use it when the change is trivial (a typo, a one-line edit, a version string), and when the task is not work on a codebase at all (a general question, a piece of writing). A trivial change needs no workflow even when it could be given a name from the list.
+`none`: no process workflow applies. Use it when the change has no behaviour at stake (a typo, a comment, a version string), and when the task is not work on a codebase at all (a general question, a piece of writing). The kind of work picks the workflow, not the size of the diff: a one-line fix to wrong behaviour is still a Bug Fix, because the reproduction and the failing test are what stop it coming back.
 
 ## Choosing between neighbours
 

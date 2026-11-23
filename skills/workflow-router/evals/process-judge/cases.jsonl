@@ -23,3 +23,5 @@
 {"id":"none-typo","expect":"none","task":"Fix the typo in the README title, it says 'Instalation'."}
 {"id":"none-version","expect":"none","task":"Bump the version string in package.json to 2.4.1 for the release."}
 {"id":"none-not-code","expect":"none","task":"Explain the difference between a mutex and a semaphore."}
+{"id":"upgrade-wide-breakage","expect":"dependency_upgrade","task":"Upgrade us to Django 5.","context":"Django 5 removes pytz support, and pytz is used directly in about 200 files."}
+{"id":"one-line-bug","expect":"bug_fix","task":"The header crashes with 'Cannot read properties of undefined' whenever a user has no profile. It should show 'Guest' instead. It's just a missing null check on user.profile.name in header.tsx."}
