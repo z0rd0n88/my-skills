@@ -1,9 +1,9 @@
 [
   {
     "skills": [
-      "spec-first"
+      "spec-to-test-development"
     ],
-    "query": "Copy evals/fixtures/tablekit to <workdir>/tablekit, run `git init` there and commit every file. Then, in that repository: /spec-first Add a max_width keyword argument to render_table. When it is given, any cell longer than max_width characters is cut to its first max_width - 1 characters followed by the single character U+2026, before column widths are worked out. max_width=None, the default, changes nothing. A max_width below 2 raises ValueError.",
+    "query": "Copy evals/fixtures/tablekit to <workdir>/tablekit, run `git init` there and commit every file. Then, in that repository: /spec-to-test-development Add a max_width keyword argument to render_table. When it is given, any cell longer than max_width characters is cut to its first max_width - 1 characters followed by the single character U+2026, before column widths are worked out. max_width=None, the default, changes nothing. A max_width below 2 raises ValueError.",
     "files": [
       "evals/fixtures/tablekit/README.md",
       "evals/fixtures/tablekit/tablekit/__init__.py",
@@ -22,9 +22,9 @@
   },
   {
     "skills": [
-      "spec-first"
+      "spec-to-test-development"
     ],
-    "query": "Copy evals/fixtures/tablekit to <workdir>/tablekit, run `git init` there and commit every file. Then, in that repository: /spec-first Tables with Japanese text in them come out misaligned in my terminal, the columns don't line up. Please fix.",
+    "query": "Copy evals/fixtures/tablekit to <workdir>/tablekit, run `git init` there and commit every file. Then, in that repository: /spec-to-test-development Tables with Japanese text in them come out misaligned in my terminal, the columns don't line up. Please fix.",
     "files": [
       "evals/fixtures/tablekit/README.md",
       "evals/fixtures/tablekit/tablekit/__init__.py",
@@ -42,9 +42,9 @@
   },
   {
     "skills": [
-      "spec-first"
+      "spec-to-test-development"
     ],
-    "query": "Copy evals/fixtures/tablekit to <workdir>/tablekit, run `git init` there and commit every file. Then, in that repository: /spec-first Reword the first sentence of the README so it sounds friendlier.",
+    "query": "Copy evals/fixtures/tablekit to <workdir>/tablekit, run `git init` there and commit every file. Then, in that repository: /spec-to-test-development Reword the first sentence of the README so it sounds friendlier.",
     "files": [
       "evals/fixtures/tablekit/README.md",
       "evals/fixtures/tablekit/tablekit/__init__.py",

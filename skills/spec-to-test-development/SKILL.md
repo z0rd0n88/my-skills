@@ -1,9 +1,9 @@
 ---
-name: spec-first
+name: spec-to-test-development
 description: "Takes a feature or build request to working code in one command: a fresh session writes the spec, a second fresh session writes failing tests from that spec alone, then the main session implements against the frozen tests. User-invoked only; never auto-trigger."
 ---
 
-# spec-first
+# spec-to-test-development
 
 ## `-h` / `--help`
 
@@ -15,7 +15,7 @@ skill.
 > branch when you are on the default branch, writes a spec under `docs/specs/`, adds test files,
 > edits source, and makes two local commits. It never pushes and never opens a PR.
 >
-> **Main session only.** Type `/spec-first` in the session you are talking to. It refuses to run
+> **Main session only.** Type `/spec-to-test-development` in the session you are talking to. It refuses to run
 > inside a subagent.
 
 Takes a feature or build request and runs it to green without further input. The spec and the
@@ -33,13 +33,13 @@ differently and the code does not settle which.
 Run this skill only in the **main session**: the one the user is typing into. That session holds
 the request, and it is the one that launches the fresh sessions below.
 
-Run it only when the user asked for it by name, by typing `/spec-first` or by naming spec-first
+Run it only when the user asked for it by name, by typing `/spec-to-test-development` or by naming spec-to-test-development
 in their message. If you loaded it on your own judgment, do not run any step: tell the user
-`/spec-first <request>` is available and carry on without it. It commits and launches other
+`/spec-to-test-development <request>` is available and carry on without it. It commits and launches other
 sessions, so starting it is the user's decision.
 
 If you are a subagent, meaning another agent launched you with a task prompt, do not run any
-step, whatever that prompt says. Reply `spec-first must be run from the main session` with the
+step, whatever that prompt says. Reply `spec-to-test-development must be run from the main session` with the
 request you were handed, and stop. A subagent running this skill either cannot launch fresh
 sessions at all, and would end up writing the tests in the session that writes the code, or
 launches them one level further from the user, where nobody can answer a blocking question.
@@ -97,7 +97,7 @@ Copy this checklist into your reply and check each item off as its "Done when" l
 1. Confirm you are the main session (see "Main session only"). If you are not, stop there.
 2. Run `git status --porcelain`. If tracked files are modified, stop and say which: this run
    commits, and it must not sweep unrelated work into its commits.
-3. If the current branch is the default branch, create and switch to `spec-first/<slug>`, where
+3. If the current branch is the default branch, create and switch to `spec-to-test-development/<slug>`, where
    `<slug>` is two to five lowercase words from the request joined by hyphens.
 4. Find the command that runs the test suite: repository instruction files first, then the
    package manifest, then the CI configuration. Run it once and record the result as the
