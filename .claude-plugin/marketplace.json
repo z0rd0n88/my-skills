@@ -1,0 +1,160 @@
+{
+  "name": "my-skills",
+  "owner": {
+    "name": "z0rd0n88"
+  },
+  "description": "z0rd0n88's personal agent skills, split into five plugins: review, workflow, lateral thinking, and the vendored addyosmani and mattpocock packs.",
+  "plugins": [
+    {
+      "name": "zord-review",
+      "source": "./",
+      "strict": false,
+      "description": "Code, PR, spec and codebase review with multi-agent lanes, adversarial refutation and finding fixers, plus PR review routing and CI parity.",
+      "author": {
+        "name": "z0rd0n88"
+      },
+      "homepage": "https://github.com/z0rd0n88/my-skills",
+      "skills": [
+        "./skills/audit-numeric-types",
+        "./skills/ci-parity-run",
+        "./skills/code-cleaver",
+        "./skills/drift-status-check",
+        "./skills/dw-review",
+        "./skills/dw-review-codex",
+        "./skills/finding-fixer",
+        "./skills/finding-fixer-codex",
+        "./skills/pr-review-router",
+        "./skills/skill-sheriff-cc",
+        "./skills/multi-agent-review",
+        "./skills/multi-agent-review-codex",
+        "./skills/reasoned-review",
+        "./skills/reasoned-review-codex",
+        "./skills/total-review",
+        "./skills/total-review-scaffold"
+      ],
+      "commands": "./refs/commands"
+    },
+    {
+      "name": "zord-workflow",
+      "source": "./",
+      "strict": false,
+      "description": "Multi-phase build runners, batons and handoffs, branch and PR wrap-up, specs and weekly wrap-ups, session and cloud-environment helpers, plain-language writing modes, and desktop/browser tools.",
+      "author": {
+        "name": "z0rd0n88"
+      },
+      "homepage": "https://github.com/z0rd0n88/my-skills",
+      "skills": [
+        "./skills/baton-pass",
+        "./skills/baton-runner-managed",
+        "./skills/big-next-job",
+        "./skills/branch-off",
+        "./skills/bro-down",
+        "./skills/bro-next",
+        "./skills/chiquita",
+        "./skills/claude-md-trim",
+        "./skills/cloud-environment-setup",
+        "./skills/daily-loop",
+        "./skills/i-have-adhd",
+        "./skills/inventory",
+        "./skills/iron-ham-split",
+        "./skills/outline-transcript",
+        "./skills/pr-merge-cleanup",
+        "./skills/rekordbox-add",
+        "./skills/remote-session-orchestration",
+        "./skills/resolve-user-skill",
+        "./skills/spec-tacular",
+        "./skills/spec-to-test-development",
+        "./skills/three-agent-wf",
+        "./skills/vercel-agent-browser",
+        "./skills/vercel-computer-use",
+        "./skills/vista-improve-prompt",
+        "./skills/weekly-wrapup",
+        "./skills/workflow-router",
+        "./skills/wrapup-specs",
+        "./skills/zoom-out",
+        "./skills/baton-runner",
+        "./skills/teammate-handoff"
+      ]
+    },
+    {
+      "name": "zord-lateral",
+      "source": "./",
+      "strict": false,
+      "description": "Lateral thinking techniques: a router plus analogy, concept fan, inversion, provocation, random stimulus, SCAMPER, six hats and worst idea.",
+      "author": {
+        "name": "z0rd0n88"
+      },
+      "homepage": "https://github.com/z0rd0n88/my-skills",
+      "skills": [
+        "./skills/analogy",
+        "./skills/concept-fan",
+        "./skills/inversion",
+        "./skills/lateral",
+        "./skills/provocation",
+        "./skills/random-stimulus",
+        "./skills/scamper",
+        "./skills/six-hats",
+        "./skills/worst-idea"
+      ]
+    },
+    {
+      "name": "zord-addyosmani",
+      "source": "./",
+      "strict": false,
+      "description": "Vendored copies of addyosmani/agent-skills (MIT, prefixed addyosmani-) plus addy-code, the workflow that drives them.",
+      "author": {
+        "name": "z0rd0n88"
+      },
+      "homepage": "https://github.com/z0rd0n88/my-skills",
+      "skills": [
+        "./skills/addy-code",
+        "./skills/addyosmani-api-and-interface-design",
+        "./skills/addyosmani-browser-testing-with-devtools",
+        "./skills/addyosmani-ci-cd-and-automation",
+        "./skills/addyosmani-code-review-and-quality",
+        "./skills/addyosmani-code-simplification",
+        "./skills/addyosmani-constraint-driven-development",
+        "./skills/addyosmani-context-engineering",
+        "./skills/addyosmani-debugging-and-error-recovery",
+        "./skills/addyosmani-deprecation-and-migration",
+        "./skills/addyosmani-documentation-and-adrs",
+        "./skills/addyosmani-doubt-driven-development",
+        "./skills/addyosmani-frontend-ui-engineering",
+        "./skills/addyosmani-git-workflow-and-versioning",
+        "./skills/addyosmani-idea-refine",
+        "./skills/addyosmani-incremental-implementation",
+        "./skills/addyosmani-interview-me",
+        "./skills/addyosmani-observability-and-instrumentation",
+        "./skills/addyosmani-performance-optimization",
+        "./skills/addyosmani-planning-and-task-breakdown",
+        "./skills/addyosmani-security-and-hardening",
+        "./skills/addyosmani-shipping-and-launch",
+        "./skills/addyosmani-source-driven-development",
+        "./skills/addyosmani-spec-driven-development",
+        "./skills/addyosmani-test-driven-development",
+        "./skills/addyosmani-using-agent-skills"
+      ]
+    },
+    {
+      "name": "zord-mattpocock",
+      "source": "./",
+      "strict": false,
+      "description": "Vendored copies of mattpocock/skills at c55ee46 (MIT, prefixed mattpocock-).",
+      "author": {
+        "name": "z0rd0n88"
+      },
+      "homepage": "https://github.com/z0rd0n88/my-skills",
+      "skills": [
+        "./skills/mattpocock-codebase-design",
+        "./skills/mattpocock-domain-modeling",
+        "./skills/mattpocock-git-guardrails-claude-code",
+        "./skills/mattpocock-grilling",
+        "./skills/mattpocock-improve-codebase-architecture",
+        "./skills/mattpocock-prototype",
+        "./skills/mattpocock-research",
+        "./skills/mattpocock-wizard",
+        "./skills/mattpocock-writing-for-agents"
+      ]
+    }
+  ]
+}

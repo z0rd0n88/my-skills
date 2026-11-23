@@ -61,7 +61,7 @@ No checkout for a repo means skip it and say so in the summary. Never clone a re
    gate passes on the final tree. When the gate can't run (no JDK, no Docker, no Flutter SDK),
    push no code commits and say so in the comment. Never skip a test, loosen an assertion, or
    pass `--no-verify` to get through the gate.
-4. **One writer at a time on a branch.** Run `zord-multi-agent-review` only with
+4. **One writer at a time on a branch.** Run `multi-agent-review` only with
    `--no-loop --no-comment`. Its own fix loop would push on top of this skill's fix passes.
 5. **REST, not GraphQL.** In cloud sessions `gh pr …` and `gh issue …` fail with a 403. Use
    `gh api repos/{owner}/{repo}/…` (and the GitHub MCP tools when a REST write is refused).
@@ -73,7 +73,7 @@ No checkout for a repo means skip it and say so in the summary. Never clone a re
    (a user-scope `nested-fanout-guard` hook blocks it on some machines, and subagent-of-subagent
    dispatch is not guaranteed anywhere). And a gate can outlast a subagent: its foreground Bash
    stops at 600 s and its background tasks die when it returns. The skills may still spawn their
-   own agents (`dw-review`'s lanes, thermo-nuclear's reviewers, `zord-multi-agent-review`'s
+   own agents (`dw-review`'s lanes, thermo-nuclear's reviewers, `multi-agent-review`'s
    orchestrator); that is one layer down from here, which they are built for.
 
 ## Step 1 — candidates
@@ -122,8 +122,8 @@ Take the **first** class that matches. Each row lists everything that runs on th
 
 | # | Class | Rule | Main review | Quality review | Blast radius | Fix passes (push) |
 |---|---|---|---|---|---|---|
-| 1 | Spec / design doc | Every changed file is Markdown under `docs/`, or named like `*spec*`, `*prd*`, `*design*`, `adr*`, **and** none is an instruction file | `zord-reasoned-review` on the changed docs | — | — | `babysit`, `unslop`, `make-pr-easy-to-review` |
-| 2 | Large | More than 40 files, or more than 1500 changed lines | `zord-multi-agent-review pr <N> --no-loop --no-comment --adversarial` | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
+| 1 | Spec / design doc | Every changed file is Markdown under `docs/`, or named like `*spec*`, `*prd*`, `*design*`, `adr*`, **and** none is an instruction file | `reasoned-review` on the changed docs | — | — | `babysit`, `unslop`, `make-pr-easy-to-review` |
+| 2 | Large | More than 40 files, or more than 1500 changed lines | `multi-agent-review pr <N> --no-loop --no-comment --adversarial` | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
 | 3 | VBE code | Repo is `VistaMarkets/vbe` | `vista-dw-review pr <N>` | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
 | 4 | Flutter code | Repo is `VistaMarkets/vfe` | `dw-review pr <N>`, plus Step 4b | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |
 | 5 | Code in another repo | Named as the target, and the repo is not in the Repos table | `code-review` on the PR | `thermo-nuclear-code-quality-review` | `blast-radius` | `babysit`, `deslop`, `make-pr-easy-to-review` |

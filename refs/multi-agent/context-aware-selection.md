@@ -1,6 +1,6 @@
 # Context-Aware Default Selection
 
-Selection algorithm for the `zord-multi-agent-review` reviewer roster. Used
+Selection algorithm for the `multi-agent-review` reviewer roster. Used
 **only when no explicit `--reviewers` roster is supplied**. Upgrades the "Default Roster
 Selection" hierarchy in [`agent-catalog-lookup.md`](agent-catalog-lookup.md)
 from a fixed baseline→overlay→lens list into a signal-driven, lane-diverse
@@ -113,7 +113,7 @@ CAP     = review: soft 6 per slice     build: hard 4  (== --max-agents, [1,4])
 
 **Review-only lanes: `L-REDTEAM` and `L-EXPLORE`.** Neither may appear in a build team, **regardless of which mechanism activated or forced it** — signal, risk flag, repo `FORCE:` line, or a `CLAUDE.md`/ADR invariant. This is a property of the lane class, not of any one trigger, and stating it that way is the whole point: attaching the restriction to the risk-flag trigger alone leaks, because the repo-invariant path (§4 source 3) and a bare `FORCE:` line in a per-repo `## LANE MAP` are both unqualified as to which lanes they may name. Either would otherwise drop an attacker-mindset or exploration agent into a 4-slot build team.
 
-1. **Build teams never include a review-only lane.** Drop it during assembly whenever the team type is build, even when explicitly forced, and record the drop. An attacker pass belongs to review, not construction; so does spec-vs-reality tracing. A repo that genuinely wants red-teaming around a build should run `zord-multi-agent-review` on the result, which is where the lane lives.
+1. **Build teams never include a review-only lane.** Drop it during assembly whenever the team type is build, even when explicitly forced, and record the drop. An attacker pass belongs to review, not construction; so does spec-vs-reality tracing. A repo that genuinely wants red-teaming around a build should run `multi-agent-review` on the result, which is where the lane lives.
 
 Rule 2 below applies to `L-REDTEAM` only — `L-EXPLORE` is not FORCED-eligible by any keyword trigger, so the cap-overflow ordering question does not arise for it.
 2. **`L-REDTEAM` yields first when FORCED exceeds CAP — but only while the team still holds another security lane.** Check the condition, do not assume it:

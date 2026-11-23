@@ -1,6 +1,6 @@
 ---
 name: daily-loop
-description: "Session-start routing table (auto-triggered): feature → addy-code; returning → recall; 3+ steps → planning-with-files; pre-merge → zord-multi-agent-review pr <ref> --yes."
+description: "Session-start routing table (auto-triggered): feature → addy-code; returning → recall; 3+ steps → planning-with-files; pre-merge → pr-review-router on the open PR."
 ---
 
 # Daily Loop — Workflow Routing Table
@@ -38,11 +38,11 @@ doesn't need.
 
 | Situation | Required skill chain |
 |-----------|----------------------|
-| New feature or new functionality | `addy-code` (interview → plan on disk → context pack → thin slices with `addyosmani-test-driven-development` → review loop → draft PR). A heavier workflow (`zord-multi-agent-developer`, `zord-code-rinse-repeat`, `baton-runner`, `big-next-job`, `build-lil-things`) only when the user names it or the brief calls for it |
+| New feature or new functionality | `addy-code` (interview → plan on disk → context pack → thin slices with `addyosmani-test-driven-development` → review loop → draft PR). A heavier workflow (`multi-agent-developer`, `code-rinse-repeat`, `baton-runner`, `big-next-job`, `build-lil-things`) only when the user names it or the brief calls for it |
 | Returning to in-progress work | `mempalace_search` the palace (deeper: `mempalace-recall`), then `memory/MEMORY.md` and the latest `~/.claude/session-data/` summary, then resume |
 | Any task with 3+ tool calls or steps | `planning-with-files` (create task_plan.md before touching code) |
 | Create or edit a skill | the Skill authoring chain in `~/.claude/rules/common/skill-discipline.md`, ending with `skill-sheriff-cc` on the skill before commit |
-| Pre-merge / pre-PR | `zord-multi-agent-review pr <ref> --yes` as the quality gate before opening a PR |
+| Pre-merge | `pr-review-router <owner>/<repo> <N>` on the open PR as the quality gate, run in the main session (a subagent has no `Workflow` or `Agent` tool, so the review skills cannot start their reviewers there): it skips a head it already reviewed, picks the review from what the diff touches, and its `babysit` pass handles failing CI and review comments |
 | Stuck / uncertain which approach | stuck → `lateral` (diagnoses the symptom, picks the technique); choosing between approaches → `ThinkTime:idea-panel` (parallel mental-model lenses, ranked) |
 
 ## Brainstorm Routing
@@ -57,7 +57,7 @@ doesn't need.
 
 1. **Never skip scoping for anything that is not a trivial bugfix.** "Let me just start" → use `addyosmani-interview-me` first (addy-code step 0), then `addyosmani-spec-driven-development` for a feature.
 2. **Never skip plans for multi-step work.** 3+ steps → `planning-with-files` before the first edit.
-3. **Never merge without a review.** Feature branch → `zord-multi-agent-review pr <ref> --yes` before opening PR.
+3. **Never merge without a review.** Open the PR, then review it with `pr-review-router <owner>/<repo> <N>`; add `--no-push` to review without pushing fix commits. Run it in the main session, never in a subagent.
 4. **Returning work → recall first.** Search the palace (`mempalace_search`; `mempalace_kg_query` for who/when facts), then `memory/MEMORY.md` and the latest `session-data/` entry, before asking what was last done. Quote what is stored; nothing there → say so.
 5. **Stuck → `lateral`, approach choice → `ThinkTime:idea-panel`; never a thinking lens at random.** `lateral` diagnoses the symptom and picks the technique; `idea-panel` runs the mental-model lenses in parallel and ranks the result.
 6. **Delegate for breadth, never to check your own work.** Spawn subagents for large, genuinely independent, parallelisable tracks. Do not spawn one to verify, re-check, or second-guess work you just did — that is the current model's default behaviour already, and paying an agent for it buys a second opinion on your own reasoning rather than a new one.
@@ -76,10 +76,6 @@ or a bug is fixed without fresh output in the transcript showing it. That is an
 honesty rule about what you say, and it is unaffected — what changed is that it
 is no longer a ritual step in a chain, because a chain step is exactly the shape
 that gets performed rather than meant.
-
-Rule 3 also stays as written. One review pass at PR time is correct and cheap;
-it only ever looked excessive because two adversary layers used to run beneath
-it, and refutation is opt-in now.
 
 ## Precision Principle
 

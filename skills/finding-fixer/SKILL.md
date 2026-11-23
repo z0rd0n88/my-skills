@@ -94,8 +94,12 @@ mistake here costs a relaunch rather than a bad edit.
 | `groups` | findings batched by what decides them, each with `label`, `findings` and `sources` | Drives how many adjudicators run |
 
 The findings text is not a top-level input. It lives on each group as `groups[].findings`, which
-is where the adjudicator reads it from. Give every finding a stable id there (`F1`, `F2`, ...) so
-verdicts can be matched back and reported.
+is where the adjudicator reads it from. Give every finding a stable id there (`F1`, `F2`, ...), the
+repo-wide format in `refs/severity-scale.md`, so
+verdicts can be matched back and reported. A review that used older labels
+(`C1`/`H1`, Blocker/Should-fix/Minor, Nit) is renumbered `F1`... and its levels mapped with the
+table in that file before grouping; keep each finding's reported level as written (CRITICAL /
+HIGH / MEDIUM / LOW) and print it with its action in the final report.
 
 `houseRules` is the input people skip, and it is the one that prevents the worst edits. Pull it
 from `CLAUDE.md`, the ADRs, the style rules in the file header. State the decided things as

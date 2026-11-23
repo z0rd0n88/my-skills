@@ -99,7 +99,9 @@ PENDING say so in one line (`not merge-ready: <n> open questions pending`). In
 the record the author replaces each PENDING with `ANSWERED - <one
 sentence>[, <commit>]`, `FILED - #<issue>`, or `DECLINED - <one sentence why it
 does not apply>`; the PR merges and its issue closes only when none is PENDING,
-and a FILED issue carries that remainder. Distinguish a before-merge blocker
+and a FILED issue carries that remainder. Label findings with the scale in
+`refs/severity-scale.md` (CRITICAL / HIGH / MEDIUM / LOW, each shown with its
+action, ids F1, F2, ...). Distinguish a before-merge blocker
 from a follow-up issue, especially for irreversible changes. Findings must
 point to actionable lines in the reviewed diff.
 

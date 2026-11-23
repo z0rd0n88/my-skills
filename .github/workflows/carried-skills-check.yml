@@ -1,0 +1,20 @@
+name: carried-skills-check
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'scripts/check-carried-skills.sh'
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'scripts/check-carried-skills.sh'
+
+jobs:
+  check:
+    name: carried skills have -h/--help and stay under the size ceiling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/check-carried-skills.sh

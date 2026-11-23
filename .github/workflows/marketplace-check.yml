@@ -1,0 +1,26 @@
+name: marketplace-check
+
+on:
+  pull_request:
+    paths:
+      - 'skills/**'
+      - 'commands/**'
+      - 'refs/commands/**'
+      - '.claude-plugin/**'
+      - 'scripts/check-marketplace.sh'
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'commands/**'
+      - 'refs/commands/**'
+      - '.claude-plugin/**'
+      - 'scripts/check-marketplace.sh'
+
+jobs:
+  check:
+    name: every skill is in exactly one plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/check-marketplace.sh

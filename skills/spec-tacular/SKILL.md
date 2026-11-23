@@ -22,7 +22,7 @@ specification with decision records and acceptance criteria, and a
 verification-and-handoff gate. Reach for it instead of writing a plan by hand
 when the deliverable needs `path:line`-grounded citations, decision records,
 and acceptance criteria a downstream builder skill (`baton-runner`,
-`zord-multi-agent-developer`, `zord-code-rinse-repeat`) can execute without follow-up
+`multi-agent-developer`, `code-rinse-repeat`) can execute without follow-up
 questions — not for evaluating an existing proposal or generating candidate
 ideas, which are separate skills.
 
@@ -74,7 +74,7 @@ than plausible-sounding.
    question. Give your professional recommendation, the reasoning, and the full
    option set. Prefer `AskUserQuestion` when the options are crisp.
 5. **Write for the machine too.** The finished spec is fed to `baton-runner`,
-   `zord-multi-agent-developer`, or `zord-code-rinse-repeat`. Meet
+   `multi-agent-developer`, or `code-rinse-repeat`. Meet
    [`references/handoff-contract.md`](references/handoff-contract.md) — it is a
    hard requirement, not a nicety.
 

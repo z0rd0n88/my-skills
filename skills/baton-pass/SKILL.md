@@ -94,7 +94,7 @@ Long sessions go stale.
 Timestamp filenames replace the old `NNN` sequential counter. Lexicographic
 sort on `YYYY-MM-DDTHHMMSS` is chronological sort, so `ls` ordering is
 preserved with no per-directory counter to compute or race on — this is
-what makes concurrent writers (e.g. `/zord-baton-runner-multi-agent` writing
+what makes concurrent writers (e.g. `/baton-runner-multi-agent` writing
 several entries in parallel) safe: each writer's own wall-clock timestamp
 is independent, unlike a shared `max + 1` counter that two writers can read
 identically and then collide on.
@@ -134,7 +134,7 @@ top of the file (see [Templates](#templates)):
 - **`source`** — `human` if a person invoked this skill directly in an
   interactive turn this session (typed a trigger phrase, ran the skill
   themselves). `runner` if the invocation came from an automated
-  multi-phase runner (`/baton-runner`, `/zord-baton-runner-multi-agent`, or
+  multi-phase runner (`/baton-runner`, `/baton-runner-multi-agent`, or
   similar) acting on a queue without direct human interaction this turn.
   When in doubt, check whether the current call stack traces back to a
   runner skill's work-unit loop rather than a raw user message — if so,

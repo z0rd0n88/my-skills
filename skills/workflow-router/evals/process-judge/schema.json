@@ -1,0 +1,8 @@
+{"type":"object","additionalProperties":false,
+ "required":["evidence","reasoning","workflow","then","open"],
+ "properties":{
+  "evidence":{"type":"string"},
+  "reasoning":{"type":"string"},
+  "workflow":{"type":"string","enum":["incident_response","code_review","debugging","bug_fix","spike","onboarding","dependency_upgrade","migration","refactor","feature_implementation","tdd_ralph","none"]},
+  "then":{"type":["string","null"],"enum":["incident_response","code_review","debugging","bug_fix","spike","onboarding","dependency_upgrade","migration","refactor","feature_implementation","tdd_ralph",null]},
+  "open":{"type":["string","null"]}}}

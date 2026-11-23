@@ -190,6 +190,8 @@ Label every comment with its severity so the author knows what's required vs opt
 
 This prevents authors from treating all feedback as mandatory and wasting time on optional suggestions.
 
+> **In this repo:** findings use the shared scale in `refs/severity-scale.md`. Map these prefixes as Critical → CRITICAL (fix now), no prefix → HIGH (fix before merge), Optional/Consider → MEDIUM (fix when convenient) or LOW (optional), Nit → LOW (optional), FYI → a note, not a finding.
+
 **Lead with what matters.** Order findings by leverage: correctness and security first, then structural regressions and missed simplifications, then everything else. Don't bury a real issue under cosmetic nits — a few high-conviction comments beat a long list. If you have one structural problem and ten nits, the structural problem *is* the review.
 
 ### Step 5: Verify the Verification
