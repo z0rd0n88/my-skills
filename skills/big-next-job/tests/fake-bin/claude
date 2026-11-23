@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Stand-in for `claude` in tests/run-job.sh. run-job starts it as
+`claude --settings <dir>/settings.json '<prompt>'` with JOB_DIR and JOB_CHILD set.
+What child N does is word N of the file named by FAKE_PLAN:
+
+  finish      set `status: done` in checkpoint.md, fire Stop
+  progress    append a line to checkpoint.md, fire Stop
+  noop        fire Stop without touching checkpoint.md
+  crash       exit 3 at once, no hook
+  exit75      exit 75 (claude's usage-limit exit), no hook
+  overloaded  fire StopFailure with error "overloaded"
+  rate_limit  fire StopFailure with error "rate_limit"
+  hang        never finish its turn
+  badjson     append progress, fire Stop with a payload that is not JSON
+  truststart  show the trust dialog text at once, wait up to 5 s for keys, then progress
+  trustlate   work 2.5 s, then show the trust dialog text, wait 2.5 s, then progress
+
+After its turn it idles at its "prompt" like claude does. Any keys typed into the pane are appended
+to $JOB_DIR/keys-<N>, so a test can tell whether run-job typed into a child."""
+import json
+import os
+import re
+import select
+import subprocess
+import sys
+import time
+
+args = sys.argv[1:]
+hooks = json.load(open(args[args.index("--settings") + 1]))["hooks"]
+job, n = os.environ["JOB_DIR"], int(os.environ["JOB_CHILD"])
+plan = open(os.environ["FAKE_PLAN"]).read().split()
+mode = plan[n - 1] if n <= len(plan) else "finish"
+checkpoint = os.path.join(job, "checkpoint.md")
+
+
+def fire(kind, payload):
+    cmd = hooks[kind][0]["hooks"][0]["command"]
+    subprocess.run(cmd, shell=True, input=payload, text=True, check=False)
+
+
+def event(msg, **extra):
+    return json.dumps({"session_id": f"fake-{n}", "transcript_path": "/dev/null",
+                       "last_assistant_message": msg, **extra})
+
+
+def progress():
+    with open(checkpoint, "a") as f:
+        f.write(f"\nprogress by child {n}\n")
+
+
+def idle(seconds=None, until_keys=False):
+    end = time.time() + seconds if seconds else None
+    while end is None or time.time() < end:
+        if select.select([sys.stdin], [], [], 0.2)[0]:
+            data = os.read(0, 1024)
+            if not data:
+                return
+            with open(os.path.join(job, f"keys-{n}"), "ab") as f:
+                f.write(data)
+            if until_keys:
+                return
+
+
+print(f"fake child {n}: {mode}", flush=True)
+# What this child sees of the runner's environment, so a test can tell whose environment it got.
+with open(os.path.join(job, f"env-{n}"), "w") as f:
+    f.write(os.environ.get("RUNJOB_PROBE", ""))
+time.sleep(float(os.environ.get("FAKE_DELAY", "0.3")))
+if mode == "finish":
+    text = open(checkpoint).read()
+    open(checkpoint, "w").write(re.sub(r"(?m)^status:.*$", "status: done", text, count=1))
+    fire("Stop", event("job finished"))
+elif mode == "progress":
+    progress(); fire("Stop", event("made progress"))
+elif mode == "noop":
+    fire("Stop", event("did nothing"))
+elif mode == "crash":
+    sys.exit(3)
+elif mode == "exit75":
+    sys.exit(75)
+elif mode in ("overloaded", "rate_limit"):
+    fire("StopFailure", event("", error=mode))
+elif mode == "badjson":
+    progress(); fire("Stop", "this is not json")
+elif mode == "truststart":
+    print("Do you trust the files in this folder?\n> Yes, I trust this folder", flush=True)
+    idle(5, until_keys=True); progress(); fire("Stop", event("trust answered"))
+elif mode == "trustlate":
+    time.sleep(2.5)
+    print("Reading run-job: ... grep -q 'Yes, I trust this folder' ...", flush=True)
+    idle(2.5); progress(); fire("Stop", event("trust text shown late"))
+idle()
