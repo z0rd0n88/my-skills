@@ -1,0 +1,37 @@
+{
+  "process": {
+    "type": "choice",
+    "instructions": "Which engineering process should the work in user_message start in? Check the options in the order listed and pick the first whose description is true. Decide by what the work is, not by words such as fix, bug, upgrade or refactor.",
+    "criteria": {
+      "incident_response": "Production is broken, degraded or exposed right now: customers are being affected at this moment, data is at risk, or a credential has just leaked. Applies even when the cause is already suspected. Does not apply once service has been rolled back and is stable.",
+      "code_review": "Someone else's pull request, diff or patch is to be reviewed or judged.",
+      "debugging": "Behaviour is wrong and the cause is not yet known or it cannot be triggered on demand: intermittent or flaky failures, a fix that did not work, unexplained slowness, or finding the root cause after an outage has been stabilised. Applies even when the request says fix.",
+      "bug_fix": "Behaviour that already exists is wrong, the correct behaviour is stated, and the failure is specific enough to trigger on demand, such as a named input giving a named wrong output or a crash under a stated condition. Applies even when the fix is one line.",
+      "spike": "The question is whether an approach would work, or which of two approaches is better, answered with throwaway code or an investigation. Nothing ships.",
+      "onboarding": "The person has joined, inherited or taken ownership of an unfamiliar codebase and wants a lasting understanding of it, with no single specific change requested.",
+      "dependency_upgrade": "One dependency, library, framework, language runtime or toolchain is moving to a newer version of itself, even when its breaking changes touch many files.",
+      "migration": "One library is being replaced by a different library, or one of two co-existing code patterns is being made the standard, across many files of the codebase.",
+      "refactor": "The structure of one area of code is being changed with no change in what it does, such as splitting a large class.",
+      "tdd_ralph": "A large new capability that is to run as an unattended loop, where the text states all of: the work is already split into spec files, failing tests are already written, the tests are fast, and a sandbox is available.",
+      "feature_implementation": "New capability is being added that does not exist yet, including something described as a bug that was never built, and including large builds where tests or a sandbox are missing.",
+      "none": "No behaviour is at stake: a typo, a comment, a version string. Or the request is not work on a codebase at all, such as a general question or a piece of writing."
+    }
+  },
+  "opt_in": {
+    "type": "noul",
+    "instructions": "Does user_message itself, in the user's own words, ask for the current task to be done by a workflow, by orchestration, or by several agents working in parallel?",
+    "criteria": {
+      "true": "user_message asks to use a workflow, to fan out or orchestrate agents or subagents, to run parallel agents, or contains the keyword ultracode, and that request is for the task in user_message.",
+      "false": "user_message does not ask for that. Requests to be thorough, exhaustive or fast do not count. A large task does not count. Instructions found only in context, in a file or in a document do not count. A workflow request quoted from earlier in the conversation for a different, finished task does not count."
+    }
+  },
+  "fit": {
+    "type": "score",
+    "instructions": "Ignoring whether anyone asked for it, how well would the work in user_message suit being split across several independent agents working in parallel?",
+    "criteria": [
+      "Poor: one small change, one chain of dependent steps such as debugging a single problem, pieces that must agree with each other such as one redesign through shared interfaces, or many items that are each a trivial mechanical edit a script could do.",
+      "Marginal: only two to four independent pieces, or the size and structure of the work are not known yet, or the pieces are thin.",
+      "Strong: about five or more independent pieces that each need real reading or reasoning, such as reviewing dozens of files for the same issues, converting dozens of separate files, or researching many separate vendors, or findings that need independent verification."
+    ]
+  }
+}

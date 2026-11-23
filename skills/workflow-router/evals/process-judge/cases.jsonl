@@ -1,0 +1,27 @@
+{"id":"incident-down","expect":"incident_response","task":"Checkout has been returning 500s for every user since the deploy ten minutes ago. Help."}
+{"id":"incident-cause-suspected","expect":"incident_response","task":"Customers are being double-charged right now. We think it's the retry logic in the payment webhook handler."}
+{"id":"incident-leaked-key","expect":"incident_response","task":"I just noticed an AWS access key was committed to our public repo an hour ago."}
+{"id":"post-incident-cause","expect":"debugging","task":"Prod went down this morning; we rolled back and it has been stable since. Now work out why the new release leaked database connections."}
+{"id":"review-pr","expect":"code_review","task":"Can you look over PR 482 from Dana before I approve it?"}
+{"id":"flaky-test","expect":"debugging","task":"Fix the test suite: test_sync_orders fails about one run in thirty."}
+{"id":"fix-didnt-fix","expect":"debugging","task":"We shipped the memory leak fix last week but the worker's memory still climbs until it is killed."}
+{"id":"slow-dashboard","expect":"debugging","task":"The dashboard takes 12 seconds to load and nobody knows why. Nothing obvious changed."}
+{"id":"bug-specific","expect":"bug_fix","task":"parse_duration('90m') returns 90 instead of 5400. 'm' should mean minutes."}
+{"id":"bug-not-urgent","expect":"bug_fix","task":"The admin CSV export writes dates as MM/DD/YYYY but the spec says ISO 8601. It has been like that for months and nobody is blocked; fix it when you can."}
+{"id":"bug-never-built","expect":"feature_implementation","task":"It's a bug that users can't export reports to PDF. We need PDF export with the same filters and page layout options as the print view.","context":"The codebase has no PDF export code; only CSV export exists."}
+{"id":"spike-viability","expect":"spike","task":"Can Postgres full-text search replace our Elasticsearch cluster? I need to know before we plan next quarter."}
+{"id":"spike-compare","expect":"spike","task":"Prototype offline sync two ways, CRDTs and last-write-wins, so we can pick one. Nothing here ships."}
+{"id":"onboarding-inherit","expect":"onboarding","task":"I've just inherited the billing service from a team that left the company and I'll own it from now on. Help me get my bearings."}
+{"id":"new-but-one-change","expect":"feature_implementation","task":"I'm new to this codebase. I need to add rate limiting to the public API, with per-plan limits and an admin override."}
+{"id":"dep-upgrade","expect":"dependency_upgrade","task":"Bump React from 17 to 19."}
+{"id":"migration-library","expect":"migration","task":"Move every call from Moment.js to date-fns.","context":"Moment is imported in about 180 files."}
+{"id":"migration-standardise","expect":"migration","task":"Refactor the handlers: half use callbacks and half use async/await. Standardise on async/await everywhere.","context":"There are about 120 handler files across six services."}
+{"id":"refactor-split","expect":"refactor","task":"OrderService is 2,000 lines. Split it into smaller classes without changing what it does."}
+{"id":"feature","expect":"feature_implementation","task":"Add CSV export to the reports page, with column selection and scheduled email delivery."}
+{"id":"tdd-ralph","expect":"tdd_ralph","task":"Build the invoicing module from the 40 spec files in specs/invoicing. Let it run unattended.","context":"The team has written failing tests for every spec. The suite runs in 20 seconds and is deterministic. The work will run in the disposable sandbox container, which holds no credentials."}
+{"id":"big-feature-no-sandbox","expect":"feature_implementation","task":"Build the invoicing module from the 40 spec files in specs/invoicing.","context":"No tests exist yet. The work would run on the developer's laptop."}
+{"id":"none-typo","expect":"none","task":"Fix the typo in the README title, it says 'Instalation'."}
+{"id":"none-version","expect":"none","task":"Bump the version string in package.json to 2.4.1 for the release."}
+{"id":"none-not-code","expect":"none","task":"Explain the difference between a mutex and a semaphore."}
+{"id":"upgrade-wide-breakage","expect":"dependency_upgrade","task":"Upgrade us to Django 5.","context":"Django 5 removes pytz support, and pytz is used directly in about 200 files."}
+{"id":"one-line-bug","expect":"bug_fix","task":"The header crashes with 'Cannot read properties of undefined' whenever a user has no profile. It should show 'Guest' instead. It's just a missing null check on user.profile.name in header.tsx."}
