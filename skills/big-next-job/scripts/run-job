@@ -17,7 +17,8 @@
 #         JOB_LIMIT_BACKOFF=1800      wait after a rate limit (or claude exit 75) before the next child
 #         JOB_TRUST_SECONDS=60        answer a child's trust dialog only this long after it starts
 #         JOB_SESSION=job-<name>      tmux session name;  JOB_KEEP_WINDOWS=1 leaves finished children open
-# Watch:  tmux -L run-job-<name> attach -t job-<name>   (each job has its own tmux server)
+# Watch:  the attach command run-job prints (tmux -L run-job-<name>-<hash> attach -t job-<name>);
+#         each job has its own tmux server
 # `session-airspace` can hold a child (held time does not count toward JOB_CHILD_TIMEOUT).
 # Child numbers continue across runs ($JOB/child-count).
 # Exit:   0 done · 1 error (bad input, or another run-job drives this job) · 3 blocked (needs the owner)
@@ -35,7 +36,11 @@ JOB="$(cd "$1" && pwd)" || die "no job dir $1"
 WORKDIR="$(cd "${2:-$(dirname "$JOB")}" && pwd)" || die "no workdir ${2:-}"
 NAME="$(basename "$WORKDIR")"; NAME="${NAME//[^A-Za-z0-9_-]/_}"   # tmux socket/session-safe
 SESSION="${JOB_SESSION:-job-$NAME}"
-SOCK="run-job-$NAME"   # this job's own tmux server: tmux -L run-job-<name>
+# The job dir, not the workdir name, identifies the job: two jobs in ~/a/api and ~/b/api (or in one
+# workdir) must never share a tmux server, or starting one kills the other's child. The lock uses the
+# same hash, so "one runner per job" and "one server per job" agree.
+JOB_HASH="$(printf '%s' "$JOB" | sha256sum | cut -c1-16)"
+SOCK="run-job-${NAME:0:40}-${JOB_HASH:0:8}"   # tmux -L run-job-<name>-<hash>; short enough for a socket path
 LOG="$JOB/run.log"
 
 # Numbers: whole, at most 9 digits, no leading zero (bash reads 010 as 8 and 08 as an error).
@@ -61,7 +66,7 @@ pid_start() { local st; st="$(cat "/proc/$1/stat" 2>/dev/null)" || return 0; rea
 
 # --- One runner per job. Two would launch children into the same checkpoint and kill each other's
 # windows. The lock holds this run's pid and start time; a dead or reused pid is stale and taken over.
-LOCK="${XDG_RUNTIME_DIR:-/tmp}/run-job-$(printf '%s' "$JOB" | sha256sum | cut -c1-16).lock"
+LOCK="${XDG_RUNTIME_DIR:-/tmp}/run-job-$JOB_HASH.lock"
 LOCK_ME="$$ $(pid_start $$)"
 if ! (set -o noclobber; echo "$LOCK_ME" > "$LOCK") 2>/dev/null; then
   { read -r lpid lstart < "$LOCK"; } 2>/dev/null || true
@@ -123,7 +128,8 @@ launch() {
   # The command after claude keeps the pane's shell as claude's parent (tmux would SIGCONT a held
   # pane process at once, so session-airspace could never hold it) and records claude's exit status.
   WIN=$(tmux -L "$SOCK" new-window -dP -F '#{pane_id}' -t "$SESSION" -n "child-$n" -c "$WORKDIR" -e JOB_DIR="$JOB" -e JOB_CHILD="$n" \
-        "claude ${CLAUDE_FLAGS:-} --settings $DIR/settings.json $q; echo \$? > $DIR/exit")
+        "claude ${CLAUDE_FLAGS:-} --settings $DIR/settings.json $q; echo \$? > $DIR/exit") \
+    || { log "child $n could not be launched: tmux server $SOCK is gone (killed from outside?); stopping"; exit 1; }
   PANE=$(tmux -L "$SOCK" display -p -t "$WIN" '#{pane_pid}' 2>/dev/null || true)
   log "child $n launched  window=$SESSION:child-$n  (watch: tmux -L $SOCK attach -t $SESSION)"
 }

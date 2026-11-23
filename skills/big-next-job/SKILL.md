@@ -131,8 +131,9 @@ drive a job at a time (a second exits 1), and stopping it closes its child.
 
 Then tell the owner, in this order: the phase table with the first phase's "will happen" list;
 `tail -f <worktree>/.big-next-job/run.log` for the chain's log and each child's closing summary;
-`tmux -L run-job-<worktree-name> attach -t job-<worktree-name>` to watch a child in a terminal
-(each job runs on its own tmux server); `<skill-dir>/scripts/run-job status <worktree>/.big-next-job`
+the `tmux -L run-job-<name>-<hash> attach -t job-<name>` command from the `child N launched` line
+of `run.log` to watch a child in a terminal (each job runs on its own tmux server, named after the
+job dir so two jobs never share one); `<skill-dir>/scripts/run-job status <worktree>/.big-next-job`
 for the current phase and next action. If `session-relay` and `session-airspace`
 (z0rd0n88/session-stickler) are on PATH and list run-job children, also mention `session-relay list`
 (works from Claude Desktop) and, when several jobs run at once, `session-airspace guard` in a spare

@@ -14,7 +14,7 @@ unset TMUX CLAUDE_FLAGS
 pass=0; fail=0
 ok()  { echo "  ok   $1"; pass=$((pass + 1)); }
 bad() { echo "  FAIL $1"; fail=$((fail + 1)); }
-# every job gets its own tmux server (tmux -L run-job-<name>); stop them all
+# every job gets its own tmux server (tmux -L run-job-<name>-<hash>); stop them all
 cleanup() { local s; for s in "$TMUX_TMPDIR"/tmux-*/*; do tmux -S "$s" kill-server 2>/dev/null; done; rm -rf "$WORK"; }
 trap cleanup EXIT
 
@@ -33,6 +33,9 @@ run() {
   SECS=$((SECONDS - t0))
 }
 has() { grep -q -- "$1" "$J/run.log"; }
+# sock: the tmux server name run-job logged for $J
+sock_of() { sed -n 's/.*(watch: tmux -L \([^ ]*\) attach.*/\1/p' "$1/run.log" | head -1; }
+sock() { sock_of "$J"; }
 
 echo "finishing"
 job finish finish; run
@@ -78,11 +81,24 @@ job trustlate trustlate finish; run JOB_TRUST_SECONDS=2
 
 echo "each job has its own tmux server, with this run's environment"
 job envcheck finish; run
-tmux -L run-job-envcheck has-session 2>/dev/null && bad "server left running after the job" || ok "its tmux server is gone after the job"
+[ -n "$(sock)" ] && ! tmux -L "$(sock)" has-session 2>/dev/null && ok "its tmux server is gone after the job" || bad "server $(sock) left running, or no server name logged"
 job 'odd name.x' hang; FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 "$RUNJOB" "$J" > "$J/out1" 2>&1 & bg=$!
 for _ in $(seq 1 50); do has "child 1 launched" 2>/dev/null && break; sleep 0.2; done
-tmux -L run-job-odd_name_x has-session -t job-odd_name_x 2>/dev/null && ok "server and session are named run-job-<name> / job-<name>, odd characters as _" || bad "server name ($(ls "$TMUX_TMPDIR"/tmux-*/))"
+[[ $(sock) =~ ^run-job-odd_name_x-[0-9a-f]{8}$ ]] && tmux -L "$(sock)" has-session -t job-odd_name_x 2>/dev/null && ok "server and session are named run-job-<name>-<hash> / job-<name>, odd characters as _" || bad "server name ($(sock); $(ls "$TMUX_TMPDIR"/tmux-*/))"
 kill -TERM "$bg"; wait "$bg" 2>/dev/null
+
+echo "two jobs whose workdirs share a name do not touch each other"
+job one/api hang; A="$J"
+FAKE_PLAN="$A/plan" JOB_CHILD_TIMEOUT=60 "$RUNJOB" "$A" > "$A/out1" 2>&1 & first=$!
+for _ in $(seq 1 50); do grep -q "child 1 launched" "$A/run.log" 2>/dev/null && break; sleep 0.2; done
+job two/api finish; run
+[ "$RC" = 0 ] && ok "the second job (two/api) finished (exit 0)" || bad "second job (rc $RC)"
+J="$A"
+[ "$(sock)" != "$(sock_of "$WORK/two/api/.big-next-job")" ] && ok "each got its own tmux server" || bad "shared server $(sock)"
+sleep 2   # run-job notices a dead child within two polls
+! has "exited without finishing\|timed out" && tmux -L "$(sock)" list-windows -t job-api 2>/dev/null | grep -q child-1 \
+  && ok "the first job's child is still running" || bad "first job's child was disturbed: $(grep -v '^fake' "$A/run.log" | tail -3)"
+kill -TERM "$first"; wait "$first" 2>/dev/null
 
 echo "one runner per job, and stopping it closes the child"
 job lock hang; FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 "$RUNJOB" "$J" > "$J/out1" 2>&1 & first=$!
@@ -91,7 +107,7 @@ run
 [ "$RC" = 1 ] && grep -q "already drives" "$J/out" && ok "a second run-job on the same job is refused" || bad "lock (rc $RC)"
 kill -TERM "$first"; wait "$first"; rc1=$?
 [ "$rc1" = 143 ] && ok "TERM stops run-job (exit 143)" || bad "TERM exit (rc $rc1)"
-tmux -L run-job-lock list-windows -a 2>/dev/null | grep -q 'child-' && bad "child window left behind" || ok "its child and tmux server are closed"
+tmux -L "$(sock)" list-windows -a 2>/dev/null | grep -q 'child-' && bad "child window left behind" || ok "its child and tmux server are closed"
 ls "$XDG_RUNTIME_DIR"/run-job-*.lock >/dev/null 2>&1 && bad "lock file left behind" || ok "its lock is removed"
 
 echo
