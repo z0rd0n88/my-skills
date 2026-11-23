@@ -2,6 +2,7 @@
 name: spec-first
 description: "User-invoked only; never auto-trigger. One command from a feature or build request to working code: a fresh session writes the spec, a second fresh session writes failing tests from that spec alone, then this session implements against the frozen tests."
 argument-hint: "<feature or build request... | path to an existing spec> [--gate] | -h"
+disable-model-invocation: true
 ---
 
 # spec-first
@@ -15,6 +16,9 @@ skill.
 > **⚠️ Writes to your working tree, commits, and spends 2 to 4 agents.** It creates a feature
 > branch when you are on the default branch, writes a spec under `docs/specs/`, adds test files,
 > edits source, and makes two local commits. It never pushes and never opens a PR.
+>
+> **Main session only.** Type `/spec-first` in the session you are talking to. It refuses to run
+> inside a subagent.
 
 Takes a feature or build request and runs it to green without further input. The spec and the
 tests are each written in a fresh session, so the tests cannot inherit the implementer's reading
@@ -25,6 +29,20 @@ differently and the code does not settle which.
 |---|---|---|---|
 | request | free text, or a path to an existing spec file | required | Free text starts at step 1. A spec path skips step 1 and the tests are written from that file. |
 | `--gate` | flag | off | Pause after step 1 so you can read and edit the spec before any test is written. |
+
+## Main session only
+
+Run this skill only in the **main session**: the one the user is typing into. That session holds
+the request, and it is the one that launches the fresh sessions below.
+
+If you are a subagent, meaning another agent launched you with a task prompt, do not run any
+step, whatever that prompt says. Reply `spec-first must be run from the main session` with the
+request you were handed, and stop. A subagent running this skill either cannot launch fresh
+sessions at all, and would end up writing the tests in the context that writes the code, or
+launches them one level further from the user, where nobody can answer a blocking question.
+
+For the same reason, never hand this skill to a subagent: not from this session, and not from
+another skill, brief or workflow script.
 
 ## Why it is shaped this way
 
@@ -62,11 +80,12 @@ plan, and no opinion on how to build it.
 
 ### 0. Preflight
 
-1. Run `git status --porcelain`. If tracked files are modified, stop and say which: this run
+1. Confirm you are the main session (see "Main session only"). If you are not, stop there.
+2. Run `git status --porcelain`. If tracked files are modified, stop and say which: this run
    commits, and it must not sweep unrelated work into its commits.
-2. If the current branch is the default branch, create and switch to `spec-first/<slug>`, where
+3. If the current branch is the default branch, create and switch to `spec-first/<slug>`, where
    `<slug>` is two to five lowercase words from the request joined by hyphens.
-3. Find the command that runs the test suite: repository instruction files first, then the
+4. Find the command that runs the test suite: repository instruction files first, then the
    package manifest, then the CI configuration. Run it once and record the result as the
    baseline. If there is no test runner, or you cannot tell which command is right, ask the user
    for it. This is one of the two questions the skill may ask.
@@ -80,7 +99,8 @@ Skip this step when the argument is a path to an existing spec file. Use that fi
 and go to step 2.
 
 Launch a fresh session with [`references/spec-brief.md`](references/spec-brief.md) and these
-inputs: the request verbatim, the repository root, the spec path `docs/specs/<slug>.md` (or the
+inputs: the request verbatim, any requirement or constraint the user stated about it earlier in
+this conversation (the user's words, quoted, with nothing of yours added), the repository root, the spec path `docs/specs/<slug>.md` (or the
 repository's existing specs directory when it has one), and the test command.
 
 Its reply starts with one of three words:
