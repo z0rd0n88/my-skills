@@ -14,6 +14,9 @@ means three different things, so the router has three lanes:
 | **Orchestration** | How to spread a step across many agents when it is too big for one context | [references/agent-orchestration.md](references/agent-orchestration.md) |
 | **Durable** | How application code runs a multi-step process on a workflow engine | [references/durable-workflows.md](references/durable-workflows.md) |
 
+[references/catalog.md](references/catalog.md) lists all 42 named choices across the lanes on one
+page, for looking a name up.
+
 Routing takes seconds. Do it, say the route in a line, then read only the reference section for
 the workflow you picked. A change with no behaviour at stake (a typo, a comment, a version
 string) needs no workflow: say so and make it. The kind of work picks the workflow, not the size
