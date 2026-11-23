@@ -400,7 +400,7 @@ Phase base branch (for diff): <base-branch>.
    The manager runs the full profile itself later — do NOT run it, and do not
    background anything.
 
-2. Do NOT run /dw-review, /finding-fixer, /zord-multi-agent-review, or the Workflow
+2. Do NOT run /dw-review, /finding-fixer, /multi-agent-review, or the Workflow
    tool. Both the multi-lane review and the fix pass are the manager's steps,
    and Workflow is blocked inside a subagent. Your review is the gate plus
    step 3.

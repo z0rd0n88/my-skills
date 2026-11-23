@@ -9,8 +9,8 @@ the spec is `READY` on arrival instead of being kicked back.
 | Consumer | Invocation | What it does with the spec |
 |---|---|---|
 | `baton-runner` | `/baton-runner` with the spec's phase list | Splits it into phases, classifies each `READY` / `THIN` / `BLOCKED`, then runs implement → review → fix per phase |
-| `zord-multi-agent-developer` | `zord-multi-agent-developer file <spec-path>` | Feeds the spec verbatim to its explorer and synthesizer; specialist briefs carry it as a compressed TARGET block (code blocks and identifiers preserved verbatim) |
-| `zord-code-rinse-repeat` | `zord-code-rinse-repeat <spec-path>` | Builds it, then runs a round-1 conformance pre-pass: every acceptance criterion → PASS / FAIL / AMBIGUOUS with `file:line` evidence |
+| `multi-agent-developer` | `multi-agent-developer file <spec-path>` | Feeds the spec verbatim to its explorer and synthesizer; specialist briefs carry it as a compressed TARGET block (code blocks and identifiers preserved verbatim) |
+| `code-rinse-repeat` | `code-rinse-repeat <spec-path>` | Builds it, then runs a round-1 conformance pre-pass: every acceptance criterion → PASS / FAIL / AMBIGUOUS with `file:line` evidence |
 | `superpowers:writing-plans` | invoked with the spec | Expands each phase into typed, TDD-stepped tasks with literal test code |
 
 ## Where this spec stops
@@ -122,7 +122,7 @@ End the run by telling the user the spec path and the command that consumes it:
 
 ```
 docs/specs/<slug>.md is ready.
-Build it:  /zord-code-rinse-repeat docs/specs/<slug>.md
+Build it:  /code-rinse-repeat docs/specs/<slug>.md
 Or phase-by-phase:  /baton-runner  (phases 1-N from §7)
 ```
 

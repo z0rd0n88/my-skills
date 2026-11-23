@@ -25,12 +25,12 @@
         "./skills/finding-fixer-codex",
         "./skills/pr-review-router",
         "./skills/skill-sheriff-cc",
-        "./skills/zord-multi-agent-review",
-        "./skills/zord-multi-agent-review-codex",
-        "./skills/zord-reasoned-review",
-        "./skills/zord-reasoned-review-codex",
-        "./skills/zord-total-review",
-        "./skills/zord-total-review-scaffold"
+        "./skills/multi-agent-review",
+        "./skills/multi-agent-review-codex",
+        "./skills/reasoned-review",
+        "./skills/reasoned-review-codex",
+        "./skills/total-review",
+        "./skills/total-review-scaffold"
       ],
       "commands": "./refs/commands"
     },
@@ -72,8 +72,8 @@
         "./skills/workflow-router",
         "./skills/wrapup-specs",
         "./skills/zoom-out",
-        "./skills/zord-baton-runner",
-        "./skills/zord-teammate-handoff"
+        "./skills/baton-runner",
+        "./skills/teammate-handoff"
       ]
     },
     {

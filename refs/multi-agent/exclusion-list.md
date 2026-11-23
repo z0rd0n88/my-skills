@@ -1,6 +1,6 @@
 # Exclusion-list discipline
 
-Shared primitive for any review skill that runs against a codebase with an existing issue tracker. Prevents reviewers from re-flagging findings already captured in open issues. Cited by `zord-total-review`, `zord-multi-agent-review`.
+Shared primitive for any review skill that runs against a codebase with an existing issue tracker. Prevents reviewers from re-flagging findings already captured in open issues. Cited by `total-review`, `multi-agent-review`.
 
 The single highest-leverage technique against duplicate-finding noise in recurring multi-agent review. Validated in practice: across a multi-pass review run on a real Python application, follow-up passes adding `python-pro`, `security-reviewer`, and `silent-failure-hunter` lenses re-flagged nothing already tracked from the prior pass — proof the discipline holds when reviewer rosters rotate.
 
@@ -57,4 +57,4 @@ This heading is part of the contract — reviewer briefs MUST match this exact t
 
 ## Cross-skill use
 
-For non-recurring reviews (`zord-multi-agent-review`), the exclusion list is project-defined and passed via `--prompt-prelude <path>`. For recurring sweeps (`zord-total-review`), the list is fetched fresh from `config.tracker.exclusion_query` each run. Both forms feed the same heading; the dedupe contract doesn't care which source produced the list.
+For non-recurring reviews (`multi-agent-review`), the exclusion list is project-defined and passed via `--prompt-prelude <path>`. For recurring sweeps (`total-review`), the list is fetched fresh from `config.tracker.exclusion_query` each run. Both forms feed the same heading; the dedupe contract doesn't care which source produced the list.

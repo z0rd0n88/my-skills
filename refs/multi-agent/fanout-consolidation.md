@@ -1,6 +1,6 @@
 # Parallel fan-out and consolidation
 
-Shared primitive for any skill that runs N reviewer/specialist agents in parallel and merges their reports. Cited by `zord-total-review`, `zord-multi-agent-review`.
+Shared primitive for any skill that runs N reviewer/specialist agents in parallel and merges their reports. Cited by `total-review`, `multi-agent-review`.
 
 ## Fan-out contract
 
@@ -15,7 +15,7 @@ Reviewer reports almost always overlap. Without these rules the synthesized outp
 
 1. **Dedupe by `(file, line, root cause)`.** If two lenses raise the same call site for the same reason, merge bodies and keep both perspectives in one entry. Never list twice.
 2. **Severity tiebreak: pick higher.** When two lenses disagree on severity for the same finding, take the higher one.
-3. **Cross-axis severity budget.** After dedupe, cap total HIGH at `min(declared_cap, ceil(N_lenses * 1.5))`. Rank by impact (CRITICAL-adjacent > correctness > maintainability > style; ties broken by distinct-lens count); keep the top, demote the rest to MEDIUM with an inline `_(demoted from HIGH by severity budget; <reason>)_` note. CRITICAL never demotes; LOW never promotes. Prevents N lenses each finding "one HIGH" → N blockers. Set `declared_cap` per skill; `zord-total-review` defaults to 8, `zord-multi-agent-review` defaults to 8 via `--high-cap <n>`. **Off-switch is mandatory.** When the synthesized output feeds a downstream gate that decides on CRITICAL+HIGH counts (e.g. `zord-baton-runner-multi-agent` per-phase `VERDICT`), the caller MUST be able to set `declared_cap = off` to skip the demotion step entirely — silently demoting under a gate produces false-CLEAN. Wrappers expose this as a flag (`zord-multi-agent-review`: `--high-cap off`); per-phase gating callers pass it.
+3. **Cross-axis severity budget.** After dedupe, cap total HIGH at `min(declared_cap, ceil(N_lenses * 1.5))`. Rank by impact (CRITICAL-adjacent > correctness > maintainability > style; ties broken by distinct-lens count); keep the top, demote the rest to MEDIUM with an inline `_(demoted from HIGH by severity budget; <reason>)_` note. CRITICAL never demotes; LOW never promotes. Prevents N lenses each finding "one HIGH" → N blockers. Set `declared_cap` per skill; `total-review` defaults to 8, `multi-agent-review` defaults to 8 via `--high-cap <n>`. **Off-switch is mandatory.** When the synthesized output feeds a downstream gate that decides on CRITICAL+HIGH counts (e.g. `baton-runner-multi-agent` per-phase `VERDICT`), the caller MUST be able to set `declared_cap = off` to skip the demotion step entirely — silently demoting under a gate produces false-CLEAN. Wrappers expose this as a flag (`multi-agent-review`: `--high-cap off`); per-phase gating callers pass it.
 4. **Theme grouping for HIGH.** Group HIGH items by theme (e.g. *atomicity*, *boundary leak*, *money math*, *typing*). Themes drive PR-slicing suggestions.
 5. **Drop excluded findings silently.** Anything matching the injected exclusion list is dropped without comment. Do not re-report; do not log "skipped".
 6. **Verdict.** `BLOCK` if any CRITICAL. `WARN` if no CRITICAL but ≥1 HIGH after the budget cap. `INFO` otherwise. One-line rationale at top of the synthesized report.
@@ -31,4 +31,4 @@ Default synthesizer: `code-architect` (for build pipelines) or `knowledge-synthe
 - **Word-budget overrun.** Re-prompt with a stricter cap or split the target. Never silently truncate.
 - **One reviewer returns garbage / refuses.** Consolidate without it; surface in the report's *Source of findings* block. Don't retry inline — that doubles cost on a flaky lens.
 - **Synthesizer disagrees with all reviewers on severity.** Reviewer severity wins on individual findings; synthesizer wins on cross-axis bucketing only. Don't let the synthesizer downgrade a reviewer's CRITICAL.
-- **More reviewers than budget allows.** Cut by lens × target affinity (see `zord-total-review`'s slice/lens matrix); do not run the whole roster at reduced cap.
+- **More reviewers than budget allows.** Cut by lens × target affinity (see `total-review`'s slice/lens matrix); do not run the whole roster at reduced cap.

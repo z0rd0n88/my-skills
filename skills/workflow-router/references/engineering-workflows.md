@@ -358,7 +358,7 @@ linter should catch; approving without reading; a hostile tone.
 
 **Carry out with:** `addyosmani-code-review-and-quality` by default. Use another only on its
 condition: `pr-review-router` when the PR is in a repo it covers; `dw-review` when the user asks
-for a multi-agent review; `zord-multi-agent-review` when they ask for a review that loops
+for a multi-agent review; `multi-agent-review` when they ask for a review that loops
 review → fix until clean. Post comments only after the user confirms.
 
 ---
