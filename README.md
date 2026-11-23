@@ -9,7 +9,7 @@ The repo is also a plugin marketplace named `my-skills` (`.claude-plugin/marketp
 | Plugin | Skills |
 |---|---|
 | `zord-review` | 16: the `zord-*` review skills, `dw-review`, `finding-fixer`, `pr-review-router`, `code-cleaver`, `audit-numeric-types`, `ci-parity-run`, `skill-sheriff-cc`, `drift-status-check`, plus the `zord-total-review-init` command |
-| `zord-workflow` | 28: build runners, batons and handoffs, branch and PR wrap-up, specs and weekly wrap-ups, session and cloud-environment helpers, writing modes (`chiquita`, `bro-*`, `i-have-adhd`, `vista-improve-prompt`) and tools (`vercel-*`, `rekordbox-add`) |
+| `zord-workflow` | 30: `workflow-router`, build runners, spec-to-test development, batons and handoffs, branch and PR wrap-up, specs and weekly wrap-ups, session and cloud-environment helpers, writing modes (`chiquita`, `bro-*`, `i-have-adhd`, `vista-improve-prompt`) and tools (`vercel-*`, `rekordbox-add`) |
 | `zord-lateral` | 9: `lateral` and its eight thinking techniques |
 | `zord-addyosmani` | 26: the vendored `addyosmani-*` skills and `addy-code` |
 | `zord-mattpocock` | 9: the vendored `mattpocock-*` skills |
