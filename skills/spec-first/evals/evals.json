@@ -1,0 +1,61 @@
+[
+  {
+    "skills": [
+      "spec-first"
+    ],
+    "query": "Copy evals/fixtures/tablekit to <workdir>/tablekit, run `git init` there and commit every file. Then, in that repository: /spec-first Add a max_width keyword argument to render_table. When it is given, any cell longer than max_width characters is cut to its first max_width - 1 characters followed by the single character U+2026, before column widths are worked out. max_width=None, the default, changes nothing. A max_width below 2 raises ValueError.",
+    "files": [
+      "evals/fixtures/tablekit/README.md",
+      "evals/fixtures/tablekit/tablekit/__init__.py",
+      "evals/fixtures/tablekit/tablekit/render.py",
+      "evals/fixtures/tablekit/tests/test_render.py"
+    ],
+    "expected_behavior": [
+      "Launches one fresh session to write the spec and a second, different fresh session to write the tests, and writes neither in the main session",
+      "The prompt given to the test writer contains the spec path, the repository root and the test command, and does not contain the request text",
+      "A spec file exists under docs/specs/ in which every behaviour has a B id, a new or existing label and an example with literal values",
+      "The new tests fail before any source file is edited, and the spec and tests are committed together before the implementation",
+      "The run ends with `python -m pytest -q` passing and `git diff --quiet <freeze point> -- <frozen set>` exiting 0",
+      "Leaves exactly two new commits on a branch other than the default branch and pushes nothing",
+      "The final report lists the spec's assumptions, or says there were none"
+    ]
+  },
+  {
+    "skills": [
+      "spec-first"
+    ],
+    "query": "Copy evals/fixtures/tablekit to <workdir>/tablekit, run `git init` there and commit every file. Then, in that repository: /spec-first Tables with Japanese text in them come out misaligned in my terminal, the columns don't line up. Please fix.",
+    "files": [
+      "evals/fixtures/tablekit/README.md",
+      "evals/fixtures/tablekit/tablekit/__init__.py",
+      "evals/fixtures/tablekit/tablekit/render.py",
+      "evals/fixtures/tablekit/tests/test_render.py"
+    ],
+    "expected_behavior": [
+      "The spec measures a cell in terminal columns, with Japanese kanji and kana counting as two columns each, not in characters",
+      "At least one new test renders a table containing Japanese text and fails on the unfixed code with an assertion error",
+      "After the run, `render_table([['日本', 'x'], ['abcdef', 'y']])` returns '| 日本   | x |\\n| abcdef | y |'",
+      "The existing three tests in tests/test_render.py still pass and are unchanged",
+      "The frozen test files are byte-identical to the freeze point commit, or differ only by a commit named `Amend disputed test ...`",
+      "The final report states the assumptions the spec made, such as how ambiguous-width characters are counted"
+    ]
+  },
+  {
+    "skills": [
+      "spec-first"
+    ],
+    "query": "Copy evals/fixtures/tablekit to <workdir>/tablekit, run `git init` there and commit every file. Then, in that repository: /spec-first Reword the first sentence of the README so it sounds friendlier.",
+    "files": [
+      "evals/fixtures/tablekit/README.md",
+      "evals/fixtures/tablekit/tablekit/__init__.py",
+      "evals/fixtures/tablekit/tablekit/render.py",
+      "evals/fixtures/tablekit/tests/test_render.py"
+    ],
+    "expected_behavior": [
+      "The spec session replies NOT-SPECABLE, or the run otherwise stops before any test is written",
+      "No test file is created and no commit is made",
+      "Tells the user why the request has no behaviour a test can observe",
+      "Offers to do the rewording without this skill instead of doing it silently or refusing outright"
+    ]
+  }
+]

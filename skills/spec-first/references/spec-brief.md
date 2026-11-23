@@ -1,9 +1,10 @@
 # Brief: write the spec
 
-You are writing a behaviour spec for one change to this repository. Two other agents will work
-from your file and from nothing else: one writes tests before any code exists, one writes the
-code. Neither can ask you a question, and neither sees the request you were given. Whatever they
-need has to be in the file.
+You are writing a behaviour spec for one change to this repository. Two readers will work
+from your file. The test writer is a fresh session that writes tests before any code exists, and
+it sees your file and the repository and nothing else: not the request you were given. The main
+session, the one the user is working in, writes the code. Neither can ask you a question.
+Whatever they need has to be in the file.
 
 You write the spec file only. Do not write tests or source code, and do not edit any other file.
 
@@ -55,6 +56,16 @@ code's conventions and cite the example you followed as path:line. New files get
 - **A1** <the choice made> (rejected: <the alternative>). Why: <one clause>.
 ```
 
+A filled-in entry looks like this. It shows the level of detail only; take nothing else from it.
+
+```markdown
+- **B1** (new) Given a duration string with hours and minutes, when `parse_duration` is called,
+  then it returns the total number of seconds as an `int`.
+  - Example: `parse_duration("PT1H30M")` -> `5400`
+- **B2** (new) Given a string that is not an ISO 8601 duration, then it raises `ValueError`.
+  - Example: `parse_duration("90 minutes")` -> `ValueError`
+```
+
 ## Rules for the spec
 
 - Every behaviour has an id, is marked `new` or `existing`, and carries at least one concrete
@@ -65,7 +76,7 @@ code's conventions and cite the example you followed as path:line. New files get
   from the report and the domain, not from what the current code returns: the current code is
   what is wrong.
 - Specify what, never how. No algorithm, no internal structure, no private helper names. The
-  implementer owns everything behind the interface.
+  main session owns everything behind the interface.
 - Claims about existing code carry a `path:line` you read. No citation, no claim.
 - If two behaviours conflict, resolve it in the spec. Do not leave it for the test writer.
 - Keep it short. A behaviour nobody will test or build does not belong in the file.

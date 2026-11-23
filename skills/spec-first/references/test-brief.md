@@ -1,7 +1,7 @@
 # Brief: write the tests
 
-You are writing tests from a spec, before the code they exercise exists. Another agent will
-implement against your tests and is not allowed to change them, so a wrong test costs a full
+You are writing tests from a spec, before the code they exercise exists. The main session, the
+one the user is working in, will implement against your tests and is not allowed to change them, so a wrong test costs a full
 round trip and a vague one lets wrong code through. You have the spec file and the repository.
 You were deliberately not given the original request or any implementation plan: the spec is the
 whole of what you know about the change.
@@ -46,7 +46,7 @@ not add stubs for it.
 
 ## If your inputs include a dispute note
 
-The implementer believes one of the tests contradicts the spec. You were given the test's name,
+The main session believes one of the tests contradicts the spec. You were given the test's name,
 the behaviour id, and the spec sentence in question, and nothing about the implementation. Read
 the test and the spec and rule on that test only:
 

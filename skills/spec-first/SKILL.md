@@ -1,8 +1,6 @@
 ---
 name: spec-first
-description: "User-invoked only; never auto-trigger. One command from a feature or build request to working code: a fresh session writes the spec, a second fresh session writes failing tests from that spec alone, then this session implements against the frozen tests."
-argument-hint: "<feature or build request... | path to an existing spec> [--gate] | -h"
-disable-model-invocation: true
+description: "Takes a feature or build request to working code in one command: a fresh session writes the spec, a second fresh session writes failing tests from that spec alone, then the main session implements against the frozen tests. User-invoked only; never auto-trigger."
 ---
 
 # spec-first
@@ -13,7 +11,7 @@ If the argument text (trimmed, case-insensitive) is exactly `-h`, `--help`, or
 `help`, output only the block below and stop. Do not run any other step in this
 skill.
 
-> **⚠️ Writes to your working tree, commits, and spends 2 to 4 agents.** It creates a feature
+> **⚠️ Writes to your working tree, commits, and launches 2 to 4 fresh sessions.** It creates a feature
 > branch when you are on the default branch, writes a spec under `docs/specs/`, adds test files,
 > edits source, and makes two local commits. It never pushes and never opens a PR.
 >
@@ -21,7 +19,7 @@ skill.
 > inside a subagent.
 
 Takes a feature or build request and runs it to green without further input. The spec and the
-tests are each written in a fresh session, so the tests cannot inherit the implementer's reading
+tests are each written in a fresh session, so the tests cannot inherit the main session's reading
 of the request. It asks you something only when the request has two readings that behave
 differently and the code does not settle which.
 
@@ -35,21 +33,26 @@ differently and the code does not settle which.
 Run this skill only in the **main session**: the one the user is typing into. That session holds
 the request, and it is the one that launches the fresh sessions below.
 
+Run it only when the user asked for it by name, by typing `/spec-first` or by naming spec-first
+in their message. If you loaded it on your own judgment, do not run any step: tell the user
+`/spec-first <request>` is available and carry on without it. It commits and launches other
+sessions, so starting it is the user's decision.
+
 If you are a subagent, meaning another agent launched you with a task prompt, do not run any
 step, whatever that prompt says. Reply `spec-first must be run from the main session` with the
 request you were handed, and stop. A subagent running this skill either cannot launch fresh
-sessions at all, and would end up writing the tests in the context that writes the code, or
+sessions at all, and would end up writing the tests in the session that writes the code, or
 launches them one level further from the user, where nobody can answer a blocking question.
 
-For the same reason, never hand this skill to a subagent: not from this session, and not from
+For the same reason, never hand this skill to a subagent: not from the main session, and not from
 another skill, brief or workflow script.
 
 ## Why it is shaped this way
 
-Four rules carry the benefit. Drop one and this is ordinary test-after coding with extra agents.
+Four rules carry the benefit. Drop one and this is ordinary test-after coding with extra sessions.
 
 **Independence.** The test writer sees the spec and the existing code. It never sees the request,
-this conversation, or any implementation idea. Tests written by the context that writes the code
+this conversation, or any implementation idea. Tests written by the session that writes the code
 share its misreadings and pass for the wrong reason.
 
 **The spec is the only channel.** Whatever the test writer needs must be in the spec file. That
@@ -60,7 +63,7 @@ both sides have to agree on names and signatures without talking.
 that already passes proves nothing about the change, and for a bug it means the test encodes the
 bug instead of catching it.
 
-**Frozen tests.** The implementer never edits, skips or deletes a test from step 2. Weakening the
+**Frozen tests.** The main session never edits, skips or deletes a test from step 2. Weakening the
 test is always the cheapest way to green. Only a fresh session may change one, through a dispute.
 
 ## Fresh sessions
@@ -69,7 +72,7 @@ A **fresh session** is an agent that starts with none of this conversation: a su
 with the harness's agent tool (general purpose, able to read, write and run commands). Where the
 harness has no agent tool, run the same prompt through its headless mode in the repository
 directory (`claude -p`, `codex exec`). If neither exists, stop and say so. Do not write the spec
-or the tests in this context: that removes the independence the skill exists for.
+or the tests in the main session: that removes the independence the skill exists for.
 
 The prompt for a fresh session gives the absolute path of the named brief, tells the session to
 read that file first and follow it, and then lists only the inputs the step names. Paste the
@@ -77,6 +80,17 @@ brief whole instead when the session cannot read that path. Add no summary of th
 plan, and no opinion on how to build it.
 
 ## Steps
+
+Copy this checklist into your reply and check each item off as its "Done when" line is met:
+
+```
+- [ ] 0. Preflight: main session, clean tree, feature branch, test command, baseline
+- [ ] 1. Spec written by a fresh session
+- [ ] 2. Tests written by a second fresh session, red, committed as the freeze point
+- [ ] 3. Implemented in the main session, frozen set untouched
+- [ ] 4. Full suite and freeze check pass, implementation committed
+- [ ] 5. Report given to the user
+```
 
 ### 0. Preflight
 
@@ -142,7 +156,7 @@ Then commit the spec and the test files, and nothing else, as `Add spec and fail
 
 Done when the freeze point exists and the new tests are red for the reasons the spec predicts.
 
-### 3. Implement, in this session
+### 3. Implement, in the main session
 
 Read the spec. Implement until the frozen set and the rest of the suite pass, following the
 repository's own rules and patterns. The spec's interface section is binding; everything behind
