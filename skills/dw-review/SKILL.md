@@ -331,9 +331,9 @@ For every finding, open the file and run the check yourself:
 - REFUTED - misread code, the guard they say is missing exists elsewhere, the failure path
   cannot occur, or the claim is about code outside this diff.
 - CONFIRMED - you reproduced the reasoning against the tree.
-Then re-rank. CRITICAL = security hole or data loss. HIGH = a real bug, OR any defect in
-something that freezes at merge, OR a control that refuses to record a legitimate failure.
-MEDIUM = maintainability. LOW = style. Demote anything speculative. Merge duplicates that
+Then re-rank. CRITICAL (fix now) = security hole or data loss. HIGH (fix before merge) = a real
+bug, OR any defect in something that freezes at merge, OR a control that refuses to record a
+legitimate failure. MEDIUM (fix when convenient) = maintainability. LOW (optional) = style. Demote anything speculative. Merge duplicates that
 different lenses found from different angles, keeping the sharpest failure path.
 
 Finally: spot-check two or three of the reviewers' own "verified as correct" claims - pick the
@@ -342,7 +342,8 @@ because it is what a reader stops checking. Then merge the DECLARED RESIDUAL RIS
 \`residualRisk\`, deduped, in each lane's own words - do not substitute your own coverage estimate.
 
 Give a verdict: APPROVE / MERGE-WITH-FIXES / BLOCK, and split survivors into
-must-fix-before-merge (anything permanent) and can-fix-after.
+must-fix-before-merge (anything permanent) and can-fix-after. Number survivors F1, F2, ... in one
+sequence, CRITICAL first.
 
 OPEN QUESTIONS: each lane also returned questions only the author can answer. For each one,
 try to settle it from the tree: ANSWERED when the code or docs decide it (cite what you read),

@@ -342,7 +342,7 @@ Review pull request PR of {{owner}}/{{repo}}. Read only; do not edit, stage or c
 2. Run `git diff origin/{{default branch}}...HEAD` for the diff. That is the whole piece; ignore anything outside it.
 3. Read {{the repo's rules files and the design doc row for this piece}}.
 
-Report every finding as: file:line, severity (CRITICAL / HIGH / MEDIUM / LOW), what is wrong, what you would change. Check especially: {{the job's own risk list}}. Say explicitly which claims in the PR body you verified and which you could not. Report everything you find; do not filter by severity.
+Report every finding as: an id (F1, F2, ...), file:line, severity spelled out with its action (CRITICAL (fix now) / HIGH (fix before merge) / MEDIUM (fix when convenient) / LOW (optional)), what is wrong, what you would change. Check especially: {{the job's own risk list}}. Say explicitly which claims in the PR body you verified and which you could not. Report everything you find; do not filter by severity.
 ```
 
 Replace `PR` before pasting.

@@ -5,7 +5,7 @@ Shared primitive for any skill that runs N reviewer/specialist agents in paralle
 ## Fan-out contract
 
 1. **One message, N `Agent` tool calls.** Parallel = same assistant turn. Sequential turns serialize at the harness level. Hard cap 16 per turn; batch into two turns if you exceed it.
-2. **Self-contained briefs.** Each agent prompt MUST carry: target materials (paths or excerpts), severity rubric, project invariants, any exclusion-list (see [`exclusion-list.md`](exclusion-list.md)), and the word cap. Reviewers don't share state; assume each one sees only its brief.
+2. **Self-contained briefs.** Each agent prompt MUST carry: target materials (paths or excerpts), severity rubric (the four levels in [`../severity-scale.md`](../severity-scale.md)), project invariants, any exclusion-list (see [`exclusion-list.md`](exclusion-list.md)), and the word cap. Reviewers don't share state; assume each one sees only its brief.
 3. **Word cap per agent.** Always set one. Without a cap, reviewers pad. Typical caps: 700 (diff-only), 900 (cleanup), 1000 (tests/perf), 1100–1300 (security/architecture). Hard ceiling: 1500.
 4. **Model uniformity.** Pick one model for the whole roster (typically `opus`). Mixing models on the same fan-out skews severity calibration.
 

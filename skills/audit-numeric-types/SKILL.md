@@ -113,12 +113,13 @@ Severity is mechanical, not judgement:
 
 | Condition | Severity |
 |---|---|
-| Any hit under `order/`, `submit/`, `sign/`, `sor/`, `fee/` | CRITICAL — forces FAIL |
-| Hit on a value reaching a price/qty/fee/balance field elsewhere | HIGH |
-| Hit in test/fixture/telemetry code with no path to a financial value | MEDIUM |
+| Any hit under `order/`, `submit/`, `sign/`, `sor/`, `fee/` | CRITICAL (fix now) — forces FAIL |
+| Hit on a value reaching a price/qty/fee/balance field elsewhere | HIGH (fix before merge) |
+| Hit in test/fixture/telemetry code with no path to a financial value | MEDIUM (fix when convenient) |
 | Match on a clearly non-financial value (see heuristics) | Not reported |
 
-`PASS` requires zero CRITICAL **and** zero HIGH. Any CRITICAL → FAIL. Zero CRITICAL with HIGH present → FAIL, HIGH list is the blocking set. MEDIUM alone → PASS with the list attached as advisory.
+`PASS` requires zero CRITICAL **and** zero HIGH. Any CRITICAL → FAIL. Zero CRITICAL with HIGH present → FAIL, HIGH list is the blocking set. MEDIUM alone → PASS with the list attached as advisory. The levels are the repo-wide scale in
+`refs/severity-scale.md`; this audit has no LOW, because a match too minor for MEDIUM is not reported.
 
 Close every FAIL with the minimum set of changes required to reach PASS.
 

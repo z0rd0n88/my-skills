@@ -139,10 +139,11 @@ STALE and re-establish the snapshot before claiming current coverage.
 2. **Give identical evidence.** Send every reviewer the target identity,
    snapshot, originating issue/spec when known, prelude, repository rules,
    assigned lens, and severity rubric. Require stable finding IDs, file/line
-   evidence, a reachable failure scenario, and a proposed change. Use CRITICAL
-   for imminent/irreversible serious failure, HIGH for a broken contract or
-   safety invariant, MEDIUM for a narrower material defect, LOW for minor
-   issues. Request all supported severities. Keep critical-thinking questions
+   evidence, a reachable failure scenario, and a proposed change. Use the
+   scale in `refs/severity-scale.md`: CRITICAL (fix now) for imminent or
+   irreversible serious failure, HIGH (fix before merge) for a broken contract
+   or safety invariant, MEDIUM (fix when convenient) for a narrower material
+   defect, LOW (optional) for minor issues. Ids are F1, F2, ... Request all supported severities. Keep critical-thinking questions
    separate; they are not claims to refute.
 3. **Dispatch and collect.** Fill available concurrency slots with independent
    work, then dispatch remaining slots as capacity frees. Wait for every

@@ -56,7 +56,10 @@ command that exercises the changed path and at least one valid input through it.
 
 ## 1. Adjudicate without writing
 
-Keep the user's full set of finding IDs; assign IDs to unlabeled findings. Group findings by the code or decision
+Keep the user's full set of finding IDs; assign IDs to unlabeled findings
+(`F1`, `F2`, ..., the format in `refs/severity-scale.md`). Map older labels
+(`C1`/`H1`, Blocker/Should-fix/Minor, Nit) with that file's table, and show each
+level with its action in the final report. Group findings by the code or decision
 that settles them, usually two to four groups, rather than by severity. Give
 each group to a read-only Codex subagent; dispatch independent groups in
 parallel up to the available slots, then wait for *every* result before editing.

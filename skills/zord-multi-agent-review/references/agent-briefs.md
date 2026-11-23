@@ -82,11 +82,11 @@ You are strictly read-only: do not call Edit, Write, or NotebookEdit, and do not
 # ordinary code-quality findings.
 
 ## SEVERITY SCALE
-Use these levels for every finding (EXCEPT if you are critical-thinking — see below):
-- CRITICAL: Security vulnerability, data loss risk, or correctness bug that breaks the contract.
-- HIGH: Significant bug, design flaw, or maintainability issue that should block merge.
-- MEDIUM: Quality concern that should be addressed but does not block.
-- LOW: Style, minor suggestion, or nit.
+Use these levels for every finding (EXCEPT if you are critical-thinking — see below). They are the repo-wide scale in `refs/severity-scale.md`; use no other labels.
+- CRITICAL (fix now): Security hole, data loss or corruption, irreversible harm, or a broken contract that fails real users.
+- HIGH (fix before merge): A real bug, a broken invariant or safety rule, or a design flaw that is hard to undo once merged.
+- MEDIUM (fix when convenient): A maintainability problem or narrow defect that does not block merge.
+- LOW (optional): Style, naming, wording, or a small suggestion.
 
 If you are the `critical-thinking` reviewer: do NOT use this scale. Instead, return a list of unstated assumptions, missing context, decisions made without justification, and questions the author should answer before proceeding.
 
@@ -622,13 +622,15 @@ Produce a single markdown report with EXACTLY this structure and these section h
 
 **Apply the refutation outcomes before rendering any section below.** A DROPPED finding does not appear in its original severity bucket; a CONTESTED finding appears one level down with its tag; UPHELD and UNVERIFIED findings keep their severity and carry their tag. Severity tags from §5A.5a step 4 are rendered inline on the finding, not stripped.
 
-## Critical Findings
+Number every finding in the report `F1`, `F2`, ... in one sequence, CRITICAL first, and render each Critical/High finding under a heading that starts with its level and action, then its id: `### HIGH (fix before merge) · F3 — <title>`. Medium/Low table rows carry the id in the Title cell (`F9 — <title>`). The format is defined in `refs/severity-scale.md`; never use a bare severity letter.
+
+## Critical Findings (fix now)
 Every CRITICAL-severity finding from any severity-using reviewer. Deduplicate when two reviewers raised the same issue (note both reviewer names). Each finding: title, location, description, suggested fix, attribution (which reviewer(s) raised it). For `slices` targets, also tag each finding with its slice label so cross-slice patterns are visible at a glance.
 
-## High Findings
+## High Findings (fix before merge)
 Same format as Critical, for HIGH-severity findings. **The severity budget below operates on refutation survivors only** — DROPPED groups are already gone and CONTESTED ones already demoted before the budget is computed, so a run that refutes heavily may never reach the cap at all. **Apply the cross-axis severity budget** from `refs/multi-agent/fanout-consolidation.md` before rendering this section, UNLESS `{{HIGH_CAP}}` is `off` (in which case skip this whole paragraph and render every HIGH as-is — used when a downstream pipeline gates on HIGH count and silent demotion would be wrong). When the budget is active: `high_cap = min({{HIGH_CAP}}, ceil(N_reviewers * 1.5))` where `N_reviewers = {{N_REVIEWERS}}`. If post-dedupe HIGH findings exceed `high_cap`, rank by impact (CRITICAL-adjacent > correctness > maintainability > style; ties broken by the number of distinct reviewers that raised the finding), keep the top `high_cap` as HIGH, **and demote the rest to MEDIUM** with the suffix `_(demoted from HIGH by severity budget; <reason>)_` on each demoted entry. CRITICAL is never demoted; LOW is never promoted. Mention the demotion count in the Executive Summary if any demotions happened (`12 HIGH → top 6 kept, 6 demoted by budget`). For `slices` targets, the budget is global across slices, not per-slice — the intent is one ranked HIGH list, not N slices each filling their own budget.
 
-## Medium and Low Findings
+## Medium and Low Findings (fix when convenient / optional)
 A single table with columns: Severity | Title | Location | Reviewer(s) | One-line description. Demoted-from-HIGH items render here with their original-severity note preserved. Items demoted by refutation (CONTESTED) render here too, carrying their `_(contested: k/R …)_` tag — do not merge the two demotion reasons into one note; a budget demotion and an evidence demotion mean different things to the reader.
 
 ## Refuted Findings
