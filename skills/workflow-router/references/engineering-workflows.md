@@ -179,8 +179,9 @@ refactoring to avoid starting the feature.
 Replaces pattern X with pattern Y across the codebase. Mechanical at most call sites, with edge
 cases, and not finished until the old pattern is gone.
 
-**Use when** swapping one library for another, adopting a framework version whose breaking
-changes touch many files, or standardising where two patterns co-exist.
+**Use when** swapping one library for another, standardising where two patterns co-exist, or
+fixing up a version's breaking change across many files. That last case starts as a Dependency
+Upgrade and is handed off here for the hop that needs it.
 **Not when** it is one version bump with no API change (Dependency Upgrade), a change inside one
 module (Refactor), or a replacement in one place (just do it).
 
@@ -217,7 +218,8 @@ behaviour.
 3. **One hop at a time:** bump, install, test, fix, commit with both versions in the message.
 4. **Test and exercise by hand** the paths that use the dependency. Defaults that changed
    (sort stability, time zones, timeouts) rarely have tests.
-5. **Fix** import and type errors first, then test failures, then runtime behaviour.
+5. **Fix** import and type errors first, then test failures, then runtime behaviour. When one
+   hop's breaking change touches many call sites, run that fix-up as a Migration, then come back.
 6. **Check transitive impact** with integration tests, smoke tests or a staging deploy.
 
 | Case | Care needed |
@@ -366,7 +368,8 @@ linter should catch; approving without reading; a hostile tone.
 
 Usual hand-offs: Incident Response → Debugging → Bug Fix. Onboarding → Spike → Feature
 Implementation, with Refactor as a sub-step or TDD-Ralph as the large-scope variant, then Code
-Review. Dependency Upgrade → Migration when the new version has no drop-in equivalent.
+Review. Dependency Upgrade → Migration when the new version has no drop-in equivalent or a
+breaking change touches many files.
 
 ## 13. Anti-patterns
 

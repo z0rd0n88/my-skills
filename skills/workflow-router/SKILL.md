@@ -15,7 +15,9 @@ means three different things, so the router has three lanes:
 | **Durable** | How application code runs a multi-step process on a workflow engine | [references/durable-workflows.md](references/durable-workflows.md) |
 
 Routing takes seconds. Do it, say the route in a line, then read only the reference section for
-the workflow you picked. A one-line change needs no workflow: say so and make the change.
+the workflow you picked. A change with no behaviour at stake (a typo, a comment, a version
+string) needs no workflow: say so and make it. The kind of work picks the workflow, not the size
+of the diff, so a one-line fix to wrong behaviour is still a Bug Fix.
 
 ## Step 1 — which lanes apply?
 
@@ -57,7 +59,9 @@ null check, or a fix started before the bug is reproduced.
 1. **One workflow is primary.** A small refactor inside a feature is a sub-step with its own
    commit. When a sub-task starts to dominate, ship what you have and start that workflow fresh.
 2. **Hand-offs are written down.** Debugging ends in a conclusion that Bug Fix starts from. A
-   Dependency Upgrade with no drop-in replacement hands off to Migration. Incident Response
+   Dependency Upgrade stays the starting workflow even for a big version jump, and hands off to
+   Migration when the new version has no drop-in replacement or a breaking change touches many
+   files. Incident Response
    hands off to Debugging once service is stable.
 3. **Keep every gate.** When workflows nest, each one's gate still applies.
 
