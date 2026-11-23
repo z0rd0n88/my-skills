@@ -21,7 +21,7 @@ If the argument text (trimmed, case-insensitive) is exactly `-h`, `--help`, or
 skill.
 
 > **⚠️ Writes files, files GitHub issues, and can spawn a `wrapup-specs` run** — every
-> invocation writes `/home/alex/WeeklyWrapup/<isodate>/wrapup.md`, files each new
+> invocation writes `/home/alex/Projects/WeeklyWrapup/<isodate>/wrapup.md`, files each new
 > proposal-table row as a `z0rd0n88/ClaudeConfig` issue (label `from-wrapup`, deduped
 > against open ones), runs the `improve-me` harness audit (which writes
 > `~/Improvements/<isodate>/report.md`), and, via the `wrapup-specs` skill, writes one
@@ -68,7 +68,7 @@ this skill still runs — it just notes the report's age and proceeds with what 
 ### 2. Gather cross-project standup
 
 #### 2.1 The project list — never hardcode it
-Read `$WEEKLY_WRAPUP_PROJECTS`, defaulting to `/home/alex/WeeklyWrapup/projects.json`. Every
+Read `$WEEKLY_WRAPUP_PROJECTS`, defaulting to `/home/alex/Projects/WeeklyWrapup/projects.json`. Every
 project's canonical `name`, local `path`, and `aliases` come from that file and nowhere else.
 `wrapup-specs` reads the same file for spec filenames, so the two can never disagree.
 
@@ -90,7 +90,7 @@ with no account of what produced them.
 ```bash
 python3 - <<'PY'
 import sqlite3, os, json, glob, collections, datetime
-cfg = os.environ.get("WEEKLY_WRAPUP_PROJECTS", "/home/alex/WeeklyWrapup/projects.json")
+cfg = os.environ.get("WEEKLY_WRAPUP_PROJECTS", "/home/alex/Projects/WeeklyWrapup/projects.json")
 projects = json.load(open(cfg))["projects"]
 alias = {a.lower(): p["name"] for p in projects
          for a in [p["name"], os.path.basename(p["path"]), *p["aliases"]]}
@@ -138,8 +138,8 @@ explicit "no activity this week" note for the quiet ones, and cross-tool counts 
 for each tool or its absence recorded.
 
 ### 3. Write the base wrapup file
-- Get today's ISO date (`date +%F`); `mkdir -p /home/alex/WeeklyWrapup/<isodate>`.
-- Write `/home/alex/WeeklyWrapup/<isodate>/wrapup.md` with `## Insights` (full extracted
+- Get today's ISO date (`date +%F`); `mkdir -p /home/alex/Projects/WeeklyWrapup/<isodate>`.
+- Write `/home/alex/Projects/WeeklyWrapup/<isodate>/wrapup.md` with `## Insights` (full extracted
   narrative + report date) and `## Standup` (full cross-project summary). Under `## Standup`,
   the git activity comes first and `### Cross-Tool Activity` closes the section.
 
@@ -147,7 +147,7 @@ for each tool or its absence recorded.
 present with either per-project numbers or a recorded reason there are none.
 
 ### 4. Load last week's wrapup
-- List `/home/alex/WeeklyWrapup/*/wrapup.md`, excluding the file just created; take the
+- List `/home/alex/Projects/WeeklyWrapup/*/wrapup.md`, excluding the file just created; take the
   most recent by the date in its parent directory's name.
 - Found → read it completely.
 - Not found → skip step 5; go to step 6.
@@ -176,15 +176,15 @@ Insights and the standup measure *activity*. This step measures *conformance and
 where your own rules, hooks and permissions fought you this week — so the issues table below
 has evidence about the harness, not only about the work.
 
-Invoke the `improve-me` skill via the `Skill` tool with `--days 7`: the wrapup's window, not
+Invoke the `ThinkTime:improve-me` skill via the `Skill` tool with `--days 7`: the wrapup's window, not
 the skill's monthly default. **Block until it returns.** It runs its signal collector over the
 week's session transcripts and writes `~/Improvements/<isodate>/report.md`.
 
-**If the `Skill` tool cannot resolve `improve-me`** — a paste-invoked headless run resolves no
-skills — read its SKILL.md from disk and follow it directly. It is user-scoped today and slated
-to move into this marketplace (ClaudeConfig#240), so try both, in order:
-`/home/alex/.claude/skills/improve-me/SKILL.md`, then
-`<plugin-root>/improve-me/skills/improve-me/SKILL.md`.
+**If the `Skill` tool cannot resolve `ThinkTime:improve-me`** — a paste-invoked headless run resolves no
+skills — read its SKILL.md from disk and follow it directly. It lives in the ThinkTime plugin
+(ClaudeConfig#240), so try, in order: the source checkout
+`/home/alex/Projects/ThinkTime/ThinkTime/improve-me/skills/improve-me/SKILL.md`, then the
+newest installed copy, `ls ~/.claude/plugins/cache/*/ThinkTime/*/improve-me/skills/improve-me/SKILL.md | sort -t/ -k9,9V | tail -1`.
 
 Append `## Harness Audit` holding the report's path, its executive summary, and each ranked
 finding condensed to one line (evidence → harm → change). Do not restate the full report — the
@@ -245,7 +245,7 @@ Comparison], Harness Audit, Potential GitHub Issues, Next Steps.
 
 ### 10. Generate per-project improvement specs
 Invoke the `wrapup-specs` skill via the `Skill` tool, passing this week's folder
-(`/home/alex/WeeklyWrapup/<isodate>`). **Block until it returns.** It reads the wrapup just
+(`/home/alex/Projects/WeeklyWrapup/<isodate>`). **Block until it returns.** It reads the wrapup just
 written and emits one `<Project>-spec.md` per project that has improvement items, into the
 same folder.
 

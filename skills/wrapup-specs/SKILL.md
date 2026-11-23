@@ -50,7 +50,7 @@ forever. Ambiguity goes in the spec's *Open Questions* section, never back to th
 
 ### 1. Resolve the target folder
 
-- Argument may be a folder path (`/home/alex/WeeklyWrapup/2026-07-26`), a bare isodate
+- Argument may be a folder path (`/home/alex/Projects/WeeklyWrapup/2026-07-26`), a bare isodate
   (`2026-07-26`), or nothing. Nothing → use today's date (`date +%F`).
 - The target file is `<folder>/wrapup.md`.
 - Missing → report "no wrapup found at `<path>`" and **stop**. Do not fabricate a wrapup, and
@@ -110,7 +110,7 @@ it would produce a spec no repo can consume.
 
 Canonical project names, used verbatim in filenames, come from the `projects.json` read in
 `weekly-wrapup` step 2.1 (`$WEEKLY_WRAPUP_PROJECTS`, default
-`/home/alex/WeeklyWrapup/projects.json`) — never from a list written here. A repo named in a
+`/home/alex/Projects/WeeklyWrapup/projects.json`) — never from a list written here. A repo named in a
 wrapup but absent from that file still gets
 a spec under its own name — do not force it into one of the four.
 
