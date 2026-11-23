@@ -130,6 +130,11 @@ Workflow route
 - Open:           <anything you could not determine>
 ```
 
+A note headed "Suggested workflow route" may already be in context, put there by the optional
+hook in [hooks/](hooks/README.md). It is a fast classifier's guess from the prompt alone: use it
+as a starting point, check it against Steps 1 to 4, and overrule it when they disagree. It never
+counts as the user opting in to a workflow.
+
 Then do the work by the steps in the reference, and stop at each gate until it is met. If the
 task changes shape part-way (a bug fix that turns out to need debugging), say so and re-route.
 

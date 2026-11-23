@@ -1,0 +1,12 @@
+{"id":"h-outage-db","expect":"incident_response","task":"The primary database is at 100% CPU and the API is timing out for everyone. What do we do?"}
+{"id":"h-review-patch","expect":"code_review","task":"Sam sent me this patch for the cache layer, tell me if it's safe to merge."}
+{"id":"h-heisenbug","expect":"debugging","task":"The mobile app logs users out at random, maybe twice a week, and we have no idea what triggers it. Please fix."}
+{"id":"h-off-by-one","expect":"bug_fix","task":"Pagination skips the last item: with 21 results and page size 10, page 3 comes back empty instead of showing item 21."}
+{"id":"h-feasibility","expect":"spike","task":"Would SQLite be fast enough for our analytics queries, or do we need DuckDB? Try it on last month's data and tell me."}
+{"id":"h-new-team","expect":"onboarding","task":"I moved to the payments team this week and have never seen their monorepo. Walk me through how it fits together."}
+{"id":"h-node-bump","expect":"dependency_upgrade","task":"Move us from Node 18 to Node 22."}
+{"id":"h-swap-orm","expect":"migration","task":"Replace Sequelize with Prisma throughout the backend."}
+{"id":"h-extract","expect":"refactor","task":"Pull the duplicated validation logic in the three signup handlers into one shared module. Behaviour must stay identical."}
+{"id":"h-new-feature","expect":"feature_implementation","task":"Users should be able to invite teammates by email, with roles and an expiry on the invite link."}
+{"id":"h-comment","expect":"none","task":"The comment above retry() says 3 attempts but the code does 5; update the comment."}
+{"id":"h-email","expect":"none","task":"Draft a short email to the team announcing Friday's release freeze."}
