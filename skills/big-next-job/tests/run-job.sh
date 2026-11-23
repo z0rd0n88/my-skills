@@ -69,6 +69,14 @@ has "child 3 launched" && ok "child numbers continue across runs" || bad "number
 job badnum finish; run JOB_CHILD_TIMEOUT=010
 [ "$RC" = 1 ] && grep -q "not a whole number" "$J/out" && ok "a number with a leading zero is refused" || bad "bad number (rc $RC)"
 
+echo "status"
+"$RUNJOB" status > "$WORK/status.out" 2>&1; rc=$?
+[ "$rc" = 1 ] && grep -q "usage: run-job status <job-dir>" "$WORK/status.out" && ok "status with no job dir prints usage (exit 1)" || bad "status with no job dir (rc $rc: $(cat "$WORK/status.out"))"
+mkdir -p "$WORK/nojob"; "$RUNJOB" status "$WORK/nojob" > "$WORK/status.out" 2>&1; rc=$?
+[ "$rc" = 1 ] && grep -q "no $WORK/nojob/checkpoint.md" "$WORK/status.out" && ok "status on a dir with no checkpoint says so (exit 1)" || bad "status with no checkpoint (rc $rc: $(cat "$WORK/status.out"))"
+job status finish; "$RUNJOB" status "$J" > "$J/status.out" 2>&1; rc=$?
+[ "$rc" = 0 ] && [ "$(cat "$J/status.out")" = "status: active" ] && ok "status on a job dir prints the checkpoint header (exit 0)" || bad "status on a job dir (rc $rc: $(cat "$J/status.out"))"
+
 echo "robustness"
 job badjson badjson finish; run
 [ "$RC" = 0 ] && has "hook payload is not a JSON object" && ok "a garbled Stop payload is logged, not fatal" || bad "bad json (rc $RC)"

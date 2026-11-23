@@ -25,13 +25,15 @@
 #         4 child cap reached · 5 two children in a row made no progress
 set -euo pipefail
 
+die() { echo "run-job: $*" >&2; exit 1; }
 case "${1:-}" in
   -h|--help|"") sed -n '2,25p' "$0"; exit 0 ;;
-  status) sed -n '1,/^## /p' "$2/checkpoint.md" | sed '$d'
+  status) [ -n "${2:-}" ] || die "usage: run-job status <job-dir>"
+          [ -f "$2/checkpoint.md" ] || die "no $2/checkpoint.md; is $2 a job dir?"
+          sed -n '1,/^## /p' "$2/checkpoint.md" | sed '$d'
           [ ! -s "$2/child-count" ] || echo "children launched so far: $(cat "$2/child-count")"; exit 0 ;;
 esac
 
-die() { echo "run-job: $*" >&2; exit 1; }
 JOB="$(cd "$1" && pwd)" || die "no job dir $1"
 WORKDIR="$(cd "${2:-$(dirname "$JOB")}" && pwd)" || die "no workdir ${2:-}"
 NAME="$(basename "$WORKDIR")"; NAME="${NAME//[^A-Za-z0-9_-]/_}"   # tmux socket/session-safe
