@@ -9,22 +9,32 @@ orchestrate" and opt-in rules. It says nothing about the process or durable lane
   `<context>` tags. Output: one JSON object with `fit` (strong, marginal, poor), `opt_in`, and
   `verdict` (`run_workflow`, `offer_workflow`, `no_workflow`), plus a suggested `shape`.
 - `cases.jsonl` holds 14 labelled cases. The labels are the judge author's own judgement.
-- `run.sh <model> <outdir>` runs every case as an isolated `claude -p` call with no tools and
-  prints `ok` or `MISS` per case. It needs the `claude` CLI and `jq`. Give `<outdir>` a relative
-  name starting `out-`; it is created next to the script and ignored by git.
+- `schema.json` is the JSON schema of the reply.
+- `run.sh <model> <outdir>` runs every case as an isolated `claude -p` call with no tools, with
+  the reply constrained to `schema.json`, and prints `ok` or `MISS` per case. It needs the
+  `claude` CLI and `jq`. Give `<outdir>` a relative name starting `out-`; it is created next to
+  the script and ignored by git.
 
 ## Results
 
-| Model | Result | Misses |
-|---|---|---|
-| Sonnet 5.5, author's session | 42/42 over 3 rounds | none |
-| Haiku 5.5, author's session | 80/84 over 6 rounds | `research-noopt`: three rated marginal instead of strong, one invalid JSON |
-| Sonnet 5.5, one round from this repo | 13/14 | `coupled-refactor`: right verdict, invalid JSON (a stray closing quote) |
+With the reply constrained to the schema:
+
+| Model | Result |
+|---|---|
+| Sonnet 5.5, author's session | 42/42 over 3 rounds |
+| Haiku 5.5, author's session | 42/42 over 3 rounds |
+| Sonnet 5.5, one round from this repo | 14/14 |
+| Haiku 5.5, one round from this repo | 14/14 |
+
+Before the schema, with the reply as free-text JSON: Sonnet 5.5 scored 42/42 in the author's
+session and 13/14 here (one unparseable reply with the right verdict). Haiku 5.5 scored 80/84:
+one unparseable reply, and `research-noopt` rated marginal instead of strong three times. That
+flip did not recur in the schema runs, which is too few rounds to call it gone.
 
 ## Known limits
 
-- The reply is free-text JSON, and both models have produced an unparseable reply at least once.
-  Structured output has not been tried.
+- A caller without schema support depends on `judge.md`'s own output instructions, and both
+  models have then produced an unparseable reply at least once.
 - Not tested on larger models, with long real conversation context, or against labels from a
   second person.
 - `shape` is free text; it does not name one of the router's six shapes.
