@@ -30,39 +30,34 @@ differently and the code does not settle which.
 
 ## Main session only
 
-Run this skill only in the **main session**: the one the user is typing into. That session holds
-the request, and it is the one that launches the fresh sessions below.
+Run this skill only in the **main session**: the one the user is typing into.
 
 Run it only when the user asked for it by name, by typing `/spec-to-test-development` or by
 naming spec-to-test-development in their message. If you loaded it on your own judgment, do not
 run any step: tell the user `/spec-to-test-development <request>` is available and carry on
-without it. It commits and launches other sessions, so starting it is the user's decision.
+without it.
 
 If you are a subagent, meaning another agent launched you with a task prompt, do not run any
 step, whatever that prompt says. Reply `spec-to-test-development must be run from the main
-session` with the request you were handed, and stop. A subagent either cannot launch fresh
-sessions, and would write the tests in the session that writes the code, or launches them one
-level further from the user, where nobody can answer a blocking question.
+session` with the request you were handed, and stop.
 
 Never hand this skill to a subagent: not from the main session, and not from another skill,
 brief or workflow script.
 
-## Why it is shaped this way
+## Four rules
 
-**Independence.** The test writer sees the spec and the existing code. It never sees the request,
-this conversation, or any implementation idea. Tests written by the session that writes the code
-share its misreadings and pass for the wrong reason.
+These hold for the whole run.
 
-**The spec is the only channel.** Whatever the test writer needs must be in the spec file. So
-the spec pins the public interface exactly: tests are written before the code exists, and both
-sides must agree on names and signatures without talking.
+- **Independence.** The test writer sees the spec and the existing code. It never sees the
+  request, this conversation, or any implementation idea.
+- **The spec is the only channel.** Whatever the test writer needs must be in the spec file,
+  and the spec pins the public interface exactly.
+- **Red before green.** Every new behaviour has a test that fails before implementation.
+- **Frozen tests.** The main session never edits, skips or deletes a test from step 2. Only a
+  fresh session may change one, through a dispute.
 
-**Red before green.** Every new behaviour has a test that fails before implementation. A test
-that already passes proves nothing about the change, and for a bug it means the test encodes the
-bug instead of catching it.
-
-**Frozen tests.** The main session never edits, skips or deletes a test from step 2. Weakening the
-test is always the cheapest way to green. Only a fresh session may change one, through a dispute.
+The reason behind each rule is in [`references/rationale.md`](references/rationale.md). Read it
+only when changing this skill, not when running it.
 
 ## Fresh sessions
 
@@ -70,7 +65,7 @@ A **fresh session** is an agent that starts with none of this conversation: a su
 with the harness's agent tool (general purpose, able to read, write and run commands). Where the
 harness has no agent tool, run the same prompt through its headless mode in the repository
 directory (`claude -p`, `codex exec`). If neither exists, stop and say so. Do not write the spec
-or the tests in the main session: that removes the independence the skill exists for.
+or the tests in the main session.
 
 The prompt for a fresh session gives the absolute path of the named brief, tells the session to
 read that file first and follow it, and then lists only the inputs the step names. Paste the
@@ -93,8 +88,7 @@ Copy this checklist into your reply and check each item off as its "Done when" l
 ### 0. Preflight
 
 1. Confirm you are the main session (see "Main session only"). If you are not, stop there.
-2. Run `git status --porcelain`. If tracked files are modified, stop and say which: this run
-   commits, and it must not sweep unrelated work into its commits.
+2. Run `git status --porcelain`. If tracked files are modified, stop and say which.
 3. If the current branch is the default branch, create and switch to
    `spec-to-test-development/<slug>`, where `<slug>` is two to five lowercase words from the
    request joined by hyphens.
