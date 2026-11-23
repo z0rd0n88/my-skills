@@ -63,6 +63,7 @@
         "./skills/remote-session-orchestration",
         "./skills/resolve-user-skill",
         "./skills/spec-tacular",
+        "./skills/spec-to-test-development",
         "./skills/three-agent-wf",
         "./skills/vercel-agent-browser",
         "./skills/vercel-computer-use",
