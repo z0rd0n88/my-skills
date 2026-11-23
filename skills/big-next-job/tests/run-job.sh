@@ -90,6 +90,13 @@ job trustlate trustlate finish; run JOB_TRUST_SECONDS=2
 echo "each job has its own tmux server, with this run's environment"
 job envcheck finish; run
 [ -n "$(sock)" ] && ! tmux -L "$(sock)" has-session 2>/dev/null && ok "its tmux server is gone after the job" || bad "server $(sock) left running, or no server name logged"
+# F12: the child must get this run's environment, not that of a server an earlier run left behind.
+# F14: and the screens of the windows that earlier run kept (JOB_KEEP_WINDOWS) are saved, not lost.
+job envstale finish finish; run RUNJOB_PROBE=old JOB_KEEP_WINDOWS=1
+tmux -L "$(sock)" has-session 2>/dev/null || bad "setup: the kept server is not running"
+printf 'status: active\n' > "$J/checkpoint.md"; run RUNJOB_PROBE=new
+[ "$(cat "$J/env-2" 2>/dev/null)" = new ] && ok "a child gets this run's environment, not a leftover server's" || bad "child 2 saw RUNJOB_PROBE='$(cat "$J/env-2" 2>/dev/null)'"
+sed -n '/earlier run left/,$p' "$J/run.log" | grep -q 'fake child 1: finish' && ok "an earlier run's kept windows have their screens saved to run.log" || bad "kept window screens lost on restart"
 job 'odd name.x' hang; FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 "$RUNJOB" "$J" > "$J/out1" 2>&1 & bg=$!
 for _ in $(seq 1 50); do has "child 1 launched" 2>/dev/null && break; sleep 0.2; done
 [[ $(sock) =~ ^run-job-odd_name_x-[0-9a-f]{8}$ ]] && tmux -L "$(sock)" has-session -t job-odd_name_x 2>/dev/null && ok "server and session are named run-job-<name>-<hash> / job-<name>, odd characters as _" || bad "server name ($(sock); $(ls "$TMUX_TMPDIR"/tmux-*/))"
@@ -116,7 +123,24 @@ run
 kill -TERM "$first"; wait "$first"; rc1=$?
 [ "$rc1" = 143 ] && ok "TERM stops run-job (exit 143)" || bad "TERM exit (rc $rc1)"
 tmux -L "$(sock)" list-windows -a 2>/dev/null | grep -q 'child-' && bad "child window left behind" || ok "its child and tmux server are closed"
-ls "$XDG_RUNTIME_DIR"/run-job-*.lock >/dev/null 2>&1 && bad "lock file left behind" || ok "its lock is removed"
+printf 'status: active\n' > "$J/checkpoint.md"; echo finish > "$J/plan"; run
+[ "$RC" = 0 ] && ok "its lock is released: the next run starts" || bad "rerun after TERM (rc $RC)"
+
+# F14: a lock left by a dead runner must not let two new runners both start.
+job race hang hang hang hang hang hang hang hang hang hang hang hang ; LOCKF="$XDG_RUNTIME_DIR/run-job-$(printf '%s' "$J" | sha256sum | cut -c1-16).lock"
+won=0
+for try in 1 2 3 4 5; do
+  echo "999999 1" > "$LOCKF"   # a dead runner's lock (pid 999999 does not exist)
+  rm -f "$J/run.log" "$J/out-a" "$J/out-b"; printf 'status: active\n' > "$J/checkpoint.md"
+  FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 "$RUNJOB" "$J" > "$J/out-a" 2>&1 & a=$!
+  FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 "$RUNJOB" "$J" > "$J/out-b" 2>&1 & b=$!
+  sleep 3
+  n=$(grep -c ' launched ' "$J/run.log" 2>/dev/null); refused=$(cat "$J/out-a" "$J/out-b" | grep -c "already drives")
+  kill -TERM $a $b 2>/dev/null; wait $a $b 2>/dev/null
+  [ "$n" = 1 ] && [ "$refused" = 1 ] || { won=$try; break; }
+done
+[ "$won" = 0 ] && ok "two runners racing for a dead runner's lock: exactly one starts (5 tries)" || { bad "race try $won: $n children launched, $refused refused"; head -3 "$J/out-a" "$J/out-b" "$J/run.log"; }
+
 
 echo
 echo "$pass passed, $fail failed"

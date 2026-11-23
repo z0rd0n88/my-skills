@@ -62,6 +62,9 @@ def idle(seconds=None, until_keys=False):
 
 
 print(f"fake child {n}: {mode}", flush=True)
+# What this child sees of the runner's environment, so a test can tell whose environment it got.
+with open(os.path.join(job, f"env-{n}"), "w") as f:
+    f.write(os.environ.get("RUNJOB_PROBE", ""))
 time.sleep(float(os.environ.get("FAKE_DELAY", "0.3")))
 if mode == "finish":
     text = open(checkpoint).read()

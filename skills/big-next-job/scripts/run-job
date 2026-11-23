@@ -4,7 +4,7 @@
 # rewrites checkpoint.md, and stops. This loop relaunches until status is done or blocked.
 # A crashed, killed, or timed-out child costs nothing but the work since its last checkpoint.
 # Mechanism borrowed from session-switcher (z0rd0n88/session-stickler): brief as one argv,
-# a Claude Stop hook as the return channel, tmux as the terminal. Needs claude, tmux, python3.
+# a Claude Stop hook as the return channel, tmux as the terminal. Needs claude, tmux, python3, flock.
 # For an unattended multi-phase coding job with receipts, CI checks and usage-limit pauses, use
 # blast-off (z0rd0n88/blast-off); its fixes to this loop are ported back here.
 #
@@ -54,7 +54,7 @@ MAXC="${JOB_MAX_CHILDREN:-12}"
 TRUST_SECONDS="${JOB_TRUST_SECONDS:-60}"
 LIMIT_EXIT=75   # claude's exit code for a usage-limit error (sysexits EX_TEMPFAIL)
 
-for b in claude tmux python3; do command -v "$b" >/dev/null || die "$b not on PATH"; done
+for b in claude tmux python3 flock; do command -v "$b" >/dev/null || die "$b not on PATH"; done
 test -s "$JOB/brief.md" || die "missing $JOB/brief.md"
 test -s "$JOB/checkpoint.md" || die "missing $JOB/checkpoint.md"
 
@@ -62,21 +62,19 @@ status() { sed -n 's/^status: *\([a-z-]*\).*/\1/p' "$JOB/checkpoint.md" | head -
 log() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" | tee -a "$LOG"; }
 fingerprint() { sha256sum "$JOB/checkpoint.md" | cut -c1-16; }
 proc_state() { awk '/^State:/ {print $2}' "/proc/$1/status" 2>/dev/null; }
-# pid_start <pid>: start time in clock ticks (/proc/<pid>/stat field 22, counted after the comm,
-# which may hold spaces); empty when the pid is gone.
-pid_start() { local st; st="$(cat "/proc/$1/stat" 2>/dev/null)" || return 0; read -ra st <<< "${st##*) }"; echo "${st[19]}"; }
 
 # --- One runner per job. Two would launch children into the same checkpoint and kill each other's
-# windows. The lock holds this run's pid and start time; a dead or reused pid is stale and taken over.
+# windows. flock(1) holds the lock on fd 9 for as long as this process lives; the kernel drops it when
+# the process dies, however it dies, so there is no stale lock to take over (taking one over by hand
+# let two runners that started together both win). The file only records who holds it, and stays:
+# deleting it would let a runner that opened the old file and one that makes a new file both lock.
 LOCK="${XDG_RUNTIME_DIR:-/tmp}/run-job-$JOB_HASH.lock"
-LOCK_ME="$$ $(pid_start $$)"
-if ! (set -o noclobber; echo "$LOCK_ME" > "$LOCK") 2>/dev/null; then
-  { read -r lpid lstart < "$LOCK"; } 2>/dev/null || true
-  if [[ ${lpid:-} =~ ^[0-9]+$ && -n ${lstart:-} && $(pid_start "$lpid") == "$lstart" ]]; then
-    die "run-job $lpid already drives $JOB (lock $LOCK); stop it first, or wait for it"
-  fi
-  echo "$LOCK_ME" > "$LOCK"
+exec 9>>"$LOCK" || die "cannot open lock $LOCK"
+if ! flock -n 9; then
+  { read -r lpid _ < "$LOCK"; } 2>/dev/null || true
+  die "${lpid:+run-job $lpid}${lpid:-another run-job} already drives $JOB (lock $LOCK); stop it first, or wait for it"
 fi
+: > "$LOCK"; echo "$$ $(date -u +%FT%TZ)" >&9
 
 # --- Stopping run-job stops its child: an orphan would keep editing checkpoint.md with no runner to
 # notice, and the next run would launch a second child beside it. JOB_KEEP_WINDOWS leaves it open.
@@ -87,7 +85,6 @@ cleanup() {
     [ -z "$DIR" ] || rm -rf "$DIR"
     tmux -L "$SOCK" kill-server 2>/dev/null || true
   fi
-  [ "$(cat "$LOCK" 2>/dev/null)" != "$LOCK_ME" ] || rm -f "$LOCK"
 }
 trap cleanup EXIT
 trap 'log "run-job stopped by signal; closing child"; exit 143' TERM
@@ -108,11 +105,22 @@ PROMPT="Continue the job in $JOB. Read $JOB/checkpoint.md first, then $JOB/brief
 # A private tmux server per job. A window takes its environment from its server, fixed when the server
 # started, so on the shared default server a child would get whatever PATH or GH_TOKEN that server was
 # started with, not this run's. -f /dev/null keeps the owner's tmux.conf (pane-died hooks, renumbering)
-# away from the children. We hold the job's lock, so a server left by an earlier run is stale: stop it.
+# away from the children. We hold the job's lock, so a server left by an earlier run is stale: stop it,
+# but first save the screens of its windows (JOB_KEEP_WINDOWS keeps them for inspection) to run.log.
 # CLAUDE* names are scrubbed so a child does not think it is nested inside this session.
+if tmux -L "$SOCK" has-session 2>/dev/null; then
+  log "closing the tmux server an earlier run left ($SOCK); its windows' last screens follow"
+  for p in $(tmux -L "$SOCK" list-panes -a -F '#{pane_id}' 2>/dev/null); do
+    { echo "--- window $(tmux -L "$SOCK" display -p -t "$p" '#{window_name}' 2>/dev/null): last screen ---"
+      tmux -L "$SOCK" capture-pane -p -t "$p" -S -40 2>/dev/null | sed '/^[[:space:]]*$/d'
+      echo "---"; } >> "$LOG"
+  done
+fi
 tmux -L "$SOCK" kill-server 2>/dev/null || true
 SCRUB=$(env | grep -o '^CLAUDE[A-Z_]*=' | sed 's/=$//; s/^/-u /' || true)
-env $SCRUB tmux -f /dev/null -L "$SOCK" new-session -d -s "$SESSION" -c "$WORKDIR"
+# 9>&-: the tmux server (and every child it starts) must not inherit the lock's fd, or a server kept
+# by JOB_KEEP_WINDOWS would hold the lock after this run ends.
+env $SCRUB tmux -f /dev/null -L "$SOCK" new-session -d -s "$SESSION" -c "$WORKDIR" 9>&-
 # The pane outlives claude, so a death shows as #{pane_dead} with the last screen still there to log.
 tmux -L "$SOCK" set-option -g remain-on-exit on
 

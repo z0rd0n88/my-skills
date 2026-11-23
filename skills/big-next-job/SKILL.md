@@ -7,7 +7,7 @@ description: Scope, brief and run a multi-phase job unattended in any repo as a 
 
 Turn a substantial, related set of outcomes into a job that runs without mid-run feedback and
 survives a crash, a timeout, or a closed terminal. Works in any git repo. Needs only `claude`,
-`tmux`, and `python3`; no Orca, no plugin. The job's whole state lives in two files a fresh
+`tmux`, `python3` and `flock` (util-linux, on every Linux and WSL); no Orca, no plugin. The job's whole state lives in two files a fresh
 session can read in one go, so every phase starts on a clean context and nothing depends on
 a hand-written handoff.
 
