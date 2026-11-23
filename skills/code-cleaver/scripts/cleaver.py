@@ -302,6 +302,12 @@ def secrets(root):
     return 0
 
 
+# A report written to refs/severity-scale.md already prefixes each title with its level, action and
+# id ("HIGH (fix before merge) · F3 — Leak", or "F9 — Typo" in a table cell). stamp() renumbers, so
+# that prefix is dropped from the title rather than repeated.
+TITLE_PREFIX = re.compile(r"^(?:\**(?:CRITICAL|HIGH|MEDIUM|LOW)\b[^·]*·\s*)?F\d+\**\s*[—–-]\s*", re.IGNORECASE)
+
+
 def stamp(report, out):
     """Give every finding in a multi-agent review report a stable id (F1, F2, ...)."""
     lines = open(report, encoding="utf-8").read().split("\n")
@@ -319,22 +325,24 @@ def stamp(report, out):
                 n += 1
                 cur = f"F{n}"
                 sev = section.upper()
-                blocks.append(f"\n### FINDING {cur} (reported {sev}): {line[4:].strip()}")
-                index.append(f"{cur} {sev} {line[4:].strip()}")
+                title = TITLE_PREFIX.sub("", line[4:].strip())
+                blocks.append(f"\n### FINDING {cur} (reported {sev}): {title}")
+                index.append(f"{cur} {sev} {title}")
             elif cur:
                 blocks.append(line)
         elif section == "table":
-            m = re.match(r"^\|\s*(CRITICAL|HIGH|MEDIUM|LOW)\s*\|", line)
+            m = re.match(r"^\|\s*(CRITICAL|HIGH|MEDIUM|LOW)\s*\|", line, re.IGNORECASE)
             if m:
                 cells = [c.strip() for c in line.strip().strip("|").split("|")]
                 n += 1
-                title = cells[1] if len(cells) > 1 else ""
+                sev = m.group(1).upper()
+                title = TITLE_PREFIX.sub("", cells[1]) if len(cells) > 1 else ""
                 blocks.append(
-                    f"\n### FINDING F{n} (reported {m.group(1)}): {title}\n"
+                    f"\n### FINDING F{n} (reported {sev}): {title}\n"
                     f"- Location: {cells[2] if len(cells) > 2 else ''}\n"
                     f"- Raised by: {cells[3] if len(cells) > 3 else ''}\n"
                     f"- Description: {' | '.join(cells[4:])}")
-                index.append(f"F{n} {m.group(1)} {title}")
+                index.append(f"F{n} {sev} {title}")
     with open(out, "w", encoding="utf-8") as f:
         f.write(f"# Findings from {os.path.basename(report)}, with ids\n" + "\n".join(blocks) + "\n")
     print(f"{n} findings stamped -> {out}")
@@ -523,6 +531,17 @@ def selftest():
         out = open(os.path.join(d, "f.md")).read()
         assert out.count("### FINDING") == 4 and "F1 (reported CRITICAL): Leak" in out, out
         assert "F4 (reported LOW): Typo" in out and "not a finding" not in out
+        os.remove(os.path.join(d, "r.md"))
+        os.remove(os.path.join(d, "f.md"))
+        w("r.md", "# R\n## Critical Findings (fix now)\n### CRITICAL (fix now) · F1 — Leak\n- a\n"
+                  "## High Findings (fix before merge)\n### HIGH (fix before merge) · F2 — Bug\n- b\n"
+                  "## Medium and Low Findings (fix when convenient / optional)\n"
+                  "| Severity | Title | Location | Reviewer(s) | D |\n|---|---|---|---|---|\n"
+                  "| Medium | F3 — Slow | x:1 | CR | d |\n## Coverage Report\n")
+        assert stamp(os.path.join(d, "r.md"), os.path.join(d, "f.md")) == 0
+        out = open(os.path.join(d, "f.md")).read()
+        assert "F1 (reported CRITICAL): Leak\n" in out and "F2 (reported HIGH): Bug\n" in out, out
+        assert "F3 (reported MEDIUM): Slow\n" in out, out
         os.remove(os.path.join(d, "r.md"))
         os.remove(os.path.join(d, "f.md"))
         run("commit", "-q", "-m", "x", "--no-verify")

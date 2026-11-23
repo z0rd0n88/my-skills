@@ -18,7 +18,7 @@ This skill and `zord-multi-agent-review` share these primitives — read the ref
 2. **Resolve exclusions.** Run `config.tracker.exclusion_query` via Bash. Parse the result into a flat skip list of `<short title> — <file:line>` entries. **Inject this verbatim** into every reviewer prompt below a `DO NOT report findings already tracked in:` heading. If the query returns nothing, emit a one-line notice on stdout (`echo "exclusion query returned 0 issues — no prior findings will be skipped"`) so the operator sees the empty result, then proceed with an empty skip list. **`gh issue list --label a,b,c` is AND semantics across the comma list, not OR** — to union multiple labels, iterate per-label and merge with `jq -s 'add | unique_by(.number)'`. See *Failure modes & guards* for the canonical snippet.
 3. **Map** (modes that need it). For `code`, `architecture`, `perf`: fan out `code-explorer` agents one per slice. Skip mapping for `cleanup`, `security`, `test`, `docs`, `pre-pr`.
 4. **Review fan-out.** Compute the effective `(slice, agent)` pairs for the requested mode (see *Effective fan-out rule*). Launch all agents **in one message with multiple `Agent` tool calls** so they run concurrently. Cap each agent at its mode word budget. Apply the exclusion list verbatim in every prompt. Pass the project invariants from `config.project.invariants` into every prompt.
-5. **Consolidate.** Dedupe by `(file, line, root cause)`; merge bodies when two lenses raise the same call site. Bucket by severity (CRITICAL/HIGH/MEDIUM/LOW). Group HIGH items by theme for the PR-slicing block. See *Consolidation rules*.
+5. **Consolidate.** Dedupe by `(file, line, root cause)`; merge bodies when two lenses raise the same call site. Bucket by severity (CRITICAL/HIGH/MEDIUM/LOW, defined in [`severity-scale.md`](../../refs/severity-scale.md); ids `F1`... in one sequence, never `C1`/`H1`). Group HIGH items by theme for the PR-slicing block. See *Consolidation rules*.
 6. **Write the report.** Every mode, unconditionally, unless `--no-write` was passed. Write the consolidated findings to `<git-root>/<config.output.report_dir>/<YYYY-MM-DD>-<slug>.md` (default `report_dir: docs/reviews`), using the *Issue body template* below as the document body; `mkdir -p` the directory first. The slug is `<mode>-review` for the issue-filing modes, `pre-pr-<branch>` for `pre-pr`, and `docs-drift` for `docs`. Under `all`, each constituent mode writes **its own** report under its own `<mode>-review` slug — `all` is never itself a slug, and one merged file would defeat the per-mode issue split that `all` exists to produce. Normalize every slug the same way: lowercase; collapse each run of non-alphanumerics to a single `-`; trim leading and trailing `-`; truncate to 60 chars on a `-` boundary. That normalization is what makes `pre-pr-<branch>` safe — a git branch name permits far more than the slug charset, so `feat/Foo_Bar.v2` becomes `pre-pr-feat-foo-bar-v2`, and a detached HEAD falls back to `pre-pr-<short-sha>`.
 
 Resolve `report_dir` against `git rev-parse --show-toplevel`, then canonicalize it and **require the result to sit inside the git root** — reject a `..` escape, an absolute path outside the repo, or an out-of-repo symlink, and hard-fail at config-read time (step 1) rather than at write time. It comes from a file, so a typo or a stale copy-paste is the normal failure, not an attack.
@@ -245,22 +245,22 @@ A parallel sweep using <agents/skills> over <slices>. Findings consolidated belo
 
 ---
 
-## CRITICAL (block)
-- [ ] **C1 — <one-line title>.** <evidence>. **Fix:** <action>. — `path/to/file.py:LL-LL`
+## CRITICAL (fix now)
+- [ ] **CRITICAL · F1 — <one-line title>.** <evidence>. **Fix:** <action>. — `path/to/file.py:LL-LL`
 
-## HIGH (warn)
+## HIGH (fix before merge)
 
 ### <Theme A>
-- [ ] **H1 — ...** — `path:LL`
+- [ ] **HIGH · F2 — ...** — `path:LL`
 
 ### <Theme B>
-- [ ] **H2 — ...** — `path:LL`
+- [ ] **HIGH · F3 — ...** — `path:LL`
 
-## MEDIUM (info)
-- [ ] **M1 — ...** — `path:LL`
+## MEDIUM (fix when convenient)
+- [ ] **MEDIUM · F4 — ...** — `path:LL`
 
-## LOW (note)
-- [ ] **L1 — ...** — `path:LL`
+## LOW (optional)
+- [ ] **LOW · F5 — ...** — `path:LL`
 
 ---
 

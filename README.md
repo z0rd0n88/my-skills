@@ -12,4 +12,6 @@ Personal agent skills. Install: `npx skills add z0rd0n88/my-skills -g -a claude-
 
 `skills/zord-*`, `refs/multi-agent/` and `commands/zord-total-review-init.md` came from [z0rd0n88/Z0rd0nZords](https://github.com/z0rd0n88/Z0rd0nZords) at `8f28f91`, which is now retired. `scripts/check-zord-skills.sh` carries over its `-h`/`--help` and size checks.
 
+Findings from every review, audit or critique skill use one severity scale: CRITICAL (fix now), HIGH (fix before merge), MEDIUM (fix when convenient), LOW (optional), with ids `F1`, `F2`, .... It is defined once in `refs/severity-scale.md`, which also maps older labels (Blocker / Should-fix / Minor, `C1`/`H1`, Nit). The vendored `addyosmani-code-review-and-quality` keeps its upstream text and carries a one-line mapping note; no other vendored skill was changed.
+
 Claude Code mods moved to [claude-mod-ity](https://github.com/z0rd0n88/claude-mod-ity).

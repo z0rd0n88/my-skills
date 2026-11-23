@@ -72,9 +72,10 @@ even where it falls outside your role:
 
 - Report every finding you can support, at every severity. Keep distinct findings
   separate. Severity is applied to the finished list, so a finding you leave out is lost.
-- Severity: CRITICAL is a security vulnerability or data-loss risk; HIGH a bug or
-  significant quality issue; MEDIUM a maintainability concern; LOW style or a minor
-  suggestion.
+- Severity (repo-wide scale, `refs/severity-scale.md`): CRITICAL (fix now) is a security
+  vulnerability or data-loss risk; HIGH (fix before merge) a bug or significant quality issue;
+  MEDIUM (fix when convenient) a maintainability concern; LOW (optional) style or a minor
+  suggestion. Use no other labels.
 - Each finding names `file:line`, quotes the lines it rests on, says what goes wrong and
   for whom, and proposes the smallest fix. A secret, token or key material is named by
   `file:line` and kind, and its value is left out.
