@@ -2,7 +2,7 @@
 
 One command takes a feature or build request to working code. A fresh session writes the spec, a
 second fresh session writes failing tests from that spec alone, and the main session implements
-against tests it is not allowed to change. The design insight, in one sentence:
+against tests it is not allowed to change. The design insight:
 
 > Tests only catch a misreading of the request when they are written by something that did not
 > also write the code, so the test writer is given the spec and nothing else.
@@ -15,7 +15,7 @@ against tests it is not allowed to change. The design insight, in one sentence:
 
 It came out of evaluating [agent-mcts](https://github.com/natsu0529/agent-mcts), a harness that
 wraps Claude Code in a tree search over several attempts. Its own published benchmark (v0.4.1,
-three small Python tasks, Haiku, 10 to 20 runs per setting) showed where the gain actually was:
+three small Python tasks, Haiku, 10 to 20 runs per setting) showed where the gain was:
 
 | Setting | Answer better than a single attempt | Worse | Time | Cost per run |
 |---|---|---|---|---|
@@ -23,16 +23,16 @@ three small Python tasks, Haiku, 10 to 20 runs per setting) showed where the gai
 | Search scored by an LLM judge | 11 of 20 | 4 of 20 | about 21 min | $1.81 |
 | Search scored on tests an agent wrote from the task | 16 of 20 | 2 of 20 | about 19 min | $2.44 |
 
-Three things in that data shaped this skill:
+What shaped this skill:
 
 - **The gain came from the tests, not the search.** With only the existing tests, searching was
   no better than one attempt. With tests written from the task by a separate agent, the hidden
   test pass rate rose from 88% to 93%, and 32 of 40 revisions improved on their parent because a
   failing test told the next attempt what to fix.
-- **The search itself was the expensive part.** Roughly four times the wall time and five to six
+- **The search was the expensive part.** Roughly four times the wall time and five to six
   times the cost, for a tree that was three attempts plus two revisions.
 - **Generated tests can encode the bug.** On a vague bug report about misaligned Japanese text,
-  the test writer measured alignment in characters, exactly as the buggy code did. The unfixed
+  the test writer measured alignment in characters, as the buggy code did. The unfixed
   code passed, every real fix failed, and the tool returned the unfixed code in 10 of 10 runs.
 
 So the skill keeps the part that worked, independent tests written before the code, and drops the
@@ -53,10 +53,10 @@ any code is written.
 ## Design decisions
 
 - **Two fresh sessions, not one.** If one session wrote both the spec and the tests, its unstated
-  assumptions would reach the tests without ever being written down. Splitting them makes the
+  assumptions would reach the tests without being written down. Splitting them makes the
   spec file the only channel, so every assumption has to be on the page where you can read it.
-- **The spec session gets only what you type after the command.** Nothing else from the
-  conversation is passed. Anything you want in the spec belongs in the request.
+- **The spec session gets only what you type after the command.** Anything you want in the spec
+  belongs in the request.
 - **Main session only.** The main session holds the request and is the one that can launch fresh
   sessions and ask you a question. A subagent running the skill would either write the tests
   itself, which removes the independence, or launch sessions nobody can answer.
@@ -74,7 +74,7 @@ any code is written.
   uploading is how a personal skill reaches cloud and Cowork sessions. The cost is that
   "user-invoked only" is an instruction in the body, not a setting Claude Code enforces.
 
-The reason behind each individual rule is in [`references/rationale.md`](references/rationale.md).
+The reason behind each rule is in [`references/rationale.md`](references/rationale.md).
 
 ## When not to use it
 
