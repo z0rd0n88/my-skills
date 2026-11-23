@@ -99,8 +99,8 @@ Skip this step when the argument is a path to an existing spec file. Use that fi
 and go to step 2.
 
 Launch a fresh session with [`references/spec-brief.md`](references/spec-brief.md) and these
-inputs: the request verbatim, any requirement or constraint the user stated about it earlier in
-this conversation (the user's words, quoted, with nothing of yours added), the repository root, the spec path `docs/specs/<slug>.md` (or the
+inputs: the request exactly as the user typed it after the command and nothing else from this
+conversation, the repository root, the spec path `docs/specs/<slug>.md` (or the
 repository's existing specs directory when it has one), and the test command.
 
 Its reply starts with one of three words:
