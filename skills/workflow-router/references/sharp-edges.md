@@ -1,7 +1,7 @@
 # Sharp edges and review checks
 
-The failure modes behind Step 5 of `workflow-router`, each as symptom, cause and fix, followed
-by a checklist for reviewing workflow code. Platform specifics here are pointers: confirm them
+The failure modes behind the reliability checks in [durable-workflows.md](durable-workflows.md),
+each as symptom, cause and fix, followed by a checklist for reviewing workflow code. Platform specifics here are pointers: confirm them
 against the docs for the SDK version the project has installed.
 
 ## Contents

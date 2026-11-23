@@ -1,149 +1,139 @@
 ---
 name: workflow-router
-description: Use when a task needs, or would be improved by, a durable workflow — a multi-step process with external side effects, money or state that must not be lost half-way, retries, long waits, webhooks, background jobs or cron. Picks the trigger, the step shape (sequential, parallel, orchestrator-worker), the platform (Temporal, Inngest, n8n, Step Functions, Durable Functions) and the reliability checks, or says no workflow is needed. Not for agent fan-out or CI pipelines.
+description: Use at the start of an engineering task, and whenever a task needs or would be improved by a workflow, to pick the one that fits. Routes three kinds. The process to follow (feature, bug fix, spike, TDD-Ralph loop, refactor, migration, dependency upgrade, debugging, onboarding, incident response, code review). The agent orchestration shape when work outgrows one context (classify, fan out, adversarial verify, generate and filter, tournament, loop until done). The durable workflow design for application code (trigger, step shape, engine such as Temporal or Inngest, reliability checks). Also says when no workflow is needed.
 ---
 
 # workflow-router
 
-Routes a situation to the workflow design that fits it, then states the route in a short card
-before any code is written. "Workflow" here means a durable application process: steps that are
-checkpointed, retried and resumed by a workflow engine.
+Picks the workflow that fits the situation and states it before the work starts. "Workflow"
+means three different things, so the router has three lanes:
 
-Use it in two cases: the user asks for a workflow, or you notice a task that would be more
-reliable as one (Step 2 lists the signs). In the second case, say so in one line and give the
-route card; don't silently rebuild their code around an engine.
-
-## Step 1 — is this the right router?
-
-"Workflow" has other meanings. Send these elsewhere before going further:
-
-| What the task really is | Go to |
-|---|---|
-| Coding agents fanned out in this session (review lanes, parallel subagents, best-of-N) | `zord-multi-agent-review`, `branch-off`, `three-agent-wf`; a phased build goes to `zord-baton-runner` |
-| A build, test or deploy pipeline | `addyosmani-ci-cd-and-automation` |
-| The API contract a workflow sits behind | `addyosmani-api-and-interface-design` |
-| A browser or desktop step inside a workflow | `vercel-agent-browser`, `vercel-computer-use` (this router still picks the workflow around it) |
-| ETL or analytics pipelines; Zapier or Make | Not covered here. Say so and carry on without this skill. |
-
-**The project's own framework wins.** Look for one before choosing anything: a workflow SDK in
-the lockfile (`@temporalio/*`, `inngest`, `@outputai/*`), Step Functions state machine
-definitions, n8n workflow exports, or a plugin that claims workflow creation (Output.ai's `output-plan-workflow`, for
-example). When one exists, use it and its skills, skip Step 4, and still do Steps 2, 3 and 5.
-
-## Step 2 — does it need a workflow at all?
-
-Start simple; add an engine only when reliability demands it. A workflow is warranted when at
-least one of these holds:
-
-- Money or other state that must never be lost or applied twice when something fails half-way.
-- Two or more external side effects, where a failure between them leaves things inconsistent.
-- A wait longer than a request or a process lives: hours, days, a human approval.
-- Work that has to survive a deploy, a crash or a worker restart.
-- A recurring job whose failures someone must hear about.
-- A long loop over many items where losing progress is expensive.
-
-Signs in existing code that it would be improved by one: a hand-written retry loop around an API
-call; `setTimeout` or `sleep` standing in for a delay of hours; a cron script with no failure
-alert; a webhook handler that does the heavy work before it answers; a status column plus a
-polling job acting as a state machine; "resume from where it failed" done by hand.
-
-If none apply, say **no workflow needed** and name the simpler thing: a plain function, one
-idempotent job on the queue the project already has, or a single cron entry. Then stop.
-
-## Step 3 — route on three axes
-
-The patterns are not six alternatives. Pick one trigger and one shape; the reliability layer is
-always on.
-
-**Trigger: what starts it?**
-
-| It starts when | Trigger |
-|---|---|
-| Something happens: a user action, a webhook, another system's event | Event-driven |
-| The clock says so: a daily report, a periodic sync, a batch window | Scheduled |
-| A person or a caller asks for this one run | Direct start |
-
-Prefer an event when either would work. A schedule that polls for changes is usually an event
-trigger with extra delay.
-
-**Shape: how do the steps relate?**
-
-| Shape | Pick it when | Typical cases |
+| Lane | What it decides | Reference |
 |---|---|---|
-| Sequential | Each step needs the previous step's output, or order matters | Order → payment → shipment → confirmation; content pipelines |
-| Parallel | Steps are independent and their results are combined at the end | Several analyses of one document; data from several sources |
-| Orchestrator-worker | The subtasks are not known until the input is examined, or need different specialists | A planner that splits a request and dispatches to create, modify and delete workers |
+| **Process** | How you and the user structure a piece of engineering work, and which gate must not be skipped | [references/engineering-workflows.md](references/engineering-workflows.md) |
+| **Orchestration** | How to spread a step across many agents when it is too big for one context | [references/agent-orchestration.md](references/agent-orchestration.md) |
+| **Durable** | How application code runs a multi-step process on a workflow engine | [references/durable-workflows.md](references/durable-workflows.md) |
 
-Take the simplest shape that fits: sequential, then parallel, then orchestrator-worker. Shapes
-nest, so a sequence with one fanned-out stage is still sequential with a parallel step. When an
-LLM writes the orchestrator's plan, validate it against an allowlisted schema and a permission
-and budget limit before dispatching anything.
+Routing takes seconds. Do it, say the route in a line, then read only the reference section for
+the workflow you picked. A one-line change needs no workflow: say so and make the change.
 
-**Reliability layer: retry and recovery.** Any step that touches something external gets
-retries with backoff and a place for runs that exhaust them. Step 5 covers it.
+## Step 1 — which lanes apply?
 
-## Step 4 — platform
+- Any work on a codebase gets a **process** workflow (Step 2).
+- Add an **orchestration** shape when one step of that process is too large for one context, has
+  many independent items, or needs independent verification (Step 3).
+- Add a **durable** design when the thing being built or changed is itself a multi-step process
+  that must survive failures: payments, webhooks, long waits, background jobs, cron (Step 4).
 
-Ask in this order and stop at the first match:
+Lanes stack. "Add an order-fulfilment flow" is Feature Implementation (process) building a
+sequential event-driven workflow (durable). "Replace library X in 400 files" is Migration
+(process) executed by the Migrate shape (orchestration).
 
-| Question | Platform | Cost of the choice |
-|---|---|---|
-| Will non-developers build and own it, or is it a quick prototype of integrations? | n8n | Visual and self-hostable; alerting on failure is not on by default |
-| Is the stack AWS-native with Lambdas already written? | AWS Step Functions | JSON state definitions; 256 KB payload limit |
-| Is the stack Azure, in .NET or TypeScript? | Azure Durable Functions | Checkpoint-and-replay rules apply to orchestrator code |
-| Is it money, or correctness-critical across services? | Temporal | Strongest durability guarantees; steepest learning curve and its own cluster or cloud |
-| Otherwise: event-driven, serverless, TypeScript, AI steps | Inngest | Runs on any hosting; least ceremony |
+Not routed here: a build, test or deploy pipeline goes to `addyosmani-ci-cd-and-automation`.
 
-## Step 5 — reliability checks
+## Step 2 — process lane: pick one primary workflow
 
-Apply every line that fits the route. Symptoms, causes and fixes are in
-[references/sharp-edges.md](references/sharp-edges.md); read it before writing or reviewing
-workflow code.
+Ask in this order and take the first match.
 
-- **Critical: idempotent side effects.** Durable does not mean exactly-once. Each external write
-  carries a key built from stable inputs (`order-<id>-payment`), passed to the provider.
-- **Critical: nothing non-deterministic in replayed workflow code.** Random values, clock reads
-  and I/O belong in steps or activities, or in the SDK's replay-safe API.
-- **High: a timeout on every activity and external call**, shorter than the workflow's own.
-- **High: many small steps, not one long one.** Durable sleep for waits; child workflows for batches.
-- **High: references, not payloads, between steps.** Store large data and pass its key.
-- **High: a failure path.** Runs that exhaust retries are logged, alerted on and stored for recovery.
-- **Medium: exponential backoff** with a cap and jitter, and named non-retryable errors.
-- **Medium: heartbeats** on long Temporal activities; **an Error Trigger** on every production n8n workflow.
+| # | Question | Workflow | Gate you must not skip |
+|---|---|---|---|
+| 1 | Is production broken right now? | Incident Response | Mitigate before diagnosing; always write the postmortem |
+| 2 | Is someone else's change in front of you to judge? | Code Review | Understand the intent before commenting; triage every comment |
+| 3 | Is behaviour wrong and you can't yet explain or reproduce it? | Debugging | Reproduce before theorising; keep a written hypothesis log |
+| 4 | Is behaviour wrong, reproducible, with the right behaviour known? | Bug Fix | A reliable reproduction, then a failing test, before the fix |
+| 5 | Is the real question "would this approach even work"? | Spike / Prototype | Time-box it and throw the code away |
+| 6 | Is the codebase unfamiliar and you need more than one change's worth of it? | Onboarding | One small real contribution early |
+| 7 | Is it one dependency moving to a newer version? | Dependency Upgrade | Read the full changelog; one major version at a time |
+| 8 | Is it replacing pattern X with Y across the codebase? | Migration | Inventory before estimating; not done until the old path is deleted |
+| 9 | Is it structure only, with no behaviour change? | Refactor | Tests cover the area first; one named transform per commit |
+| 10 | Is it new capability? | Feature Implementation | The plan is approved before code is written |
+| 10a | …and large, split into spec'd tasks, with fast deterministic tests and a sandbox? | TDD-Ralph loop | A sandbox and human-written failing tests before the loop runs |
 
-Always, whatever the route: authenticate webhooks, deduplicate events, keep payloads and
-credentials out of workflow history and logs, use test accounts for payments, and never send
-real messages or create schedules without the user's go-ahead.
+The common mistake is running Feature Implementation for everything: a full plan for a one-line
+null check, or a fix started before the bug is reproduced.
 
-## Step 6 — state the route, then build
+**Composition rules**
 
-Give this card, one line per field, before writing code:
+1. **One workflow is primary.** A small refactor inside a feature is a sub-step with its own
+   commit. When a sub-task starts to dominate, ship what you have and start that workflow fresh.
+2. **Hand-offs are written down.** Debugging ends in a conclusion that Bug Fix starts from. A
+   Dependency Upgrade with no drop-in replacement hands off to Migration. Incident Response
+   hands off to Debugging once service is stable.
+3. **Keep every gate.** When workflows nest, each one's gate still applies.
+
+Gates that act outside the repo stay with the user: reverting or failing over in production,
+posting review comments, and starting a TDD-Ralph loop all wait for their go-ahead.
+
+## Step 3 — orchestration lane: pick a shape
+
+Take the simplest shape that fits. Shapes stack (fan out, then verify, then loop).
+
+| Shape | Pick it when |
+|---|---|
+| Classify and act | Mixed inputs that each need a different handler, or untrusted content that should be read by one agent and acted on by another |
+| Fan out and synthesize | The work splits into non-overlapping slices and the answer needs all of them |
+| Adversarial verification | Output could be plausible and wrong; separate agents try to refute each item |
+| Generate and filter | A matter of taste; overgenerate, then a different agent judges down |
+| Tournament | Many candidates to rank, where scoring each one cold drifts |
+| Loop until done | The number of attempts can't be known in advance |
+
+Ready-made combinations for engineering work (Understand, Design, Review, Research, Migrate),
+the quality patterns and the scripting rules are in the reference.
+
+**Opt-in.** In Claude Code these run through the `Workflow` tool, which needs the user's
+explicit opt-in: they ask for a workflow or a fan-out, `ultracode` is on, or they invoke a skill
+that calls it. Selecting a shape is always allowed; running it is not. Without opt-in, name the
+shape and the rough agent count in the route and ask, and carry on with what can be done inline.
+Scout inline first (list the files, find the call sites) so the run gets a real work-list.
+
+Existing skills already implement some shapes, so use them when the task matches:
+`dw-review` and `zord-multi-agent-review` (Review), `branch-off` (best-of-N with judges),
+`zord-baton-runner` (a phased build), `code-cleaver` (a whole-codebase audit).
+
+## Step 4 — durable lane: design the workflow
+
+Follow [references/durable-workflows.md](references/durable-workflows.md). In short:
+
+1. **Check it needs an engine.** Money or state that can't be lost half-way, several external
+   side effects, long waits, or work that must survive a crash. Otherwise a function, a queue
+   job or a cron entry is enough. A framework already in the project wins over any new choice.
+2. **Pick a trigger** (event, schedule, direct start) **and a shape** (sequential, parallel,
+   orchestrator-worker). Retry and recovery always applies.
+3. **Pick the platform:** n8n, AWS Step Functions, Azure Durable Functions, Temporal or Inngest.
+4. **Apply the reliability checks** in [references/sharp-edges.md](references/sharp-edges.md):
+   idempotency keys, determinism, timeouts, small steps, a failure path.
+
+## Step 5 — state the route
+
+For most tasks, one line before starting:
+
+```
+Workflow: Bug Fix — gate: reproduce, then a failing test, before the fix.
+```
+
+When lanes stack, one line per lane:
 
 ```
 Workflow route
-- Needed:    yes — <the Step 2 reason>          (or: no — <the simpler thing>; stop here)
-- Trigger:   event <name> | schedule <cron> | direct start
-- Shape:     sequential | parallel | orchestrator-worker — <why>
-- Platform:  <name> — <why, or "already in the repo">
-- Steps:     1. <step> [side effect? key? timeout?]  2. …
-- Failure:   <where exhausted runs go and who hears about it>
-- Open:      <anything you could not determine>
+- Process:        Migration — gate: inventory first; done only when the old path is deleted
+- Orchestration:  Migrate shape (discover → transform per worktree → verify), about 8 agents — needs your opt-in
+- Durable:        not applicable
+- Open:           <anything you could not determine>
 ```
 
-Ask the user only when the route turns on something the repo cannot tell you, such as which
-cloud they deploy to or whether real money moves. Otherwise state the route and proceed.
-
-Write code against the installed SDK's version and its current docs, not from memory: workflow
-SDK signatures change between major versions (Inngest's `createFunction`, Temporal's schedules),
-and `addyosmani-source-driven-development` describes how to check.
+Then do the work by the steps in the reference, and stop at each gate until it is met. If the
+task changes shape part-way (a bug fix that turns out to need debugging), say so and re-route.
 
 ## Examples
 
 | Situation | Route |
 |---|---|
-| Charge the card, create a shipment and email a confirmation when an order is placed | Event · sequential · Temporal (money), or the engine already in the repo · keys on charge, shipment and email |
-| Run security, performance and compliance analysis on each uploaded document | Event · parallel, then one aggregate step · Inngest |
-| Welcome email an hour after signup, a nudge after three days if inactive | Event · sequential with durable sleeps · Inngest |
-| Every morning at 9, gather metrics and mail the report | Scheduled · sequential · n8n if ops owns it, otherwise the repo's engine · failure alert required |
-| "Do whatever this free-text request needs" | Direct start or event · orchestrator-worker · plan validated before dispatch |
-| Resize an image on upload | No workflow: one idempotent job on the existing queue |
+| "Checkout total is wrong for orders with a discount" | Bug Fix, if it reproduces; otherwise Debugging first |
+| "Tests fail one run in thirty" | Debugging · loop until done to reproduce it |
+| "Can Postgres full-text search replace our Elasticsearch?" | Spike · Research shape if the reading is wide |
+| "Move every call from Moment.js to date-fns" | Migration · Migrate shape for the bulk |
+| "Bump React from 17 to 19" | Dependency Upgrade, 17 → 18 → 19 · stop at each major |
+| "Review this PR" | Code Review · Review shape via `dw-review` |
+| "Charge the card, ship the order and email a receipt on each purchase" | Feature Implementation · durable: event, sequential, Temporal or the repo's engine |
+| "Rank these 200 name ideas" | Generate and filter, or Tournament for the final ranking |
+| "Fix this typo" | No workflow |
