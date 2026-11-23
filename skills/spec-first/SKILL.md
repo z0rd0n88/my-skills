@@ -106,8 +106,10 @@ repository root, and the test command. Do not pass the request.
 
 When it returns, check its work yourself:
 
-1. `git status --porcelain` shows only new or changed test files, plus the spec. If it touched
-   anything else, revert those paths and say so in the final report.
+1. `git status --porcelain` shows only new or changed test files, plus the spec. Caches and
+   other byproducts of running the tests (`__pycache__`, coverage output) do not count and are
+   never committed. If it touched anything else, revert those paths and say so in the final
+   report.
 2. Run the new tests. Each behaviour marked `new` in the spec has at least one failing test, and
    each failure is an assertion or a missing symbol the spec names, not a syntax error or a
    broken import of the test tooling. Send failures of the wrong kind back to a fresh session
