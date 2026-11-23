@@ -1,0 +1,11 @@
+{"type":"object","additionalProperties":false,
+ "required":["opt_in_evidence","units","fit_reasoning","fit","opt_in","verdict","shape","note"],
+ "properties":{
+  "opt_in_evidence":{"type":"string"},
+  "units":{"type":"string"},
+  "fit_reasoning":{"type":"string"},
+  "fit":{"type":"string","enum":["strong","marginal","poor"]},
+  "opt_in":{"type":"boolean"},
+  "verdict":{"type":"string","enum":["run_workflow","offer_workflow","no_workflow"]},
+  "shape":{"type":["string","null"]},
+  "note":{"type":["string","null"]}}}

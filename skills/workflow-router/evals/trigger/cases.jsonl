@@ -1,0 +1,21 @@
+{"id":"bug-wrong-total","expect":"load","prompt":"The checkout total is wrong for orders with a discount code: a 10% code on a $50 order charges $46. Fix it."}
+{"id":"flaky-test","expect":"load","prompt":"The payments test suite fails about one run in thirty and nobody knows why. Find out what is going on."}
+{"id":"new-feature","expect":"load","prompt":"Users should be able to invite teammates by email, with roles and an expiry on the invite link. Build it."}
+{"id":"library-swap","expect":"load","prompt":"Replace Moment.js with date-fns across the whole frontend."}
+{"id":"major-upgrade","expect":"load","prompt":"Bump React from 17 to 19."}
+{"id":"split-class","expect":"load","prompt":"Split the 2,000-line OrderService class into smaller modules. Behaviour must stay identical."}
+{"id":"prod-down","expect":"load","prompt":"The production API has returned 500 for every request since the last deploy. Help."}
+{"id":"inherited-repo","expect":"load","prompt":"I inherited this repo this week and have never seen it. Help me get to know it well enough to own it."}
+{"id":"feasibility","expect":"load","prompt":"Could SQLite replace Postgres for our analytics queries? Try it on a sample and tell me."}
+{"id":"asks-which-workflow","expect":"load","prompt":"Which workflow should I follow to move our auth from server sessions to JWTs?"}
+{"id":"too-big-for-one-context","expect":"load","prompt":"I need all 60 service files audited for missing input validation, with each finding checked by a second pass. It will not fit in one context. How should the work be split across agents?"}
+{"id":"durable-order-flow","expect":"load","prompt":"Design the background flow that charges the card, ships the order and emails a receipt after each purchase. It must survive a crash half-way without charging twice."}
+{"id":"typo","expect":"skip","prompt":"Fix the typo in the README title: 'Instalation' should be 'Installation'."}
+{"id":"stale-comment","expect":"skip","prompt":"The comment above retry() says 3 attempts but the code does 5. Update the comment."}
+{"id":"version-string","expect":"skip","prompt":"Set the version string in package.json to 2.4.1."}
+{"id":"git-question","expect":"skip","prompt":"What does the --no-ff flag do in git merge?"}
+{"id":"regex-question","expect":"skip","prompt":"Explain how this regex works: ^(a+)+$"}
+{"id":"email","expect":"skip","prompt":"Draft a short email to the team announcing Friday's release freeze."}
+{"id":"run-tests","expect":"skip","prompt":"Run the test suite and tell me which tests fail."}
+{"id":"recent-commits","expect":"skip","prompt":"Show me the last five commits on main."}
+{"id":"continue","expect":"skip","prompt":"Yes, go ahead with step 3 of the plan."}
