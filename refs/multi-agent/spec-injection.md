@@ -1,6 +1,6 @@
 # Spec / requirement injection
 
-Shared primitive for ensuring multi-agent reviewers measure their output against the *originating intent*, not just the diff in isolation. Cited by `zord-total-review`, `zord-multi-agent-review`.
+Shared primitive for ensuring multi-agent reviewers measure their output against the *originating intent*, not just the diff in isolation. Cited by `total-review`, `multi-agent-review`.
 
 ## The failure this prevents
 
@@ -33,12 +33,12 @@ This makes "you built the wrong thing" a first-class finding category rather tha
 
 | Skill | How to inject |
 |---|---|
-| `zord-multi-agent-review` | Pass spec path via `--prompt-prelude <path>`. The skill already prepends prelude contents to every reviewer brief — this is the right hook; no schema change needed. |
-| `zord-total-review` | For `pre-pr` mode, accept an optional `--spec <path>` argument; for recurring full-codebase modes (`code`, `architecture`, etc.), spec injection is N/A — those don't have a single originating spec. |
+| `multi-agent-review` | Pass spec path via `--prompt-prelude <path>`. The skill already prepends prelude contents to every reviewer brief — this is the right hook; no schema change needed. |
+| `total-review` | For `pre-pr` mode, accept an optional `--spec <path>` argument; for recurring full-codebase modes (`code`, `architecture`, etc.), spec injection is N/A — those don't have a single originating spec. |
 
 ## Spec budget
 
-Specs can be long; reviewer context isn't free. Hard cap injected spec at 16 KB (matches `zord-multi-agent-review`'s `--prompt-prelude` cap). If the spec exceeds this:
+Specs can be long; reviewer context isn't free. Hard cap injected spec at 16 KB (matches `multi-agent-review`'s `--prompt-prelude` cap). If the spec exceeds this:
 
 1. Prefer the acceptance-criteria block alone over the full spec.
 2. If that's still over budget, truncate the body but **always preserve the acceptance criteria verbatim** — those are what reviewers must check against.

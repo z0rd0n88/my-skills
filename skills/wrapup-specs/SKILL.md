@@ -89,8 +89,8 @@ repository would the resulting commit land in?* That repo is the project.
 
 Judge by the **deliverable** — the thing being changed. Specifically **not**:
 
-- **Not the instrument.** *"Run `zord-multi-agent-review pr 272 --yes` on BotHaus and force a
-  merge/park decision"* → **BotHaus**. `zord-multi-agent-review` is the tool used, not the thing
+- **Not the instrument.** *"Run `multi-agent-review pr 272 --yes` on BotHaus and force a
+  merge/park decision"* → **BotHaus**. `multi-agent-review` is the tool used, not the thing
   changed. A first-tool-name-wins scan would wrongly say Z0rd0nZords.
 - **Not the evidence.** An issue row whose Body states a cross-repo policy but whose Evidence
   column cites specific PRs belongs to the repo the *policy* lands in, not the cited repos.

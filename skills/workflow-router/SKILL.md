@@ -97,9 +97,9 @@ carry on with what can be done inline. A weaker fit is done inline without askin
 first (list the files, find the call sites) so the run gets a real work-list.
 
 Existing skills already implement some of these, so use them when the task matches: `dw-review`
-(the Review combination; the default for a multi-agent review), `zord-multi-agent-review` (only
+(the Review combination; the default for a multi-agent review), `multi-agent-review` (only
 when the review should loop review → fix until clean), `branch-off` (best-of-N with judges),
-`zord-baton-runner` (a phased build), `code-cleaver` (a whole-codebase audit).
+`baton-runner` (a phased build), `code-cleaver` (a whole-codebase audit).
 
 ## Step 4 — durable lane: design the workflow
 

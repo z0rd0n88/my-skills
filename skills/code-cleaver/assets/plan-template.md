@@ -66,7 +66,7 @@ The checklist is what reviewers receive, so a lens is changed there and nowhere 
 
 ## How a slice is run
 
-- One slice is one `zord-multi-agent-review` run on **one or two directories**: `dir` for
+- One slice is one `multi-agent-review` run on **one or two directories**: `dir` for
   one, `slices` for two. The tool runs the whole roster once per directory and hard-fails
   when roster times directories passes <<limit>>, and its automatic roster is <<seats>>
   seats. A directory with more than <<file cap>> tracked files passes `--max-files <n>`.

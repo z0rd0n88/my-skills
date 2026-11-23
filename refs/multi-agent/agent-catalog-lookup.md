@@ -1,6 +1,6 @@
 # Agent catalog lookup
 
-Shared primitive for any multi-agent skill that picks specialists from the project's active agents plus the user-scoped parked catalog. Cited by `zord-total-review`, `zord-multi-agent-review`.
+Shared primitive for any multi-agent skill that picks specialists from the project's active agents plus the user-scoped parked catalog. Cited by `total-review`, `multi-agent-review`.
 
 ## The two catalogs
 
@@ -51,7 +51,7 @@ and two only by internal name.
 
 **Whichever shape matched, the `subagent_type` you dispatch with is the resolved
 file's filename stem** — that is what the Agent tool registers, per
-`zord-multi-agent-review` §5A.4 and the user-scope `CLAUDE.md` § Agent Roster. Resolution
+`multi-agent-review` §5A.4 and the user-scope `CLAUDE.md` § Agent Roster. Resolution
 accepts two shapes; dispatch emits exactly one.
 
 ## Selection heuristics (when the skill picks the roster)
@@ -71,4 +71,4 @@ as the selector's semantic-matcher ordering when a lane is unmapped:
 - **Name collision.** Two `agents/disabled/<name>.md` and `agents/<name>.md` both have the same `name:` field. Harness loads one silently and drops the other. Audit project agents with `grep -rh ^name: <repo>/.claude/agents/ | sort | uniq -d`.
 - **Parked agent depended on by a wrapper that doesn't activate it.** A `<slug>-total-review/config.yml` references a lens that's parked but not activated → reviewer fan-out runs with degraded coverage. The orchestrator MUST warn loudly (not silently skip) and ask the user to activate before retrying.
 - **Filename ≠ internal name — and resolving by *either* one alone silently fails.** By filename only, `python-reviewer` misses an agent living as `python-reviewer.md` with `name: python-reviewer`. By `^name:` only, `architect-reviewer` and `security-reviewer` — both in this skill's own default roster — match nothing, because their files carry `architect-reviewer` and `security-reviewer`. Match on both shapes (Lookup procedure step 1), and hard-fail when they disagree.
-- **A roster name that resolves under no rule.** The symptom is a hard-fail at parse time, which is the good case. The dangerous variant is a lane whose absence is *tolerated* — `penetration-tester` is explicitly allowed to be missing without hard-failing (`zord-multi-agent-review` §4), so a mis-shaped name in that slot degrades the roster silently instead of stopping. Audit a roster by resolving every name before trusting a run that reports fewer lanes than expected.
+- **A roster name that resolves under no rule.** The symptom is a hard-fail at parse time, which is the good case. The dangerous variant is a lane whose absence is *tolerated* — `penetration-tester` is explicitly allowed to be missing without hard-failing (`multi-agent-review` §4), so a mis-shaped name in that slot degrades the roster silently instead of stopping. Audit a roster by resolving every name before trusting a run that reports fewer lanes than expected.

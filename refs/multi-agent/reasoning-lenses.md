@@ -1,7 +1,7 @@
 # Reasoning lenses
 
 Shared primitive for reviewing a document's *reasoning* rather than its form. Cited by
-`zord-multi-agent-review` (`--lenses`) and `zord-reasoned-review`.
+`multi-agent-review` (`--lenses`) and `reasoned-review`.
 
 ## The failure this prevents
 

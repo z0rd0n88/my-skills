@@ -31,7 +31,7 @@ only the block below and stop.
 > leave in that worktree (a virtualenv, caches). It changes no tracked file and commits
 > nothing.
 >
-> Needs `zord-multi-agent-review`, `zord-reasoned-review` and `finding-fixer`, a git repo,
+> Needs `multi-agent-review`, `reasoned-review` and `finding-fixer`, a git repo,
 > and a top-level session.
 >
 > ```
@@ -69,7 +69,7 @@ plan states a judgement, such as which trees are high-risk, it says it is one.
 
 ## Review tool limits
 
-Five figures from `zord-multi-agent-review` 2.3.0, checked against the installed copy in
+Five figures from `multi-agent-review` 2.3.0, checked against the installed copy in
 stage 1. `cleaver.py` carries the first and last as `MAX_FILES_DEFAULT` and `PRELUDE_CAP`.
 
 | Figure | 2.3.0 |
@@ -87,7 +87,7 @@ Nine stages, in order. Each ends on a check; move on when the check holds.
 1. Confirm this is a top-level session; in a subagent, stop and say code-cleaver must be
    run from the main session. The review skills dispatch two layers of agents of their own,
    and the tool supports no third.
-2. Confirm `zord-multi-agent-review`, `zord-reasoned-review` and
+2. Confirm `multi-agent-review`, `reasoned-review` and
    `finding-fixer` are in this session's skill list. If one is absent, stop with
    `code-cleaver needs <name>, which is not installed in this session.` Leave installing to
    the user. Use the session's installed skills even where the repo vendors its own copy,
@@ -261,7 +261,7 @@ and `verify` prints `VERIFY: PASS`.
 ## 7. Run the tracer
 
 1. Copy `checklist.md` to `<id>-checklist.md` and fill `This run`. Note the start time.
-2. Invoke `zord-multi-agent-review` and follow it, with the target and flags
+2. Invoke `multi-agent-review` and follow it, with the target and flags
    the plan's `How a slice is run` section sets for the tracer's row.
 3. When it returns, check the report before believing it: the file exists, its Coverage
    Report says `Reviewers: n/n returned` with equal numbers, and `Reviewed at:` is the
@@ -280,7 +280,7 @@ file, the Tracer result says for every CRITICAL and HIGH whether its cited lines
 A first-draft plan reads fine and fails in use: the run this skill came from had twelve HIGH
 problems that showed only when reviewers set the plan against the tracer report.
 
-1. Invoke `zord-reasoned-review` on the plan's absolute path, asking it to
+1. Invoke `reasoned-review` on the plan's absolute path, asking it to
    forward `--write-to <abs audit folder>/plan-review.md`. If the report lands in the tool's
    default folder, copy it into the audit folder. Run the stage 7 step 3 integrity check.
 2. `python3 $C stamp <plan-review.md> <scratch>/plan-review-findings.md` to give every

@@ -8,7 +8,7 @@ The repo is also a plugin marketplace named `my-skills` (`.claude-plugin/marketp
 
 | Plugin | Skills |
 |---|---|
-| `zord-review` | 16: the `zord-*` review skills, `dw-review`, `finding-fixer`, `pr-review-router`, `code-cleaver`, `audit-numeric-types`, `ci-parity-run`, `skill-sheriff-cc`, `drift-status-check`, plus the `zord-total-review-init` command |
+| `zord-review` | 16: the carried review skills (`multi-agent-review`, `total-review`, `reasoned-review` and their variants), `dw-review`, `finding-fixer`, `pr-review-router`, `code-cleaver`, `audit-numeric-types`, `ci-parity-run`, `skill-sheriff-cc`, `drift-status-check`, plus the `total-review-init` command |
 | `zord-workflow` | 30: `workflow-router`, build runners, spec-to-test development, batons and handoffs, branch and PR wrap-up, specs and weekly wrap-ups, session and cloud-environment helpers, writing modes (`chiquita`, `bro-*`, `i-have-adhd`, `vista-improve-prompt`) and tools (`vercel-*`, `rekordbox-add`) |
 | `zord-lateral` | 9: `lateral` and its eight thinking techniques |
 | `zord-addyosmani` | 26: the vendored `addyosmani-*` skills and `addy-code` |
@@ -25,7 +25,7 @@ The repo is also a plugin marketplace named `my-skills` (`.claude-plugin/marketp
 /plugin install zord-mattpocock --marketplace z0rd0n88/my-skills
 ```
 
-A plugin namespaces its skills, so `dw-review` runs as `zord-review:dw-review`. Skills call across plugins: the review skills use `baton-pass`, `spec-tacular`, `pr-merge-cleanup` and `zord-baton-runner` from `zord-workflow`, and `daily-loop`, `big-next-job` and `baton-runner-managed` use the `addyosmani-*` skills. Enable those plugins together.
+A plugin namespaces its skills, so `dw-review` runs as `zord-review:dw-review`. Skills call across plugins: the review skills use `baton-pass`, `spec-tacular`, `pr-merge-cleanup` and `baton-runner` from `zord-workflow`, and `daily-loop`, `big-next-job` and `baton-runner-managed` use the `addyosmani-*` skills. Enable those plugins together.
 
 Every plugin's `source` is the repo root, so each lists its skill folders. A new skill under `skills/` loads in no plugin until it is added to one list in `marketplace.json`; `scripts/check-marketplace.sh` fails CI until it is. Commands live in `refs/commands/`, because every plugin would load a root `commands/` folder.
 
@@ -37,7 +37,7 @@ Every plugin's `source` is the repo root, so each lists its skill folders. A new
 
 `skills/mattpocock-*` are copies of [mattpocock/skills](https://github.com/mattpocock/skills) at commit `c55ee46`, by Matt Pocock, renamed with a `mattpocock-` prefix (cross-skill references updated to match). MIT licensed; notice in `LICENSES/mattpocock-skills.txt`. One local change: `mattpocock-git-guardrails-claude-code` checks commands with a Python `shlex` parser (`scripts/block-dangerous-git.py`) instead of regexes, fails closed, and has a self-check in `test-block-dangerous-git.sh`.
 
-`skills/zord-*`, `refs/multi-agent/` and `refs/commands/zord-total-review-init.md` came from [z0rd0n88/Z0rd0nZords](https://github.com/z0rd0n88/Z0rd0nZords) at `8f28f91`, which is now retired. `scripts/check-zord-skills.sh` carries over its `-h`/`--help` and size checks.
+The eight carried skills (`baton-runner`, `multi-agent-review`, `multi-agent-review-codex`, `reasoned-review`, `reasoned-review-codex`, `teammate-handoff`, `total-review`, `total-review-scaffold`), `refs/multi-agent/` and `refs/commands/total-review-init.md` came from [z0rd0n88/Z0rd0nZords](https://github.com/z0rd0n88/Z0rd0nZords) at `8f28f91`, which is now retired. `scripts/check-carried-skills.sh` carries over its `-h`/`--help` and size checks.
 
 Findings from every review, audit or critique skill use one severity scale: CRITICAL (fix now), HIGH (fix before merge), MEDIUM (fix when convenient), LOW (optional), with ids `F1`, `F2`, .... It is defined once in `refs/severity-scale.md`, which also maps older labels (Blocker / Should-fix / Minor, `C1`/`H1`, Nit). The vendored `addyosmani-code-review-and-quality` keeps its upstream text and carries a one-line mapping note; no other vendored skill was changed.
 

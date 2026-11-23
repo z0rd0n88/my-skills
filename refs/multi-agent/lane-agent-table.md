@@ -123,7 +123,7 @@ interchangeable and are not:
 |---|---|---|
 | Question asked | "What is the author assuming without saying?" | "How do I make this code do something it must not?" |
 | Output shape | Assumptions / open questions — **no severity tags** | Severity-tagged findings, same rubric as every other lane |
-| Consumed as | Its own report section (`zord-multi-agent-review` §9) | Ordinary findings, merged into the severity buckets |
+| Consumed as | Its own report section (`multi-agent-review` §9) | Ordinary findings, merged into the severity buckets |
 | Status | Floor lane — always on | Signal-activated; forced whenever any `risk_flag` fires |
 
 A repo that rebinds `L-ADVERSARIAL` to an attacker-mindset agent loses the
@@ -131,7 +131,7 @@ assumptions lens entirely and gets two red teams. Rebind `L-REDTEAM` instead.
 
 Neither lane is the **refutation stage** — that is a separate pipeline step that
 attacks *the findings*, not the target, and spawns no lane. See
-`zord-multi-agent-review` §5A.5a.
+`multi-agent-review` §5A.5a.
 
 ## Per-repo override format
 

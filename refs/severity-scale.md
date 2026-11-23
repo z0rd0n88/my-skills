@@ -44,7 +44,7 @@ Every finding shown to the owner carries the level **and** its action, then its 
   first. One sequence for the whole report: it never restarts per section, and it never encodes the
   level. `finding-fixer` matches its verdicts back by this id.
 - **Level first.** Start the line or heading with the level, as above (a heading reads
-  `### HIGH (fix before merge) · F3 — <title>`). `zord-multi-agent-review`'s `loop_metrics.py`
+  `### HIGH (fix before merge) · F3 — <title>`). `multi-agent-review`'s `loop_metrics.py`
   counts findings by a level word at the start of a line, and `code-cleaver`'s `stamp` strips the
   level-and-id prefix when it renumbers.
 
@@ -60,7 +60,7 @@ Minor, Major, Nit, P1 ...). When a source uses one, map it with the table below 
 | Should-fix, S1, Important, can-fix-after, P2 | MEDIUM |
 | Minor, M1 when it meant minor, Nit, Optional, Consider, Suggestion, P3 | LOW |
 | FYI | Not a finding; a note |
-| `C1` / `H1` / `M1` / `L1` ids (old `zord-total-review` issues) | The letter was the level: CRITICAL / HIGH / MEDIUM / LOW. Renumber as `F1`... before handing them to `finding-fixer` |
+| `C1` / `H1` / `M1` / `L1` ids (old `total-review` issues) | The letter was the level: CRITICAL / HIGH / MEDIUM / LOW. Renumber as `F1`... before handing them to `finding-fixer` |
 | BLOCK / WARN / INFO verdicts | Unchanged: BLOCK means any CRITICAL, WARN means any HIGH, INFO means neither |
 
 ## Deliberate exceptions
