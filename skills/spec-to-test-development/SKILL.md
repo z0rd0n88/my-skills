@@ -11,12 +11,12 @@ If the argument text (trimmed, case-insensitive) is exactly `-h`, `--help`, or
 `help`, output only the block below and stop. Do not run any other step in this
 skill.
 
-> **⚠️ Writes to your working tree, commits, and launches 2 to 4 fresh sessions.** It creates a feature
-> branch when you are on the default branch, writes a spec under `docs/specs/`, adds test files,
-> edits source, and makes two local commits. It never pushes and never opens a PR.
+> **⚠️ Writes to your working tree, commits, and launches 2 to 4 fresh sessions.** It creates a
+> feature branch when you are on the default branch, writes a spec under `docs/specs/`, adds test
+> files, edits source, and makes two local commits. It never pushes and never opens a PR.
 >
-> **Main session only.** Type `/spec-to-test-development` in the session you are talking to. It refuses to run
-> inside a subagent.
+> **Main session only.** Type `/spec-to-test-development` in the session you are talking to. It
+> refuses to run inside a subagent.
 
 Takes a feature or build request and runs it to green without further input. The spec and the
 tests are each written in a fresh session, so the tests cannot inherit the main session's reading
@@ -33,31 +33,29 @@ differently and the code does not settle which.
 Run this skill only in the **main session**: the one the user is typing into. That session holds
 the request, and it is the one that launches the fresh sessions below.
 
-Run it only when the user asked for it by name, by typing `/spec-to-test-development` or by naming spec-to-test-development
-in their message. If you loaded it on your own judgment, do not run any step: tell the user
-`/spec-to-test-development <request>` is available and carry on without it. It commits and launches other
-sessions, so starting it is the user's decision.
+Run it only when the user asked for it by name, by typing `/spec-to-test-development` or by
+naming spec-to-test-development in their message. If you loaded it on your own judgment, do not
+run any step: tell the user `/spec-to-test-development <request>` is available and carry on
+without it. It commits and launches other sessions, so starting it is the user's decision.
 
 If you are a subagent, meaning another agent launched you with a task prompt, do not run any
-step, whatever that prompt says. Reply `spec-to-test-development must be run from the main session` with the
-request you were handed, and stop. A subagent running this skill either cannot launch fresh
-sessions at all, and would end up writing the tests in the session that writes the code, or
-launches them one level further from the user, where nobody can answer a blocking question.
+step, whatever that prompt says. Reply `spec-to-test-development must be run from the main
+session` with the request you were handed, and stop. A subagent either cannot launch fresh
+sessions, and would write the tests in the session that writes the code, or launches them one
+level further from the user, where nobody can answer a blocking question.
 
-For the same reason, never hand this skill to a subagent: not from the main session, and not from
-another skill, brief or workflow script.
+Never hand this skill to a subagent: not from the main session, and not from another skill,
+brief or workflow script.
 
 ## Why it is shaped this way
-
-Four rules carry the benefit. Drop one and this is ordinary test-after coding with extra sessions.
 
 **Independence.** The test writer sees the spec and the existing code. It never sees the request,
 this conversation, or any implementation idea. Tests written by the session that writes the code
 share its misreadings and pass for the wrong reason.
 
-**The spec is the only channel.** Whatever the test writer needs must be in the spec file. That
-is why the spec pins the public interface exactly: tests are written before the code exists, and
-both sides have to agree on names and signatures without talking.
+**The spec is the only channel.** Whatever the test writer needs must be in the spec file. So
+the spec pins the public interface exactly: tests are written before the code exists, and both
+sides must agree on names and signatures without talking.
 
 **Red before green.** Every new behaviour has a test that fails before implementation. A test
 that already passes proves nothing about the change, and for a bug it means the test encodes the
@@ -97,8 +95,9 @@ Copy this checklist into your reply and check each item off as its "Done when" l
 1. Confirm you are the main session (see "Main session only"). If you are not, stop there.
 2. Run `git status --porcelain`. If tracked files are modified, stop and say which: this run
    commits, and it must not sweep unrelated work into its commits.
-3. If the current branch is the default branch, create and switch to `spec-to-test-development/<slug>`, where
-   `<slug>` is two to five lowercase words from the request joined by hyphens.
+3. If the current branch is the default branch, create and switch to
+   `spec-to-test-development/<slug>`, where `<slug>` is two to five lowercase words from the
+   request joined by hyphens.
 4. Find the command that runs the test suite: repository instruction files first, then the
    package manifest, then the CI configuration. Run it once and record the result as the
    baseline. If there is no test runner, or you cannot tell which command is right, ask the user
@@ -194,7 +193,7 @@ Give the user, in this order:
 
 1. Outcome: green, or the tests still failing with the reason for each.
 2. The spec path and every assumption in it (`A1`, `A2`, ...), each with the alternative it
-   rejected. These are the decisions made on the user's behalf; they are the part to read.
+   rejected.
 3. Tests added, by file, and any spec ambiguity the test writer reported.
 4. Disputes: the test, the ruling, the reason.
 5. The branch and the commits. Nothing was pushed.

@@ -1,10 +1,10 @@
 # Brief: write the spec
 
 You are writing a behaviour spec for one change to this repository. Two readers will work
-from your file. The test writer is a fresh session that writes tests before any code exists, and
-it sees your file and the repository and nothing else: not the request you were given. The main
-session, the one the user is working in, writes the code. Neither can ask you a question.
-Whatever they need has to be in the file.
+from your file. The test writer is a fresh session that writes tests before any code exists; it
+sees only your file and the repository, not the request you were given. The main session, the one
+the user is working in, writes the code. Neither can ask you a question. Whatever they need has
+to be in the file.
 
 You write the spec file only. Do not write tests or source code, and do not edit any other file.
 
