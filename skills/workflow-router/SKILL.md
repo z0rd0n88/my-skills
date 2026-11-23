@@ -82,9 +82,11 @@ the quality patterns and the scripting rules are in the reference.
 
 **Opt-in.** In Claude Code these run through the `Workflow` tool, which needs the user's
 explicit opt-in: they ask for a workflow or a fan-out, `ultracode` is on, or they invoke a skill
-that calls it. Selecting a shape is always allowed; running it is not. Without opt-in, name the
-shape and the rough agent count in the route and ask, and carry on with what can be done inline.
-Scout inline first (list the files, find the call sites) so the run gets a real work-list.
+that calls it. Selecting a shape is always allowed; running it is not. Without opt-in, offer it
+only when the fit is strong (about five or more independent, substantial units, or findings that
+need independent verification): name the shape and the rough agent count in the route, ask, and
+carry on with what can be done inline. A weaker fit is done inline without asking. Scout inline
+first (list the files, find the call sites) so the run gets a real work-list.
 
 Existing skills already implement some shapes, so use them when the task matches:
 `dw-review` and `zord-multi-agent-review` (Review), `branch-off` (best-of-N with judges),

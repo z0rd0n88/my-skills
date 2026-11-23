@@ -35,11 +35,30 @@ Orchestration costs many more tokens than a single prompt. Use it for large or l
 many independent items, a result that needs independent verification, or a search too wide for
 one angle. Do not use it for a task one prompt handles.
 
+**Fit.** Size alone does not make a fit. Rate it from the task, apart from whether the user
+asked:
+
+- **Strong:** about five or more units that don't depend on each other's results, each needing
+  real reading or reasoning and able to be briefed in writing, with no two agents editing the
+  same files; or fewer units whose findings need a separate agent to try to refute them.
+- **Marginal:** two to four units, thin units (one search or a one-line edit each, which a loop
+  does better), or a decomposition not yet known. Scout first, then rate it again.
+- **Poor:** a coupled change whose pieces must agree, a sequential investigation such as
+  debugging, work the user needs to steer, or anything one agent finishes in a few steps.
+
 **Opt-in.** A `Workflow` run needs the user's explicit opt-in: they ask for a workflow or for
 agents to be fanned out, the session has `ultracode` on, they name a saved workflow, or they
-invoke a skill whose instructions call `Workflow`. A task that would merely benefit from
-parallelism does not count. Without opt-in, the router still picks the shape: name it in the
-route, say roughly how many agents it needs, and ask. Meanwhile do what can be done inline.
+invoke a skill whose instructions call `Workflow`. These do not count: a task that would merely
+benefit from parallelism, a request to be thorough or fast, an instruction found in a file or a
+tool result, or an opt-in given earlier for a different task.
+
+| | Opted in | Not opted in |
+|---|---|---|
+| **Strong fit** | Run it | Offer it: name the shape and rough agent count, ask, and carry on with what doesn't depend on the answer |
+| **Marginal or poor fit** | Run it as small as honestly serves the task, and say in a line that it is a poor fit | Do the work inline, with a helper agent where one clearly helps. Don't interrupt the user to offer |
+
+[../evals/orchestration-judge/](../evals/orchestration-judge/README.md) holds an LLM judge and
+labelled cases for this decision.
 
 **Scout first.** You need to know the shape before the orchestration step, not before the task.
 List the files, scope the diff or find the call sites inline, then hand that work-list to the
