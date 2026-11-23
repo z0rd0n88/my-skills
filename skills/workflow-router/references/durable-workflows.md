@@ -8,12 +8,12 @@ what starts it, how its steps relate, which engine, and which reliability checks
 
 1. Does it need a workflow engine at all?
 2. Route on three axes: trigger, shape, reliability
-3. Platform
+3. Engine
 4. Reliability checks
 5. Route card
 6. Examples
 
-**The project's own framework wins.** Look for one before choosing anything: a workflow SDK in
+**The project's own engine wins.** Look for one before choosing anything: a workflow SDK in
 the lockfile (`@temporalio/*`, `inngest`, `@outputai/*`), Step Functions state machine
 definitions, n8n workflow exports, or a plugin that claims workflow creation (Output.ai's
 `output-plan-workflow`, for example). When one exists, use it and its skills, skip section 3,
@@ -73,11 +73,11 @@ and budget limit before dispatching anything.
 **Reliability layer: retry and recovery.** Any step that touches something external gets
 retries with backoff and a place for runs that exhaust them. Section 4 covers it.
 
-## 3. Platform
+## 3. Engine
 
 Ask in this order and stop at the first match:
 
-| Question | Platform | Cost of the choice |
+| Question | Engine | Cost of the choice |
 |---|---|---|
 | Will non-developers build and own it, or is it a quick prototype of integrations? | n8n | Visual and self-hostable; alerting on failure is not on by default |
 | Is the stack AWS-native with Lambdas already written? | AWS Step Functions | JSON state definitions; 256 KB payload limit |
@@ -114,7 +114,7 @@ Workflow route (durable)
 - Needed:    yes — <the section 1 reason>       (or: no — <the simpler thing>; stop here)
 - Trigger:   event <name> | schedule <cron> | direct start
 - Shape:     sequential | parallel | orchestrator-worker — <why>
-- Platform:  <name> — <why, or "already in the repo">
+- Engine:    <name> — <why, or "already in the repo">
 - Steps:     1. <step> [side effect? key? timeout?]  2. …
 - Failure:   <where exhausted runs go and who hears about it>
 - Open:      <anything you could not determine>

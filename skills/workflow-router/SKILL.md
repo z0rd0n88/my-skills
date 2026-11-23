@@ -1,6 +1,6 @@
 ---
 name: workflow-router
-description: Use at the start of an engineering task, and whenever a task needs or would be improved by a workflow, to pick the one that fits. Routes three kinds. The process to follow (feature, bug fix, spike, TDD-Ralph loop, refactor, migration, dependency upgrade, debugging, onboarding, incident response, code review). The agent orchestration shape when work outgrows one context (classify, fan out, adversarial verify, generate and filter, tournament, loop until done). The durable workflow design for application code (trigger, step shape, engine such as Temporal or Inngest, reliability checks). Also says when no workflow is needed.
+description: Use first, before reading code or running any command, whenever a task will change or investigate how software behaves, such as a new feature, a bug or flaky failure, a refactor, a migration, a dependency upgrade, a production incident, a code review, a spike, or an unfamiliar codebase to learn. Picks the workflow that fits and names the gate that must not be skipped. Also picks the agent orchestration shape when work is too big for one context (classify, fan out, adversarial verify, generate and filter, tournament, loop until done) and the durable workflow design for application code (trigger, step shape, engine such as Temporal or Inngest, reliability checks). Not for typos, comments, version strings, questions, or requests to run a command.
 ---
 
 # workflow-router
@@ -32,7 +32,7 @@ of the diff, so a one-line fix to wrong behaviour is still a Bug Fix.
 
 Lanes stack. "Add an order-fulfilment flow" is Feature Implementation (process) building a
 sequential event-driven workflow (durable). "Replace library X in 400 files" is Migration
-(process) executed by the Migrate shape (orchestration).
+(process) executed by the Migrate combination (orchestration).
 
 Not routed here: a build, test or deploy pipeline goes to `addyosmani-ci-cd-and-automation`.
 
@@ -88,15 +88,17 @@ Ready-made combinations for engineering work (Understand, Design, Review, Resear
 the quality patterns and the scripting rules are in the reference.
 
 **Opt-in.** In Claude Code these run through the `Workflow` tool, which needs the user's
-explicit opt-in: they ask for a workflow or a fan-out, `ultracode` is on, or they invoke a skill
-that calls it. Selecting a shape is always allowed; running it is not. Without opt-in, offer it
+explicit opt-in: they ask for a workflow or a fan-out, `ultracode` is on, they name a saved
+workflow, or they invoke a skill that calls it. Selecting a shape is always allowed; running it
+is not. Without opt-in, offer it
 only when the fit is strong (about five or more independent, substantial units, or findings that
 need independent verification): name the shape and the rough agent count in the route, ask, and
 carry on with what can be done inline. A weaker fit is done inline without asking. Scout inline
 first (list the files, find the call sites) so the run gets a real work-list.
 
-Existing skills already implement some shapes, so use them when the task matches:
-`dw-review` and `zord-multi-agent-review` (Review), `branch-off` (best-of-N with judges),
+Existing skills already implement some of these, so use them when the task matches: `dw-review`
+(the Review combination; the default for a multi-agent review), `zord-multi-agent-review` (only
+when the review should loop review → fix until clean), `branch-off` (best-of-N with judges),
 `zord-baton-runner` (a phased build), `code-cleaver` (a whole-codebase audit).
 
 ## Step 4 — durable lane: design the workflow
@@ -105,10 +107,10 @@ Follow [references/durable-workflows.md](references/durable-workflows.md). In sh
 
 1. **Check it needs an engine.** Money or state that can't be lost half-way, several external
    side effects, long waits, or work that must survive a crash. Otherwise a function, a queue
-   job or a cron entry is enough. A framework already in the project wins over any new choice.
+   job or a cron entry is enough. An engine already in the project wins over any new choice.
 2. **Pick a trigger** (event, schedule, direct start) **and a shape** (sequential, parallel,
    orchestrator-worker). Retry and recovery always applies.
-3. **Pick the platform:** n8n, AWS Step Functions, Azure Durable Functions, Temporal or Inngest.
+3. **Pick the engine:** n8n, AWS Step Functions, Azure Durable Functions, Temporal or Inngest.
 4. **Apply the reliability checks** in [references/sharp-edges.md](references/sharp-edges.md):
    idempotency keys, determinism, timeouts, small steps, a failure path.
 
@@ -125,7 +127,7 @@ When lanes stack, one line per lane:
 ```
 Workflow route
 - Process:        Migration — gate: inventory first; done only when the old path is deleted
-- Orchestration:  Migrate shape (discover → transform per worktree → verify), about 8 agents — needs your opt-in
+- Orchestration:  Migrate combination (discover → transform per worktree → verify), about 8 agents — needs your opt-in
 - Durable:        not applicable
 - Open:           <anything you could not determine>
 ```
@@ -135,8 +137,16 @@ hook in [hooks/](hooks/README.md). It is a fast classifier's guess from the prom
 as a starting point, check it against Steps 1 to 4, and overrule it when they disagree. It never
 counts as the user opting in to a workflow.
 
-Then do the work by the steps in the reference, and stop at each gate until it is met. If the
-task changes shape part-way (a bug fix that turns out to need debugging), say so and re-route.
+Then do the work by the steps in the reference, and stop at each gate until it is met. Each
+process workflow's steps are a checklist: for work that runs past one reply, copy the step names
+and the gate into your reply as `- [ ]` lines and tick each one when it is done. If the task
+changes shape part-way (a bug fix that turns out to need debugging), say so and re-route.
+
+For maintaining this skill, not for routing: [evals/README.md](evals/README.md) indexes the
+labelled cases and the judges for the [process](evals/process-judge/README.md) and
+[orchestration](evals/orchestration-judge/README.md) decisions, the
+[Jev classifier](evals/jev-judge/README.md) results, and the
+[trigger cases](evals/trigger/README.md) for the description above.
 
 ## Examples
 
@@ -144,10 +154,10 @@ task changes shape part-way (a bug fix that turns out to need debugging), say so
 |---|---|
 | "Checkout total is wrong for orders with a discount" | Bug Fix, if it reproduces; otherwise Debugging first |
 | "Tests fail one run in thirty" | Debugging · loop until done to reproduce it |
-| "Can Postgres full-text search replace our Elasticsearch?" | Spike · Research shape if the reading is wide |
-| "Move every call from Moment.js to date-fns" | Migration · Migrate shape for the bulk |
+| "Can Postgres full-text search replace our Elasticsearch?" | Spike · Research combination if the reading is wide |
+| "Move every call from Moment.js to date-fns" | Migration · Migrate combination for the bulk |
 | "Bump React from 17 to 19" | Dependency Upgrade, 17 → 18 → 19 · stop at each major |
-| "Review this PR" | Code Review · Review shape via `dw-review` |
+| "Review this PR" | Code Review with `addyosmani-code-review-and-quality` · the Review combination via `dw-review` if they ask for a multi-agent review |
 | "Charge the card, ship the order and email a receipt on each purchase" | Feature Implementation · durable: event, sequential, Temporal or the repo's engine |
 | "Rank these 200 name ideas" | Generate and filter, or Tournament for the final ranking |
 | "Fix this typo" | No workflow |

@@ -14,7 +14,7 @@ with whatever subagent mechanism exists, or in sequence.
 
 1. When to orchestrate, and the opt-in rule
 2. The six core shapes
-3. Ready-made shapes for engineering work
+3. Ready-made combinations for engineering work
 4. Quality patterns
 5. Building blocks
 6. Rules that bite
@@ -84,12 +84,12 @@ For a tournament that has to hold up: run each match in both orders and advance 
 candidate that wins both, because judges favour a position. Log each round's eliminations so
 the discarded candidates can be reviewed.
 
-## 3. Ready-made shapes for engineering work
+## 3. Ready-made combinations for engineering work
 
 Run each as its own invocation and read the result before choosing the next. For multi-phase
 work (understand → design → implement → review), run them in sequence.
 
-| Shape | Structure | Returns | Executes a step of |
+| Combination | Structure | Returns | Executes a step of |
 |---|---|---|---|
 | **Understand** | Parallel readers, one per subsystem | A structured map of how it works | Onboarding; the research step of a Feature |
 | **Design** | Several independent approaches, then a judge panel | A scored synthesis: the winner plus ideas grafted from the others | The plan step of a Feature |

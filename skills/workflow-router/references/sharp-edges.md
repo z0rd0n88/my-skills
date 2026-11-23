@@ -1,7 +1,7 @@
 # Sharp edges and review checks
 
 The failure modes behind the reliability checks in [durable-workflows.md](durable-workflows.md),
-each as symptom, cause and fix, followed by a checklist for reviewing workflow code. Platform specifics here are pointers: confirm them
+each as symptom, cause and fix, followed by a checklist for reviewing workflow code. Engine specifics here are pointers: confirm them
 against the docs for the SDK version the project has installed.
 
 ## Contents
@@ -82,7 +82,7 @@ Hand large batches to a child workflow.
 
 **Symptom:** slow runs and replays, memory errors, "payload too large", storage bills.
 
-**Cause:** every step's return value is persisted and deserialised on replay. Some platforms cap
+**Cause:** every step's return value is persisted and deserialised on replay. Some engines cap
 it outright (Step Functions: 256 KB).
 
 **Fix:** write the data to object storage or a database inside the step and return only the key.
