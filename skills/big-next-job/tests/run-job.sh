@@ -142,6 +142,19 @@ done
 [ "$won" = 0 ] && ok "two runners racing for a dead runner's lock: exactly one starts (5 tries)" || { bad "race try $won: $n children launched, $refused refused"; head -3 "$J/out-a" "$J/out-b" "$J/run.log"; }
 
 
+echo "background shells"
+job bgwait background finish
+run JOB_CHILD_TIMEOUT=60
+[ "$RC" = 0 ] && has "child 1 ended its turn with a background shell running; waiting" && grep -q "progress by child 1" "$J/checkpoint.md" && ! has "stall" \
+  && ok "a turn that ends with a background shell is waited through to the turn it starts, not a stall" || { bad "background shell (rc $RC)"; cat "$J/run.log"; }
+job bgforever bgforever finish
+run JOB_CHILD_TIMEOUT=60 JOB_BG_WAIT=3 JOB_KEEP_WINDOWS=1
+[ "$RC" = 0 ] && has "child 1 still has a background shell after 3s; taking its last reply and closing it" && has "child 1 left checkpoint.md unchanged (stall 1/2)" \
+  && ok "a background shell that never ends is capped by JOB_BG_WAIT, then counts as a stall" || { bad "never-ending background shell (rc $RC)"; cat "$J/run.log"; }
+sleep 1; ! pgrep -f 'snapshot-bash-fake.* 2>/dev/null; sleep 60' >/dev/null && ok "that child is closed even with JOB_KEEP_WINDOWS, its shell with it" || bad "the capped child or its shell was left running"
+run JOB_BG_WAIT=07
+[ "$RC" = 1 ] && grep -q "JOB_BG_WAIT=07 is not a whole number" "$J/out" && ok "JOB_BG_WAIT is validated like the other numbers" || bad "JOB_BG_WAIT validation (rc $RC)"
+
 echo
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]

@@ -16,6 +16,8 @@
 #         JOB_API_BACKOFF=600         wait after an overloaded/server API error before the next child
 #         JOB_LIMIT_BACKOFF=1800      wait after a rate limit (or claude exit 75) before the next child
 #         JOB_TRUST_SECONDS=60        answer a child's trust dialog only this long after it starts
+#         JOB_BG_WAIT=1800            a child whose turn ends with a background shell running is
+#                                     waited on this long for the turn that shell's end starts
 #         JOB_SESSION=job-<name>      tmux session name;  JOB_KEEP_WINDOWS=1 leaves finished children open
 # Watch:  the attach command run-job prints (tmux -L run-job-<name>-<hash> attach -t job-<name>);
 #         each job has its own tmux server
@@ -46,12 +48,13 @@ SOCK="run-job-${NAME:0:40}-${JOB_HASH:0:8}"   # tmux -L run-job-<name>-<hash>; s
 LOG="$JOB/run.log"
 
 # Numbers: whole, at most 9 digits, no leading zero (bash reads 010 as 8 and 08 as an error).
-for v in JOB_CHILD_TIMEOUT JOB_MAX_CHILDREN JOB_API_BACKOFF JOB_LIMIT_BACKOFF JOB_TRUST_SECONDS; do
+for v in JOB_CHILD_TIMEOUT JOB_MAX_CHILDREN JOB_API_BACKOFF JOB_LIMIT_BACKOFF JOB_TRUST_SECONDS JOB_BG_WAIT; do
   [[ ${!v:-0} =~ ^(0|[1-9][0-9]{0,8})$ ]] || die "$v=${!v} is not a whole number (at most 9 digits, no leading zero)"
 done
 TIMEOUT="${JOB_CHILD_TIMEOUT:-14400}"
 MAXC="${JOB_MAX_CHILDREN:-12}"
 TRUST_SECONDS="${JOB_TRUST_SECONDS:-60}"
+BG_WAIT="${JOB_BG_WAIT:-1800}"
 LIMIT_EXIT=75   # claude's exit code for a usage-limit error (sysexits EX_TEMPFAIL)
 
 for b in claude tmux python3 flock; do command -v "$b" >/dev/null || die "$b not on PATH"; done
@@ -144,15 +147,61 @@ launch() {
   log "child $n launched  window=$SESSION:child-$n  (watch: tmux -L $SOCK attach -t $SESSION)"
 }
 
+# bg_shells: how many shells the child left running in the background. The Bash tool runs each
+# command as `bash -c 'source <home>/.claude/shell-snapshots/snapshot-...'`; once a turn has ended,
+# any such shell still under the child was started in the background, and Claude Code starts a new
+# turn when it finishes. A shell's subshells carry the same argv, so only the outermost counts. The
+# footer ("· 1 shell ·", "1 shell still running") is the second signal.
+bg_shells() {
+  local n
+  n=$(ps -eo pid=,ppid=,args= | awk -v root="${PANE:-0}" -v mark="/shell-snapshots/snapshot-" '
+    { pid = $1; par[pid] = $2; $1 = $2 = ""; arg[pid] = $0 }
+    END { for (p in par) {
+            if (!index(arg[p], mark) || index(arg[par[p]], mark)) continue
+            for (a = par[p]; a > 1 && d < 64; a = par[a]) { d++; if (a == root) { c++; break } }
+            d = 0 }
+          print c + 0 }')
+  [ "$n" -gt 0 ] || ! tmux -L "$SOCK" capture-pane -p -t "$WIN" 2>/dev/null | tail -n 30 \
+    | grep -qE '(^|·)[[:space:]]*[0-9]+ shells?( still running)?[[:space:]]*(·|$)' || n=1
+  echo "$n"
+}
+
+# turn_ended: done.json holds a Stop that is the child's last word for now. A turn that ended with
+# a background shell running ("waiting for the tests to finish") is not: the turn that shell's end
+# starts is, so wait for its Stop (a new done.json; the hook's mv gives it a new inode). Up to
+# BG_WAIT for a shell that never ends (a dev server), and 30 s for a turn that does not follow.
+turn_ended() {
+  [ -s "$DIR/done.json" ] || return 1
+  if [ "$(bg_shells)" -gt 0 ]; then
+    if [ -z "$bg_since" ]; then
+      bg_since=$SECONDS
+      log "child $n ended its turn with a background shell running; waiting for the turn it starts (up to ${BG_WAIT}s)"
+    fi
+    bg_stop=$(stat -c %i "$DIR/done.json"); bg_quiet=''
+    [ $((SECONDS - bg_since)) -lt "$BG_WAIT" ] && return 1
+    # Close it even with JOB_KEEP_WINDOWS: left open, it would wake when the shell ends and edit
+    # the checkpoint beside the next child.
+    log "child $n still has a background shell after ${BG_WAIT}s; taking its last reply and closing it"
+    BG_LEFT=1; return 0
+  fi
+  [ -n "$bg_since" ] || return 0
+  if tmux -L "$SOCK" capture-pane -p -t "$WIN" 2>/dev/null | tail -n 30 | grep -q 'esc to interrupt'; then
+    bg_quiet=''; return 1   # the turn the shell started is running
+  fi
+  [ "$(stat -c %i "$DIR/done.json")" != "$bg_stop" ] && return 0   # ... and has ended
+  [ -n "$bg_quiet" ] || bg_quiet=$SECONDS
+  [ $((SECONDS - bg_quiet)) -ge 30 ]
+}
+
 # wait_child: 0 the turn ended (done.json), 1 timed out, 2 claude exited first (AGE, RC),
 # 3 an API error ended the turn (failed.json). Time is the clock ($SECONDS), not loop turns, less any
 # time session-airspace held the child. A failed read (window gone, or a tmux hiccup) counts as a
 # death only on the second in a row.
 wait_child() {
-  local start=$SECONDS last=$SECONDS held=0 now d miss=0 cpid
+  local start=$SECONDS last=$SECONDS held=0 now d miss=0 cpid bg_since='' bg_stop='' bg_quiet=''
   while :; do
-    [ -s "$DIR/done.json" ] && return 0
     [ -s "$DIR/failed.json" ] && return 3
+    turn_ended && return 0
     d=$(tmux -L "$SOCK" display -p -t "$WIN" '#{pane_dead}' 2>/dev/null) || d=
     case "$d" in 0) miss=0 ;; 1) miss=2 ;; *) miss=$((miss+1)) ;; esac
     if [ "$miss" -ge 2 ]; then
@@ -240,10 +289,10 @@ while :; do
   n=$((LAUNCHED+1)); LAUNCHED=$n
   echo "$n" > "$JOB/child-count.tmp" && mv -f "$JOB/child-count.tmp" "$JOB/child-count"
   launch "$n"
-  w=0; wait_child || w=$?
+  BG_LEFT=''; w=0; wait_child || w=$?
   apierr=''
   case "$w" in
-    0) report "$n" done.json; close_child ;;
+    0) report "$n" done.json; close_child ${BG_LEFT:+force} ;;
     1) log "child $n timed out after ${TIMEOUT}s of work; killing it, next child resumes from checkpoint"
        screen; close_child force ;;
     3) report "$n" failed.json; err="$(api_error)"; close_child force; apierr=1

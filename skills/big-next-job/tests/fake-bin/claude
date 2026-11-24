@@ -14,6 +14,11 @@ What child N does is word N of the file named by FAKE_PLAN:
   badjson     append progress, fire Stop with a payload that is not JSON
   truststart  show the trust dialog text at once, wait up to 5 s for keys, then progress
   trustlate   work 2.5 s, then show the trust dialog text, wait 2.5 s, then progress
+  background  start a shell the way the Bash tool backgrounds one (its argv sources
+              .../.claude/shell-snapshots/snapshot-...), fire Stop without progress while it runs
+              (no footer: only the process tree shows it), and when it ends (3 s) append progress
+              and fire Stop again, as Claude Code's own follow-up turn does
+  bgforever   a shell that runs 60 s, "· 1 shell ·" in the footer, and no follow-up
 
 After its turn it idles at its "prompt" like claude does. Any keys typed into the pane are appended
 to $JOB_DIR/keys-<N>, so a test can tell whether run-job typed into a child."""
@@ -24,6 +29,11 @@ import select
 import subprocess
 import sys
 import time
+
+def bg_shell(secs):
+    # `; true` keeps bash from exec'ing sleep and losing its argv, as the Bash tool's trailing commands do
+    return subprocess.Popen(["bash", "-c", "source /nonexistent/.claude/shell-snapshots/snapshot-bash-fake.sh"
+                             f" 2>/dev/null; sleep {secs}; true"])
 
 args = sys.argv[1:]
 hooks = json.load(open(args[args.index("--settings") + 1]))["hooks"]
@@ -85,6 +95,15 @@ elif mode == "badjson":
 elif mode == "truststart":
     print("Do you trust the files in this folder?\n> Yes, I trust this folder", flush=True)
     idle(5, until_keys=True); progress(); fire("Stop", event("trust answered"))
+elif mode in ("background", "bgforever"):
+    shell = bg_shell(3 if mode == "background" else 60)
+    # background shows no footer, so only the process tree gives it away; bgforever shows Claude
+    # Code's "· 1 shell ·" footer as well, so either signal is exercised.
+    print("Waiting for the background command to finish." + ("\n  ⏵⏵ auto mode on · 1 shell · ↓ to manage"
+          if mode == "bgforever" else ""), flush=True)
+    fire("Stop", event("Waiting for the background command to finish."))
+    if mode == "background":
+        shell.wait(); progress(); fire("Stop", event("background work done"))
 elif mode == "trustlate":
     time.sleep(2.5)
     print("Reading run-job: ... grep -q 'Yes, I trust this folder' ...", flush=True)
