@@ -67,7 +67,8 @@ Minor, Major, Nit, P1 ...). When a source uses one, map it with the table below 
 
 - `audit-numeric-types` uses CRITICAL, HIGH and MEDIUM only. It has no LOW because a match too minor
   for MEDIUM is not reported.
-- `inventory` ranks suggestions by **Priority** (Low / Medium / High). That is a to-do order for
-  setup ideas, not a finding severity.
+- The `inventory` plugin's skill (`inventory:inventory`, not part of this repo) ranks suggestions
+  by **Priority** (Low / Medium / High). That is a to-do order for setup ideas, not a finding
+  severity.
 - Vendored `addyosmani-*` skills keep their upstream wording; `addyosmani-code-review-and-quality`
   carries a one-line mapping to this file.
