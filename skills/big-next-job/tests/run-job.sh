@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tests for scripts/run-job with a fake claude (tests/fake-bin/claude). Needs tmux and python3, no
 # Claude account. Runs on a private tmux server and runtime dir; touches nothing else.
-# Usage: skills/big-next-job/tests/run-job.sh        (about a minute)
+# Usage: skills/big-next-job/tests/run-job.sh        (about four minutes)
 # shellcheck disable=SC2015  # `ok` always succeeds, so `test && ok || bad` is a safe if/else here
 set -uo pipefail
 
@@ -149,7 +149,7 @@ done
 echo "background work"
 for mode in background bglate bgtree bgfooter; do
   job "bg-$mode" "$mode" finish
-  run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=2
+  run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=4
   case $mode in
     background) what="a turn that leaves a background shell is waited through to the turn it starts, not a stall" ;;
     bglate) what="... also when the shell ends before the Stop and the turn follows it" ;;
@@ -159,7 +159,7 @@ for mode in background bglate bgtree bgfooter; do
   [ "$RC" = 0 ] && grep -q "progress by child 1" "$J/checkpoint.md" && ! has "stall" && ok "$what" || { bad "$what (rc $RC)"; cat "$J/run.log"; }
 done
 job bgnofollow bgnofollow finish
-run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=2
+run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=4
 [ "$RC" = 0 ] && has "child 1 left checkpoint.md unchanged (stall 1/2)" && [ "$SECS" -lt 25 ] \
   && ok "a shell that ends with no turn after it is waited on only JOB_BG_SETTLE seconds (${SECS}s)" || { bad "no follow-up turn (rc $RC, ${SECS}s)"; cat "$J/run.log"; }
 job bgforever bgforever finish
@@ -179,7 +179,7 @@ gap=$(( $(date -d "${t2:-x}" +%s 2>/dev/null || echo 0) - $(date -d "${t1:-x}" +
 [ "$RC" = 0 ] && [ -n "$t1" ] && [ -n "$t2" ] && [ "$gap" -ge 8 ] && [ "$gap" -le 30 ] && ok "time held does not count toward JOB_BG_WAIT (capped after ${gap}s: 4s + 6s held)" || { bad "held time and JOB_BG_WAIT (rc $RC, gap ${gap}s)"; cat "$J/run.log"; }
 for mode in bgagent bgagentlate bgmonitor bgmonfooter; do
   job "bg-$mode" "$mode" finish
-  run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=2
+  run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=4
   case $mode in
     bgagent) what="a turn that leaves a background subagent is waited through to the turn it starts" ;;
     bgagentlate) what="... also when the subagent ends before the Stop" ;;

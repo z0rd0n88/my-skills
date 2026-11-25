@@ -183,10 +183,11 @@ else:   # no rule: the rows at the very bottom and the two non-blank lines above
     while n and row.match(tail[n - 1]):
         n -= 1
     tail = tail[max(0, n - 2):]
-rows = sum(1 for l in tail if re.match(r"^\s*◯\s+\S", l))
+main = next((i for i, l in enumerate(tail) if re.match(r"^\s*●\s+main\b", l)), None)   # rows sit under it
+rows = 0 if main is None else sum(1 for l in tail[main + 1:] if re.match(r"^\s*◯\s+\S", l))
 status = "\n".join(l for l in tail if not row.match(l))
-counted = sum(int(c) for c in re.findall(r"(?:^|[·,])\s*(\d+)\s+(?:background\s+)?(?:shells?|monitors?|tasks?)\b", status, re.M))
-print(int("esc to interrupt" in status), max(counted, rows), rows)' 2>/dev/null || echo "0 0 0")
+counted = sum(int(c) for c in re.findall(r"(?:^|[·,])\s*(\d+)\s+(?:(?:background\s+)?(?:shells?|monitors?)|background\s+tasks?)\b", status, re.M))
+print(int(bool(re.search(r"esc\s+to\s+interrupt", status))), max(counted, rows), rows)' 2>/dev/null || echo "0 0 0")
   if [ "${BG_BUSY:-0}" != 1 ] && [ "${rows:-0}" = 0 ]; then
     tree=$(ps -eo pid=,ppid=,args= | awk -v root="${PANE:-0}" -v mark="/shell-snapshots/snapshot-" '
       { pid = $1; par[pid] = $2; $1 = $2 = ""; arg[pid] = $0 }
