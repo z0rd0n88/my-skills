@@ -130,7 +130,7 @@ finishes has ended. The work is read from Claude Code's status line (`· 1 shell
 between turns, the process tree; once some was seen, a Stop counts only after `JOB_BG_SETTLE` (10 s)
 quiet, since the follow-up turn starts about a second after the work ends, even when it ended just
 before the Stop. Work that never ends (a dev server, a monitor with no end) is waited on up to
-`JOB_BG_WAIT` (1800 s, time held by `session-airspace` excluded; `JOB_CHILD_TIMEOUT` still applies
+`JOB_BG_WAIT` (600 s, time held by `session-airspace` excluded; `JOB_CHILD_TIMEOUT` still applies
 and may come first); that child is then closed, even with `JOB_KEEP_WINDOWS`, and counts as a stall
 if it made no progress. The brief's child protocol tells children to stop background processes and
 monitors before ending a turn, and not to end one while a subagent still works. A child stopped by an API error waits `JOB_API_BACKOFF` (600 s)

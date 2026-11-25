@@ -16,7 +16,7 @@
 #         JOB_API_BACKOFF=600         wait after an overloaded/server API error before the next child
 #         JOB_LIMIT_BACKOFF=1800      wait after a rate limit (or claude exit 75) before the next child
 #         JOB_TRUST_SECONDS=60        answer a child's trust dialog only this long after it starts
-#         JOB_BG_WAIT=1800            a child whose turn ends with background work running (a
+#         JOB_BG_WAIT=600             a child whose turn ends with background work running (a
 #                                     shell, a monitor or a subagent) is waited on this long (time
 #                                     held excluded) for the turn that work's end starts, then
 #                                     closed; with JOB_CHILD_TIMEOUT smaller, that comes first. The
@@ -60,7 +60,7 @@ done
 TIMEOUT="${JOB_CHILD_TIMEOUT:-14400}"
 MAXC="${JOB_MAX_CHILDREN:-12}"
 TRUST_SECONDS="${JOB_TRUST_SECONDS:-60}"
-BG_WAIT="${JOB_BG_WAIT:-1800}"
+BG_WAIT="${JOB_BG_WAIT:-600}"
 BG_SETTLE="${JOB_BG_SETTLE:-10}"
 LIMIT_EXIT=75   # claude's exit code for a usage-limit error (sysexits EX_TEMPFAIL)
 

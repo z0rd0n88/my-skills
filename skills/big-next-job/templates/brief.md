@@ -81,7 +81,7 @@ Every session in this job follows this, in order:
    you are on, checkpoint, set `Next action` to the exact next step, and end your turn. Before
    ending any turn, stop background processes and monitors you started (a dev server, a watcher):
    the runner treats a turn that leaves background work running as unfinished, waits for it up to
-   `JOB_BG_WAIT` (30 min by default), then closes your session. Don't end a turn while a subagent
+   `JOB_BG_WAIT` (10 min by default), then closes your session. Don't end a turn while a subagent
    still works; wait for its result first, so the checkpoint records it.
 6. **Finish or block.** When the last phase is done, write the final report into `Completed phases`
    and set `status: done`. If the job cannot proceed without the owner, write what is needed under
