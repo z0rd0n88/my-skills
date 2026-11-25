@@ -16,13 +16,14 @@
 #         JOB_API_BACKOFF=600         wait after an overloaded/server API error before the next child
 #         JOB_LIMIT_BACKOFF=1800      wait after a rate limit (or claude exit 75) before the next child
 #         JOB_TRUST_SECONDS=60        answer a child's trust dialog only this long after it starts
-#         JOB_BG_WAIT=1800            a child whose turn ends with a background shell running is
-#                                     waited on this long (time held excluded) for the turn that
-#                                     shell's end starts, then closed; with JOB_CHILD_TIMEOUT smaller,
-#                                     that comes first. The child counts as a stall if it made none
-#         JOB_BG_SETTLE=10            once a child showed a background shell, its Stop counts only
+#         JOB_BG_WAIT=1800            a child whose turn ends with background work running (a
+#                                     shell, a monitor or a subagent) is waited on this long (time
+#                                     held excluded) for the turn that work's end starts, then
+#                                     closed; with JOB_CHILD_TIMEOUT smaller, that comes first. The
+#                                     child counts as a stall if it made no progress
+#         JOB_BG_SETTLE=10            once a child showed background work, its Stop counts only
 #                                     after this many quiet seconds (its follow-up turn starts ~1 s
-#                                     after the shell ends)
+#                                     after the work ends)
 #         JOB_SESSION=job-<name>      tmux session name;  JOB_KEEP_WINDOWS=1 leaves finished children open
 # Watch:  the attach command run-job prints (tmux -L run-job-<name>-<hash> attach -t job-<name>);
 #         each job has its own tmux server
@@ -34,7 +35,7 @@ set -euo pipefail
 
 die() { echo "run-job: $*" >&2; exit 1; }
 case "${1:-}" in
-  -h|--help|"") sed -n '2,25p' "$0"; exit 0 ;;
+  -h|--help|"") sed -n '2,/^set -euo/p' "$0" | sed '$d'; exit 0 ;;
   status) [ -n "${2:-}" ] || die "usage: run-job status <job-dir>"
           [ -f "$2/checkpoint.md" ] || die "no $2/checkpoint.md; is $2 a job dir?"
           sed -n '1,/^## /p' "$2/checkpoint.md" | sed '$d'
@@ -153,31 +154,39 @@ launch() {
   log "child $n launched  window=$SESSION:child-$n  (watch: tmux -L $SOCK attach -t $SESSION)"
 }
 
-# bg_status: sets BG_BUSY (a turn runs) and BG_NEW (background shells running). Claude Code can end
-# a turn while a shell it started in the background still runs, and starts a new turn by itself when
-# that shell finishes. Two signals, checked live:
-# - The status line under the input box lists them ("⏵⏵ auto mode on · 1 shell · ↓ to manage"),
-#   during a turn too, and never lists a foreground command. Only that footer is read: the
-#   transcript above it can hold the same words. "esc to interrupt" there means a turn runs.
-# - Background subagents and monitors show there too: a row per subagent under the status line
-#   ("◯ general-purpose  waiting on 1 monitor · ..."), and "· 1 monitor ·" in it. BG_AGENTS is the
-#   larger count (a subagent waiting on its monitor shows in both). They are not waited on (they can run for good and start turns of their own).
+# bg_status: sets BG_BUSY (a turn runs) and BG_NEW (background work running). Claude Code can end a
+# turn while work it started in the background still runs (a shell, a monitor, a subagent), and
+# starts a new turn by itself when that work finishes. Two signals, checked live:
+# - The status line under the input box counts it: "⏵⏵ auto mode on · 1 shell · ↓ to manage",
+#   "· 1 shell, 1 monitor ·", or "· 3 background tasks ·" while a subagent runs. It shows during a
+#   turn too, and never counts a foreground command; "esc to interrupt" there means a turn runs.
+#   Each subagent is also a row under it ("◯ general-purpose <task>"; "● main" is the session).
+#   Only the lines under the input box's lower rule are read (the transcript above can hold the same
+#   words), and row text (a subagent's task) is never counted.
 # - The Bash tool runs each command as `bash -c 'source <home>/.claude/shell-snapshots/snapshot-...'`
-#   under claude. Between turns any such shell still alive is a background one (during a turn a
-#   foreground command looks the same). Only the outermost of a shell's subshells counts.
+#   under claude, monitors too. Between turns any such shell still alive is background work (during
+#   a turn a foreground command looks the same, and so does a subagent's while its row shows, so the
+#   tree is read only between turns with no row). Only the outermost of a shell's subshells counts.
+# The same rules as session-stickler's session_panes.py.
 bg_status() {
-  local listed rows tree=0
-  read -r BG_BUSY listed BG_AGENTS rows < <(tmux -L "$SOCK" capture-pane -p -t "$WIN" 2>/dev/null | python3 -c '
+  local work rows tree=0
+  read -r BG_BUSY work rows < <(tmux -L "$SOCK" capture-pane -p -t "$WIN" 2>/dev/null | python3 -c '
 import re, sys
 lines = sys.stdin.read().splitlines()[-40:]
+row = re.compile(r"^\s*[◯●]\s+\S")
 rules = [i for i, line in enumerate(lines) if re.match(r"^\s*─{8,}\s*$", line)]
-text = "\n".join(lines[rules[-1] + 1:] if rules else [l for l in lines if l.strip()][-2:])
-m = re.search(r"(?:^|·)\s*(\d+) shells?\b", text, re.M)
-mon = re.search(r"(?:^|·)\s*(\d+) monitors?\b", text, re.M)
-rows = len(re.findall(r"^\s*◯\s+\S", text, re.M))
-print(int("esc to interrupt" in text), m.group(1) if m else 0, max(rows, int(mon.group(1)) if mon else 0), rows)' 2>/dev/null || echo "0 0 0 0")
-  # A subagent's own commands run as Bash-tool shells under claude too, unlisted in the status line
-  # (checked live); while a subagent row shows, the tree cannot tell whose a shell is.
+if rules:
+    tail = lines[rules[-1] + 1:]
+else:   # no rule: the rows at the very bottom and the two non-blank lines above them
+    tail = [l for l in lines if l.strip()]
+    n = len(tail)
+    while n and row.match(tail[n - 1]):
+        n -= 1
+    tail = tail[max(0, n - 2):]
+rows = sum(1 for l in tail if re.match(r"^\s*◯\s+\S", l))
+status = "\n".join(l for l in tail if not row.match(l))
+counted = sum(int(c) for c in re.findall(r"(?:^|[·,])\s*(\d+)\s+(?:background\s+)?(?:shells?|monitors?|tasks?)\b", status, re.M))
+print(int("esc to interrupt" in status), max(counted, rows), rows)' 2>/dev/null || echo "0 0 0")
   if [ "${BG_BUSY:-0}" != 1 ] && [ "${rows:-0}" = 0 ]; then
     tree=$(ps -eo pid=,ppid=,args= | awk -v root="${PANE:-0}" -v mark="/shell-snapshots/snapshot-" '
       { pid = $1; par[pid] = $2; $1 = $2 = ""; arg[pid] = $0 }
@@ -187,13 +196,13 @@ print(int("esc to interrupt" in text), m.group(1) if m else 0, max(rows, int(mon
               d = 0 }
             print c + 0 }')
   fi
-  BG_NEW=$(( ${listed:-0} > tree ? ${listed:-0} : tree ))
+  BG_NEW=$(( ${work:-0} > tree ? ${work:-0} : tree ))
 }
 
-# turn_ended: done.json holds a Stop that is the child's last word for now. Not while a background
-# shell runs, or a turn (the one such a shell's end starts): wait for that, up to BG_WAIT of
-# unheld time for a shell that never ends (a dev server). And once a background shell was seen at
-# all, only after BG_SETTLE quiet seconds: a shell that ends while Claude writes its last message
+# turn_ended: done.json holds a Stop that is the child's last word for now. Not while background
+# work runs, or a turn (the one that work's end starts): wait for that, up to BG_WAIT of unheld time
+# for work that never ends (a dev server, a monitor with no end). And once background work was seen
+# at all, only after BG_SETTLE quiet seconds: work that ends while Claude writes its last message
 # leaves nothing to see at the Stop, yet its turn follows about a second later.
 turn_ended() {
   [ -s "$DIR/done.json" ] || return 1
@@ -202,30 +211,20 @@ turn_ended() {
     if [ "$BG_NEW" -gt 0 ]; then
       if [ -z "$bg_since" ]; then
         bg_since=$SECONDS bg_held0=$held
-        log "child $n ended its turn with a background shell running; waiting for the turn it starts (up to ${BG_WAIT}s)"
+        log "child $n ended its turn with background work running (shells, monitors or subagents); waiting for the turn it starts (up to ${BG_WAIT}s)"
       fi
       if [ $((SECONDS - bg_since - (held - bg_held0))) -ge "$BG_WAIT" ]; then
-        # Close it even with JOB_KEEP_WINDOWS: left open, it would wake when the shell ends and
+        # Close it even with JOB_KEEP_WINDOWS: left open, it would wake when the work ends and
         # edit the checkpoint beside the next child.
-        log "child $n still has a background shell after ${BG_WAIT}s; taking its last reply and closing it"
+        log "child $n still has background work after ${BG_WAIT}s; taking its last reply and closing it"
         BG_LEFT=1; return 0
       fi
     fi
     return 1
   fi
-  [ "$bg_seen" = 1 ] || { agents_left; return 0; }
+  [ "$bg_seen" = 1 ] || return 0
   [ -n "$bg_quiet" ] || bg_quiet=$SECONDS
-  [ $((SECONDS - bg_quiet)) -ge "$BG_SETTLE" ] || return 1
-  agents_left
-}
-
-# agents_left: a child whose turn ended with background subagents or monitors still listed is not
-# waited on, but it is closed even with JOB_KEEP_WINDOWS: left open, it could wake when one finishes
-# and edit the checkpoint beside the next child.
-agents_left() {
-  [ "${BG_AGENTS:-0}" -gt 0 ] || return 0
-  log "child $n ended its turn with ${BG_AGENTS} background agent(s) or monitor(s) still listed; not waited on, closing it"
-  BG_LEFT=1
+  [ $((SECONDS - bg_quiet)) -ge "$BG_SETTLE" ]
 }
 
 # wait_child: 0 the turn ended (done.json), 1 timed out, 2 claude exited first (AGE, RC),

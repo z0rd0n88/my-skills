@@ -14,10 +14,11 @@ What child N does is word N of the file named by FAKE_PLAN:
   badjson     append progress, fire Stop with a payload that is not JSON
   truststart  show the trust dialog text at once, wait up to 5 s for keys, then progress
   trustlate   work 2.5 s, then show the trust dialog text, wait 2.5 s, then progress
-  Background shells, as Claude Code shows them: the screen has the input box between two rules and a
-  status line under it, "⏵⏵ auto mode on" plus " · 1 shell" while a background shell is listed and
-  " · esc to interrupt" while a turn runs. The shell's argv sources
-  .../.claude/shell-snapshots/snapshot-bash-$FAKE_TAG.sh, as the Bash tool's does.
+  Background work, as Claude Code shows it: the screen has the input box between two rules and a
+  status line under it, "⏵⏵ auto mode on" plus " · 1 shell", " · 1 monitor", or " · N background
+  tasks" while a subagent runs (with a "◯ general-purpose" row per subagent under it), and
+  " · esc to interrupt" while a turn runs. Shells (monitors and a subagent's commands too) source
+  .../.claude/shell-snapshots/snapshot-bash-$FAKE_TAG.sh, as the Bash tool's do.
   background  turn starts a 3 s background shell and ends (Stop, no progress); when the shell
               ends, 1.2 s later a turn of its own (1 s) appends progress and fires Stop again
   bglate      the shell (1 s) ends while the turn still runs (2.5 s); the turn of its own still
@@ -26,9 +27,12 @@ What child N does is word N of the file named by FAKE_PLAN:
   bgfooter    like background, but only the status line lists it (no process)
   bgnofollow  a 2 s shell, and no turn follows it
   bgforever   a 60 s shell, and no turn follows it
-  bgagent     append progress, then end the turn with a background subagent listed as seen live
-              (a "◯ general-purpose" row under the status line, " · 1 monitor" in it) for good; its
-              own command runs as a Bash-tool shell under claude that the status line does not list
+  bgagent     the turn starts a subagent (row first, then its own 3 s command, an unlisted shell under
+              claude) and ends (Stop, no progress); when the subagent ends, 1.2 s later a turn of its
+              own appends progress and fires Stop again
+  bgagentlate the subagent (1 s) ends while the turn still runs; its turn still follows the Stop
+  bgmonitor   like bgagent, but a 3 s monitor, listed as " · 1 monitor"
+  bgmonfooter like bgmonitor, but only the status line shows it (no process)
 After its turn it idles at its "prompt" like claude does. Any keys typed into the pane are appended
 to $JOB_DIR/keys-<N>, so a test can tell whether run-job typed into a child."""
 import json
@@ -49,10 +53,13 @@ def bg_shell(secs):
                              f" 2>/dev/null; sleep {secs}; true"])
 
 
-def screen(text, busy=False, shells=0, agents=0):
-    status = "  \u23f5\u23f5 auto mode on" + (f" \u00b7 {shells} shell" if shells else "") \
-        + (f" \u00b7 {agents} monitor" if agents else "") + (" \u00b7 esc to interrupt" if busy else "")
-    rows = ["  \u25cf main"] + ["  \u25ef general-purpose  waiting on 1 monitor \u00b7 probe"] * agents if agents else []
+def screen(text, busy=False, shells=0, monitors=0, agents=0):
+    if agents:
+        counts = [f"{shells + monitors + agents} background task" + ("s" if shells + monitors + agents > 1 else "")]
+    else:
+        counts = [", ".join(f"{c} {w}" for c, w in ((shells, "shell"), (monitors, "monitor")) if c)] if shells or monitors else []
+    status = "  \u23f5\u23f5 auto mode on" + "".join(f" \u00b7 {c}" for c in counts) + (" \u00b7 esc to interrupt" if busy else "")
+    rows = ["  \u25cf main"] + ["  \u25ef general-purpose  Run 2 shells \u00b7 waiting on 1 shell"] * agents if agents else []
     print("\x1b[2J\x1b[H" + "\n".join([text, "", RULE, "\u276f ", RULE, status] + rows), flush=True)
 
 
@@ -116,10 +123,23 @@ elif mode == "badjson":
 elif mode == "truststart":
     print("Do you trust the files in this folder?\n> Yes, I trust this folder", flush=True)
     idle(5, until_keys=True); progress(); fire("Stop", event("trust answered"))
-elif mode == "bgagent":
-    sub = bg_shell(60)   # the subagent's own (foreground) command: under claude, unlisted
-    progress(); screen("Started a background agent.", agents=1)
-    fire("Stop", event("started a background agent"))
+elif mode in ("bgagent", "bgagentlate", "bgmonitor", "bgmonfooter"):
+    kind = {"monitors": 1} if mode.startswith("bgmon") else {"agents": 1}
+    screen("Starting background work.", busy=True, **kind)
+    time.sleep(0.3)
+    # the monitor, or the subagent's own command
+    work = None if mode == "bgmonfooter" else bg_shell(1 if mode == "bgagentlate" else 3)
+    if mode == "bgagentlate":
+        work.wait(); screen("Writing a long summary.", busy=True); time.sleep(1.5)
+        screen("Waiting for the subagent.")
+    else:
+        time.sleep(0.5); screen("Waiting for it.", **kind)
+    fire("Stop", event("Waiting for the background work."))
+    work.wait() if work else time.sleep(3)
+    screen("Background work ended.")
+    time.sleep(1.2)   # Claude Code starts its own turn about a second after the work ends
+    screen("Background work ended.", busy=True); time.sleep(1)
+    progress(); screen("Background work done."); fire("Stop", event("background work done"))
 elif mode.startswith("bg") or mode == "background":
     listed = 0 if mode == "bgtree" else 1
     secs = {"bglate": 1, "bgnofollow": 2, "bgforever": 60}.get(mode, 3)
