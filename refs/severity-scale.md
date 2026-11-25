@@ -57,7 +57,8 @@ Minor, Major, Nit, P1 ...). When a source uses one, map it with the table below 
 |---|---|
 | Blocker, B1, must-fix, must-fix-before-merge, Required, P0/P1 | HIGH; CRITICAL when it is a security hole or data loss (P0 is always CRITICAL) |
 | Major | HIGH |
-| Should-fix, S1, Important, can-fix-after, P2 | MEDIUM |
+| Claude Code `/code-review` and `/ship`: Important, Pre-existing (`pre_existing`), Nit | Important (a bug the change adds or makes worse): HIGH, or CRITICAL when it meets that definition. Nit: LOW. Pre-existing means the bug was there before the change; that is not a level: give it the level the defect earns. Keep the source label in brackets after the dash (`— [Pre-existing] …`). `[Pre-existing]` is the written reason a HIGH may stay; a CRITICAL still stops work |
+| Should-fix, S1, Important (from anything except Claude Code `/code-review` or `/ship`; assume this row when the source is unknown), can-fix-after, P2 | MEDIUM |
 | Minor, M1 when it meant minor, Nit, Optional, Consider, Suggestion, P3 | LOW |
 | FYI | Not a finding; a note |
 | `C1` / `H1` / `M1` / `L1` ids (old `total-review` issues) | The letter was the level: CRITICAL / HIGH / MEDIUM / LOW. Renumber as `F1`... before handing them to `finding-fixer` |
