@@ -25,7 +25,7 @@ report files.
 
 A PR that touches order submission can pass every test and still smuggle a `Double` into a price calculation. CI does not catch every case, and human review is fatigue-prone. This skill is the mechanical gate: it scans a change set for forbidden numeric types on financial values and returns a deterministic verdict.
 
-**This is the canonical contract.** The `financial-precision-auditor` agent implements the same rules for context-isolated runs. It has two homes: ClaudeConfig `agents-parked/` (activated per `total-review-scaffold`), and, in Vista repos, the vista-dev plugin's `vista-dev:financial-precision-auditor`. If this file and an agent copy ever disagree, this file wins — update each agent copy to match.
+**Which copy applies where.** The vista-dev plugin (vista-root `plugins/vista-dev/`) carries its own copy of this skill, `vista-dev:audit-numeric-types`, together with the `vista-dev:financial-precision-auditor` agent. In Vista repos that copy and its agent apply, and that copy is canonical there; it is maintained separately and its severity table is worded differently. Everywhere else this file is the canonical contract, and the `financial-precision-auditor` agent in ClaudeConfig `agents-parked/` (activated per `total-review-scaffold`) implements the same rules for context-isolated runs. If this file and that agent ever disagree, this file wins — update the agent to match.
 
 ## Read-Only Mandate
 

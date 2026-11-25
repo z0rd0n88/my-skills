@@ -1,10 +1,10 @@
 # Multi-Agent Review
 
-Parallel multi-perspective code review with a synthesizer that dedupes findings across reviewer lenses. A `pr` target loops review → fix → re-review by default until the PR is clean; everything else is a one-shot read-only report.
+Parallel multi-perspective code review with a synthesizer that dedupes findings across reviewer lenses. A `pr` target runs one review→fix round by default (`--max-iterations` adds re-review rounds, up to 8); everything else is a one-shot read-only report.
 
 Built around the insight that **single-agent review is a thin filter** and **multi-agent review without coordination is noise** — what's needed is parallel fan-out plus a synthesis layer that catches what each reviewer missed without re-reporting what they all caught.
 
-How to run it, its flags, the shared `refs/multi-agent/` primitives and how it composes with other skills are in [`SKILL.md`](SKILL.md) (§3, §14, §15). The full decision history is in [`references/resolved-decisions.md`](references/resolved-decisions.md).
+How to run it, its flags, the shared `refs/multi-agent/` primitives and how it composes with other skills are in [`SKILL.md`](SKILL.md) (the `-h` table, §3, §14, §15). The full decision history is in [`references/resolved-decisions.md`](references/resolved-decisions.md).
 
 ## What makes this different from "run a code reviewer agent"
 
@@ -18,7 +18,7 @@ Seven load-bearing properties most ad-hoc review setups miss:
 6. **Exclusion-list discipline.** Open tracker issues are injected verbatim into every reviewer's prompt under a "DO NOT report" heading. Recurring sweeps stay quiet on issues you've already triaged. In loop mode, findings refuted in an earlier round are carried forward through the same channel, so stateless reviewers stop rediscovering dead claims every round.
 7. **Target taxonomy.** `pr`, `dir`, `file`, `spec`, `diff`, and `slices` (fan-out across N directories with cross-slice meta-synth). Most review tools cover only `pr` or only `diff`; the spec/slices forms are rare and load-bearing.
 
-## Plugin 3.1.0 (#218)
+## Gating on a one-shot review
 
 A caller that gates on a one-shot review passes `--high-cap off` itself, and the orchestrator's summary reports the cap and lists budget-demoted findings on `Cap:` and `Demoted:` lines.
 
@@ -59,4 +59,4 @@ The stage still does exactly what 2.1 claimed. The reversal is about *where the 
 - **`--refuters` / `--max-refuters` require `--adversarial`** and hard-fail without it, rather than silently doing nothing. They never *imply* it — a flag that reads like "spend less" must not switch on the expensive path.
 - **Unattended loops still get nudged.** A looping `pr` with `--yes` and no `--adversarial` prints one note at loop start saying auto-fix will act on unchallenged findings. A note, not a block.
 - **`--max-refuters` default lowered `60` → `20`.** A live verification run on a single 135-line file produced 13 finding groups needing 28 refuters, 22 of them for MEDIUM/LOW — at 60 the budget never bound, so a routine one-file review would have spawned all 28. Trade-off, stated plainly: degradation starts sooner, so finding-rich reviews now carry a visible `UNVERIFIED` tail. `UNVERIFIED` means *nobody challenged this*, not *this survived challenge*; the Executive Summary always states the arithmetic. Raise the flag when a run needs full coverage.
-- **`--max-refuters` is per review pass, not per session** — now documented as such. A loop forwards it to every round, so budget `--max-iterations × --max-refuters`; at the new defaults that is 60, not 20. This was always the behavior; only the documentation changed.
+- **`--max-refuters` is per review pass, not per session** — now documented as such. A loop forwards it to every round, so budget `--max-iterations × --max-refuters`; at the default of one round that is 20, and a 3-round loop (`--max-iterations 3`) can dispatch 60. This was always the behavior; only the documentation changed.
