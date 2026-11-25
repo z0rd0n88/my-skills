@@ -162,7 +162,7 @@ Format: one `L-*: name[, fallback...]` per line; an optional `FORCE:` line adds
 repo-mandated forced lanes. Names are validated against the pool at parse time
 (unknown → hard-fail, same as `--reviewers`).
 
-## Worked instantiation — a Kotlin/Solana custody repo (e.g. VistaMobileBE)
+## Worked instantiation — a Kotlin/Solana custody repo (e.g. VBE)
 
 Its pool renamed `architect-review`→`architect-reviewer` and carries
 `numeric-precision-reviewer`, `crypto-security-reviewer`,
