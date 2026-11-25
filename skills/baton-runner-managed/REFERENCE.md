@@ -485,8 +485,7 @@ RETURN: the STATUS line, then `VERDICT: CLEAN | ISSUES`, then BATON + NOTES.
 
 Written by the **closing unit**, from `review-phase-<N>-dw.json` and
 `fixer-phase-<N>.json`, to `docs/reviews/<YYYY-MM-DD>-dw-review-<slug>.md`. It is
-the durable artifact; both JSONs are run bookkeeping. Shape, matching
-`docs/reviews/2026-09-09-dw-review-maker-lab-3-5-phase-*.md`:
+the durable artifact; both JSONs are run bookkeeping. Shape:
 
 | Section | Content |
 |---|---|
