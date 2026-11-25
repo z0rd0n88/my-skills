@@ -14,7 +14,18 @@ What child N does is word N of the file named by FAKE_PLAN:
   badjson     append progress, fire Stop with a payload that is not JSON
   truststart  show the trust dialog text at once, wait up to 5 s for keys, then progress
   trustlate   work 2.5 s, then show the trust dialog text, wait 2.5 s, then progress
-
+  Background shells, as Claude Code shows them: the screen has the input box between two rules and a
+  status line under it, "⏵⏵ auto mode on" plus " · 1 shell" while a background shell is listed and
+  " · esc to interrupt" while a turn runs. The shell's argv sources
+  .../.claude/shell-snapshots/snapshot-bash-$FAKE_TAG.sh, as the Bash tool's does.
+  background  turn starts a 3 s background shell and ends (Stop, no progress); when the shell
+              ends, 1.2 s later a turn of its own (1 s) appends progress and fires Stop again
+  bglate      the shell (1 s) ends while the turn still runs (2.5 s); the turn of its own still
+              follows the Stop, 1.2 s later
+  bgtree      like background, but the status line never lists the shell (process tree only)
+  bgfooter    like background, but only the status line lists it (no process)
+  bgnofollow  a 2 s shell, and no turn follows it
+  bgforever   a 60 s shell, and no turn follows it
 After its turn it idles at its "prompt" like claude does. Any keys typed into the pane are appended
 to $JOB_DIR/keys-<N>, so a test can tell whether run-job typed into a child."""
 import json
@@ -24,6 +35,22 @@ import select
 import subprocess
 import sys
 import time
+
+TAG = os.environ.get("FAKE_TAG", "fake")
+RULE = "\u2500" * 78
+
+
+def bg_shell(secs):
+    # `; true` keeps bash from exec'ing sleep and losing its argv, as the Bash tool's trailing commands do
+    return subprocess.Popen(["bash", "-c", f"source /nonexistent/.claude/shell-snapshots/snapshot-bash-{TAG}.sh"
+                             f" 2>/dev/null; sleep {secs}; true"])
+
+
+def screen(text, busy=False, shells=0):
+    status = "  \u23f5\u23f5 auto mode on" + (f" \u00b7 {shells} shell" if shells else "") \
+        + (" \u00b7 esc to interrupt" if busy else "")
+    print("\x1b[2J\x1b[H" + "\n".join([text, "", RULE, "\u276f ", RULE, status]), flush=True)
+
 
 args = sys.argv[1:]
 hooks = json.load(open(args[args.index("--settings") + 1]))["hooks"]
@@ -85,6 +112,23 @@ elif mode == "badjson":
 elif mode == "truststart":
     print("Do you trust the files in this folder?\n> Yes, I trust this folder", flush=True)
     idle(5, until_keys=True); progress(); fire("Stop", event("trust answered"))
+elif mode.startswith("bg") or mode == "background":
+    listed = 0 if mode == "bgtree" else 1
+    secs = {"bglate": 1, "bgnofollow": 2, "bgforever": 60}.get(mode, 3)
+    shell = None if mode == "bgfooter" else bg_shell(secs)
+    screen("Starting the tests in the background.", busy=True, shells=listed)
+    if mode == "bglate":
+        shell.wait(); screen("Writing a long summary.", busy=True); time.sleep(1.5)
+    screen("Waiting for the background command to finish.", shells=0 if mode == "bglate" else listed)
+    fire("Stop", event("Waiting for the background command to finish."))
+    if mode not in ("bgnofollow", "bgforever"):
+        shell.wait() if shell else time.sleep(secs)
+        screen("Background command completed.")
+        time.sleep(1.2)   # Claude Code starts its own turn about a second after the shell ends
+        screen("Background command completed.", busy=True); time.sleep(1)
+        progress(); screen("Background work done."); fire("Stop", event("background work done"))
+    elif shell and mode == "bgnofollow":
+        shell.wait(); screen("Waiting for the background command to finish.")
 elif mode == "trustlate":
     time.sleep(2.5)
     print("Reading run-job: ... grep -q 'Yes, I trust this folder' ...", flush=True)

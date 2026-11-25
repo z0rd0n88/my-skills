@@ -11,11 +11,15 @@ WORK=$(mktemp -d)
 export TMUX_TMPDIR="$WORK/tmux" XDG_RUNTIME_DIR="$WORK/run" PATH="$HERE/fake-bin:$PATH"
 mkdir -p "$TMUX_TMPDIR" "$XDG_RUNTIME_DIR"
 unset TMUX CLAUDE_FLAGS
+export FAKE_TAG="runjob-$$"   # names this run's fake background shells, so a parallel suite's are not touched
 pass=0; fail=0
 ok()  { echo "  ok   $1"; pass=$((pass + 1)); }
 bad() { echo "  FAIL $1"; fail=$((fail + 1)); }
 # every job gets its own tmux server (tmux -L run-job-<name>-<hash>); stop them all
-cleanup() { local s; for s in "$TMUX_TMPDIR"/tmux-*/*; do tmux -S "$s" kill-server 2>/dev/null; done; rm -rf "$WORK"; }
+cleanup() {
+  local s; for s in "$TMUX_TMPDIR"/tmux-*/*; do tmux -S "$s" kill-server 2>/dev/null; done
+  pkill -f "snapshot-bash-$FAKE_TAG" 2>/dev/null; rm -rf "$WORK"
+}
 trap cleanup EXIT
 
 # job <name> <plan...>: a fresh job dir under its own workdir; sets J (job dir).
@@ -32,7 +36,7 @@ run() {
   env FAKE_PLAN="$J/plan" "$@" "$RUNJOB" "$J" > "$J/out" 2>&1; RC=$?
   SECS=$((SECONDS - t0))
 }
-has() { grep -q -- "$1" "$J/run.log"; }
+has() { grep -q -- "$1" "$J/run.log" 2>/dev/null; }
 # sock: the tmux server name run-job logged for $J
 sock_of() { sed -n 's/.*(watch: tmux -L \([^ ]*\) attach.*/\1/p' "$1/run.log" | head -1; }
 sock() { sock_of "$J"; }
@@ -141,6 +145,42 @@ for try in 1 2 3 4 5; do
 done
 [ "$won" = 0 ] && ok "two runners racing for a dead runner's lock: exactly one starts (5 tries)" || { bad "race try $won: $n children launched, $refused refused"; head -3 "$J/out-a" "$J/out-b" "$J/run.log"; }
 
+
+echo "background shells"
+for mode in background bglate bgtree bgfooter; do
+  job "bg-$mode" "$mode" finish
+  run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=2
+  case $mode in
+    background) what="a turn that leaves a background shell is waited through to the turn it starts, not a stall" ;;
+    bglate) what="... also when the shell ends before the Stop and the turn follows it" ;;
+    bgtree) what="... also when only the process tree shows the shell" ;;
+    *) what="... also when only the status line shows the shell" ;;
+  esac
+  [ "$RC" = 0 ] && grep -q "progress by child 1" "$J/checkpoint.md" && ! has "stall" && ok "$what" || { bad "$what (rc $RC)"; cat "$J/run.log"; }
+done
+job bgnofollow bgnofollow finish
+run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=2
+[ "$RC" = 0 ] && has "child 1 left checkpoint.md unchanged (stall 1/2)" && [ "$SECS" -lt 25 ] \
+  && ok "a shell that ends with no turn after it is waited on only JOB_BG_SETTLE seconds (${SECS}s)" || { bad "no follow-up turn (rc $RC, ${SECS}s)"; cat "$J/run.log"; }
+job bgforever bgforever finish
+run JOB_CHILD_TIMEOUT=60 JOB_BG_WAIT=3 JOB_BG_SETTLE=2 JOB_KEEP_WINDOWS=1
+[ "$RC" = 0 ] && has "child 1 still has a background shell after 3s; taking its last reply and closing it" && has "child 1 left checkpoint.md unchanged (stall 1/2)" \
+  && ok "a background shell that never ends is capped by JOB_BG_WAIT, then counts as a stall" || { bad "never-ending background shell (rc $RC)"; cat "$J/run.log"; }
+sleep 1; ! pgrep -f "snapshot-bash-$FAKE_TAG.sh 2>/dev/null; sleep 60" >/dev/null && ok "that child is closed even with JOB_KEEP_WINDOWS, its shell with it" || bad "the capped child or its shell was left running"
+# Time held by session-airspace does not count toward JOB_BG_WAIT (a held shell cannot finish).
+job bgheld bgforever finish
+FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 JOB_BG_WAIT=4 JOB_BG_SETTLE=2 "$RUNJOB" "$J" > "$J/out" 2>&1 & rj=$!
+for _ in $(seq 1 50); do has "child 1 ended its turn with a background shell" && break; sleep 0.2; done
+cpid=$(pgrep -P "$(tmux -L "$(sock)" display -p -t job-bgheld:child-1 '#{pane_pid}' 2>/dev/null)" | head -1)
+kill -STOP "$cpid" 2>/dev/null; sleep 6; kill -CONT "$cpid" 2>/dev/null
+wait "$rj"; RC=$?
+t1=$(sed -n 's/^\(.\{20\}\) child 1 ended its turn with a background.*/\1/p' "$J/run.log"); t2=$(sed -n 's/^\(.\{20\}\) child 1 still has a background shell.*/\1/p' "$J/run.log")
+gap=$(( $(date -d "$t2" +%s) - $(date -d "$t1" +%s) ))
+[ "$RC" = 0 ] && [ "$gap" -ge 8 ] && ok "time held does not count toward JOB_BG_WAIT (capped after ${gap}s: 4s + 6s held)" || { bad "held time and JOB_BG_WAIT (rc $RC, gap ${gap}s)"; cat "$J/run.log"; }
+run JOB_BG_WAIT=07
+[ "$RC" = 1 ] && grep -q "JOB_BG_WAIT=07 is not a whole number" "$J/out" && ok "JOB_BG_WAIT is validated like the other numbers" || bad "JOB_BG_WAIT validation (rc $RC)"
+run JOB_BG_SETTLE=x
+[ "$RC" = 1 ] && grep -q "JOB_BG_SETTLE=x is not a whole number" "$J/out" && ok "so is JOB_BG_SETTLE" || bad "JOB_BG_SETTLE validation (rc $RC)"
 
 echo
 echo "$pass passed, $fail failed"
