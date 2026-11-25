@@ -123,15 +123,17 @@ Unattended children can only use tools the owner allowed; pass that through `CLA
 exactly as the owner stated it. `run-job` starts one child, waits for its turn to end, reads the
 checkpoint, and starts the next, until `status:` is `done` or `blocked`. A child that crashes is
 seen within seconds and one that exceeds `JOB_CHILD_TIMEOUT` is killed; either way the next one
-resumes from the last checkpoint. A child whose turn leaves a shell running in the background ("waiting for the tests to
-finish") is waited on until the turn Claude starts when that shell finishes has ended. The shells
-are read from Claude Code's status line (`· 1 shell ·`) and, between turns, the process tree; once
-one was seen, a Stop counts only after `JOB_BG_SETTLE` (10 s) quiet, since the follow-up turn starts
-about a second after the shell ends, even when it ended just before the Stop. A shell that never
-ends (a dev server) is waited on up to `JOB_BG_WAIT` (1800 s, time held by `session-airspace`
-excluded; `JOB_CHILD_TIMEOUT` still applies and may come first); that child is then closed, even
-with `JOB_KEEP_WINDOWS`, and counts as a stall if it made no progress. The brief's child protocol
-tells children to stop background processes before ending a turn. A child stopped by an API error waits `JOB_API_BACKOFF` (600 s)
+resumes from the last checkpoint. A child whose turn leaves work running in the background (a shell
+running the tests, a monitor, a subagent) is waited on until the turn Claude starts when that work
+finishes has ended. The work is read from Claude Code's status line (`· 1 shell ·`, `· 1 shell,
+1 monitor ·`, `· 3 background tasks ·` while a subagent runs), the `◯` subagent rows under it, and,
+between turns, the process tree; once some was seen, a Stop counts only after `JOB_BG_SETTLE` (10 s)
+quiet, since the follow-up turn starts about a second after the work ends, even when it ended just
+before the Stop. Work that never ends (a dev server, a monitor with no end) is waited on up to
+`JOB_BG_WAIT` (600 s, time held by `session-airspace` excluded; `JOB_CHILD_TIMEOUT` still applies
+and may come first); that child is then closed, even with `JOB_KEEP_WINDOWS`, and counts as a stall
+if it made no progress. The brief's child protocol tells children to stop background processes and
+monitors before ending a turn, and not to end one while a subagent still works. A child stopped by an API error waits `JOB_API_BACKOFF` (600 s)
 before the next, or `JOB_LIMIT_BACKOFF` (1800 s) for a rate or usage limit; those children are not
 counted as stalls. Two children in a row that leave the checkpoint untouched stop the chain
 (exit 5), as does the child cap (exit 4), so a confused job cannot spin. Only one `run-job` can

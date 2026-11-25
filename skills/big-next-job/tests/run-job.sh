@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tests for scripts/run-job with a fake claude (tests/fake-bin/claude). Needs tmux and python3, no
 # Claude account. Runs on a private tmux server and runtime dir; touches nothing else.
-# Usage: skills/big-next-job/tests/run-job.sh        (about a minute)
+# Usage: skills/big-next-job/tests/run-job.sh        (about four minutes)
 # shellcheck disable=SC2015  # `ok` always succeeds, so `test && ok || bad` is a safe if/else here
 set -uo pipefail
 
@@ -146,10 +146,10 @@ done
 [ "$won" = 0 ] && ok "two runners racing for a dead runner's lock: exactly one starts (5 tries)" || { bad "race try $won: $n children launched, $refused refused"; head -3 "$J/out-a" "$J/out-b" "$J/run.log"; }
 
 
-echo "background shells"
+echo "background work"
 for mode in background bglate bgtree bgfooter; do
   job "bg-$mode" "$mode" finish
-  run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=2
+  run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=4
   case $mode in
     background) what="a turn that leaves a background shell is waited through to the turn it starts, not a stall" ;;
     bglate) what="... also when the shell ends before the Stop and the turn follows it" ;;
@@ -159,24 +159,36 @@ for mode in background bglate bgtree bgfooter; do
   [ "$RC" = 0 ] && grep -q "progress by child 1" "$J/checkpoint.md" && ! has "stall" && ok "$what" || { bad "$what (rc $RC)"; cat "$J/run.log"; }
 done
 job bgnofollow bgnofollow finish
-run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=2
+run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=4
 [ "$RC" = 0 ] && has "child 1 left checkpoint.md unchanged (stall 1/2)" && [ "$SECS" -lt 25 ] \
   && ok "a shell that ends with no turn after it is waited on only JOB_BG_SETTLE seconds (${SECS}s)" || { bad "no follow-up turn (rc $RC, ${SECS}s)"; cat "$J/run.log"; }
 job bgforever bgforever finish
 run JOB_CHILD_TIMEOUT=60 JOB_BG_WAIT=3 JOB_BG_SETTLE=2 JOB_KEEP_WINDOWS=1
-[ "$RC" = 0 ] && has "child 1 still has a background shell after 3s; taking its last reply and closing it" && has "child 1 left checkpoint.md unchanged (stall 1/2)" \
+[ "$RC" = 0 ] && has "child 1 still has background work after 3s; taking its last reply and closing it" && has "child 1 left checkpoint.md unchanged (stall 1/2)" \
   && ok "a background shell that never ends is capped by JOB_BG_WAIT, then counts as a stall" || { bad "never-ending background shell (rc $RC)"; cat "$J/run.log"; }
 sleep 1; ! pgrep -f "snapshot-bash-$FAKE_TAG.sh 2>/dev/null; sleep 60" >/dev/null && ok "that child is closed even with JOB_KEEP_WINDOWS, its shell with it" || bad "the capped child or its shell was left running"
 # Time held by session-airspace does not count toward JOB_BG_WAIT (a held shell cannot finish).
 job bgheld bgforever finish
 FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 JOB_BG_WAIT=4 JOB_BG_SETTLE=2 "$RUNJOB" "$J" > "$J/out" 2>&1 & rj=$!
-for _ in $(seq 1 50); do has "child 1 ended its turn with a background shell" && break; sleep 0.2; done
+for _ in $(seq 1 50); do has "child 1 ended its turn with background work" && break; sleep 0.2; done
 cpid=$(pgrep -P "$(tmux -L "$(sock)" display -p -t job-bgheld:child-1 '#{pane_pid}' 2>/dev/null)" | head -1)
 kill -STOP "$cpid" 2>/dev/null; sleep 6; kill -CONT "$cpid" 2>/dev/null
 wait "$rj"; RC=$?
-t1=$(sed -n 's/^\(.\{20\}\) child 1 ended its turn with a background.*/\1/p' "$J/run.log"); t2=$(sed -n 's/^\(.\{20\}\) child 1 still has a background shell.*/\1/p' "$J/run.log")
-gap=$(( $(date -d "$t2" +%s) - $(date -d "$t1" +%s) ))
-[ "$RC" = 0 ] && [ "$gap" -ge 8 ] && ok "time held does not count toward JOB_BG_WAIT (capped after ${gap}s: 4s + 6s held)" || { bad "held time and JOB_BG_WAIT (rc $RC, gap ${gap}s)"; cat "$J/run.log"; }
+t1=$(sed -n 's/^\(.\{20\}\) child 1 ended its turn with background work.*/\1/p' "$J/run.log"); t2=$(sed -n 's/^\(.\{20\}\) child 1 still has background work.*/\1/p' "$J/run.log")
+gap=$(( $(date -d "${t2:-x}" +%s 2>/dev/null || echo 0) - $(date -d "${t1:-x}" +%s 2>/dev/null || echo 0) ))
+[ "$RC" = 0 ] && [ -n "$t1" ] && [ -n "$t2" ] && [ "$gap" -ge 8 ] && [ "$gap" -le 30 ] && ok "time held does not count toward JOB_BG_WAIT (capped after ${gap}s: 4s + 6s held)" || { bad "held time and JOB_BG_WAIT (rc $RC, gap ${gap}s)"; cat "$J/run.log"; }
+for mode in bgagent bgagentlate bgmonitor bgmonfooter; do
+  job "bg-$mode" "$mode" finish
+  run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=4
+  case $mode in
+    bgagent) what="a turn that leaves a background subagent is waited through to the turn it starts" ;;
+    bgagentlate) what="... also when the subagent ends before the Stop" ;;
+    bgmonitor) what="... and a background monitor" ;;
+    *) what="... also when only the status line shows the monitor" ;;
+  esac
+  { [ "$mode" = bgagentlate ] || has "child 1 ended its turn with background work running"; } \
+    && [ "$RC" = 0 ] && grep -q "progress by child 1" "$J/checkpoint.md" && ! has "stall" && ok "$what" || { bad "$what (rc $RC)"; cat "$J/run.log"; }
+done
 run JOB_BG_WAIT=07
 [ "$RC" = 1 ] && grep -q "JOB_BG_WAIT=07 is not a whole number" "$J/out" && ok "JOB_BG_WAIT is validated like the other numbers" || bad "JOB_BG_WAIT validation (rc $RC)"
 run JOB_BG_SETTLE=x
