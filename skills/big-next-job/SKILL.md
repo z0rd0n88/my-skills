@@ -130,8 +130,10 @@ one was seen, a Stop counts only after `JOB_BG_SETTLE` (10 s) quiet, since the f
 about a second after the shell ends, even when it ended just before the Stop. A shell that never
 ends (a dev server) is waited on up to `JOB_BG_WAIT` (1800 s, time held by `session-airspace`
 excluded; `JOB_CHILD_TIMEOUT` still applies and may come first); that child is then closed, even
-with `JOB_KEEP_WINDOWS`, and counts as a stall if it made no progress. The brief's child protocol
-tells children to stop background processes before ending a turn. A child stopped by an API error waits `JOB_API_BACKOFF` (600 s)
+with `JOB_KEEP_WINDOWS`, and counts as a stall if it made no progress. Background subagents and monitors
+(a `◯` row under the status line, `· 1 monitor ·`) are not waited on, since they can run for good;
+run.log notes them and the child is closed, even with `JOB_KEEP_WINDOWS`. The brief's child protocol
+tells children to stop background processes and to wait for their subagents before ending a turn. A child stopped by an API error waits `JOB_API_BACKOFF` (600 s)
 before the next, or `JOB_LIMIT_BACKOFF` (1800 s) for a rate or usage limit; those children are not
 counted as stalls. Two children in a row that leave the checkpoint untouched stop the chain
 (exit 5), as does the child cap (exit 4), so a confused job cannot spin. Only one `run-job` can

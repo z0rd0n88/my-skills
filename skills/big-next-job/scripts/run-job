@@ -159,19 +159,26 @@ launch() {
 # - The status line under the input box lists them ("⏵⏵ auto mode on · 1 shell · ↓ to manage"),
 #   during a turn too, and never lists a foreground command. Only that footer is read: the
 #   transcript above it can hold the same words. "esc to interrupt" there means a turn runs.
+# - Background subagents and monitors show there too: a row per subagent under the status line
+#   ("◯ general-purpose  waiting on 1 monitor · ..."), and "· 1 monitor ·" in it. BG_AGENTS is the
+#   larger count (a subagent waiting on its monitor shows in both). They are not waited on (they can run for good and start turns of their own).
 # - The Bash tool runs each command as `bash -c 'source <home>/.claude/shell-snapshots/snapshot-...'`
 #   under claude. Between turns any such shell still alive is a background one (during a turn a
 #   foreground command looks the same). Only the outermost of a shell's subshells counts.
 bg_status() {
-  local listed tree=0
-  read -r BG_BUSY listed < <(tmux -L "$SOCK" capture-pane -p -t "$WIN" 2>/dev/null | python3 -c '
+  local listed rows tree=0
+  read -r BG_BUSY listed BG_AGENTS rows < <(tmux -L "$SOCK" capture-pane -p -t "$WIN" 2>/dev/null | python3 -c '
 import re, sys
 lines = sys.stdin.read().splitlines()[-40:]
 rules = [i for i, line in enumerate(lines) if re.match(r"^\s*─{8,}\s*$", line)]
 text = "\n".join(lines[rules[-1] + 1:] if rules else [l for l in lines if l.strip()][-2:])
 m = re.search(r"(?:^|·)\s*(\d+) shells?\b", text, re.M)
-print(int("esc to interrupt" in text), m.group(1) if m else 0)' 2>/dev/null || echo "0 0")
-  if [ "${BG_BUSY:-0}" != 1 ]; then
+mon = re.search(r"(?:^|·)\s*(\d+) monitors?\b", text, re.M)
+rows = len(re.findall(r"^\s*◯\s+\S", text, re.M))
+print(int("esc to interrupt" in text), m.group(1) if m else 0, max(rows, int(mon.group(1)) if mon else 0), rows)' 2>/dev/null || echo "0 0 0 0")
+  # A subagent's own commands run as Bash-tool shells under claude too, unlisted in the status line
+  # (checked live); while a subagent row shows, the tree cannot tell whose a shell is.
+  if [ "${BG_BUSY:-0}" != 1 ] && [ "${rows:-0}" = 0 ]; then
     tree=$(ps -eo pid=,ppid=,args= | awk -v root="${PANE:-0}" -v mark="/shell-snapshots/snapshot-" '
       { pid = $1; par[pid] = $2; $1 = $2 = ""; arg[pid] = $0 }
       END { for (p in par) {
@@ -206,9 +213,19 @@ turn_ended() {
     fi
     return 1
   fi
-  [ "$bg_seen" = 1 ] || return 0
+  [ "$bg_seen" = 1 ] || { agents_left; return 0; }
   [ -n "$bg_quiet" ] || bg_quiet=$SECONDS
-  [ $((SECONDS - bg_quiet)) -ge "$BG_SETTLE" ]
+  [ $((SECONDS - bg_quiet)) -ge "$BG_SETTLE" ] || return 1
+  agents_left
+}
+
+# agents_left: a child whose turn ended with background subagents or monitors still listed is not
+# waited on, but it is closed even with JOB_KEEP_WINDOWS: left open, it could wake when one finishes
+# and edit the checkpoint beside the next child.
+agents_left() {
+  [ "${BG_AGENTS:-0}" -gt 0 ] || return 0
+  log "child $n ended its turn with ${BG_AGENTS} background agent(s) or monitor(s) still listed; not waited on, closing it"
+  BG_LEFT=1
 }
 
 # wait_child: 0 the turn ended (done.json), 1 timed out, 2 claude exited first (AGE, RC),

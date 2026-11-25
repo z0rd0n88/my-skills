@@ -26,6 +26,9 @@ What child N does is word N of the file named by FAKE_PLAN:
   bgfooter    like background, but only the status line lists it (no process)
   bgnofollow  a 2 s shell, and no turn follows it
   bgforever   a 60 s shell, and no turn follows it
+  bgagent     append progress, then end the turn with a background subagent listed as seen live
+              (a "◯ general-purpose" row under the status line, " · 1 monitor" in it) for good; its
+              own command runs as a Bash-tool shell under claude that the status line does not list
 After its turn it idles at its "prompt" like claude does. Any keys typed into the pane are appended
 to $JOB_DIR/keys-<N>, so a test can tell whether run-job typed into a child."""
 import json
@@ -46,10 +49,11 @@ def bg_shell(secs):
                              f" 2>/dev/null; sleep {secs}; true"])
 
 
-def screen(text, busy=False, shells=0):
+def screen(text, busy=False, shells=0, agents=0):
     status = "  \u23f5\u23f5 auto mode on" + (f" \u00b7 {shells} shell" if shells else "") \
-        + (" \u00b7 esc to interrupt" if busy else "")
-    print("\x1b[2J\x1b[H" + "\n".join([text, "", RULE, "\u276f ", RULE, status]), flush=True)
+        + (f" \u00b7 {agents} monitor" if agents else "") + (" \u00b7 esc to interrupt" if busy else "")
+    rows = ["  \u25cf main"] + ["  \u25ef general-purpose  waiting on 1 monitor \u00b7 probe"] * agents if agents else []
+    print("\x1b[2J\x1b[H" + "\n".join([text, "", RULE, "\u276f ", RULE, status] + rows), flush=True)
 
 
 args = sys.argv[1:]
@@ -112,6 +116,10 @@ elif mode == "badjson":
 elif mode == "truststart":
     print("Do you trust the files in this folder?\n> Yes, I trust this folder", flush=True)
     idle(5, until_keys=True); progress(); fire("Stop", event("trust answered"))
+elif mode == "bgagent":
+    sub = bg_shell(60)   # the subagent's own (foreground) command: under claude, unlisted
+    progress(); screen("Started a background agent.", agents=1)
+    fire("Stop", event("started a background agent"))
 elif mode.startswith("bg") or mode == "background":
     listed = 0 if mode == "bgtree" else 1
     secs = {"bglate": 1, "bgnofollow": 2, "bgforever": 60}.get(mode, 3)

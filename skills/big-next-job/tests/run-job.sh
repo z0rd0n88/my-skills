@@ -177,6 +177,16 @@ wait "$rj"; RC=$?
 t1=$(sed -n 's/^\(.\{20\}\) child 1 ended its turn with a background.*/\1/p' "$J/run.log"); t2=$(sed -n 's/^\(.\{20\}\) child 1 still has a background shell.*/\1/p' "$J/run.log")
 gap=$(( $(date -d "$t2" +%s) - $(date -d "$t1" +%s) ))
 [ "$RC" = 0 ] && [ "$gap" -ge 8 ] && ok "time held does not count toward JOB_BG_WAIT (capped after ${gap}s: 4s + 6s held)" || { bad "held time and JOB_BG_WAIT (rc $RC, gap ${gap}s)"; cat "$J/run.log"; }
+job bgagent bgagent finish
+run JOB_CHILD_TIMEOUT=60 JOB_BG_SETTLE=2
+[ "$RC" = 0 ] && has "child 1 ended its turn with 1 background agent(s) or monitor(s) still listed; not waited on" && grep -q "progress by child 1" "$J/checkpoint.md" && [ "$SECS" -lt 15 ] \
+  && ok "a background subagent or monitor is logged, not waited on (${SECS}s)" || { bad "background agent (rc $RC, ${SECS}s)"; cat "$J/run.log"; }
+job bgagentkeep bgagent hang
+FAKE_PLAN="$J/plan" JOB_CHILD_TIMEOUT=60 JOB_KEEP_WINDOWS=1 "$RUNJOB" "$J" > "$J/out" 2>&1 & rj=$!
+for _ in $(seq 1 50); do has "child 2 launched" && break; sleep 0.2; done
+wins=$(tmux -L "$(sock)" list-windows -t job-bgagentkeep -F '#{window_name}' 2>/dev/null | tr '\n' ' ')
+kill -TERM "$rj" 2>/dev/null; wait "$rj" 2>/dev/null
+[[ " $wins" != *" child-1 "* ]] && [[ "$wins" == *child-2* ]] && ok "that child is closed even with JOB_KEEP_WINDOWS" || bad "child with a background agent left open (windows: $wins)"
 run JOB_BG_WAIT=07
 [ "$RC" = 1 ] && grep -q "JOB_BG_WAIT=07 is not a whole number" "$J/out" && ok "JOB_BG_WAIT is validated like the other numbers" || bad "JOB_BG_WAIT validation (rc $RC)"
 run JOB_BG_SETTLE=x
