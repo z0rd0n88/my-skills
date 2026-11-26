@@ -182,7 +182,8 @@ Two standing rules:
 State the three you picked and why in one line each before running.
 
 At level `light`, take the top **two** by strength of signal instead of three (the tautology-hunt
-rule still applies), fill `LANES` with two entries, and state those two.
+rule still applies), fill `LANES` with two entries (delete the `<<<lane-3>>>` row), and state
+those two.
 
 ## Step 3 — run the workflow
 
