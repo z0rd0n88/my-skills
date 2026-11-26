@@ -1,9 +1,9 @@
 ---
-name: branch-off
+name: walk-off
 description: "Use when the user wants N agents to compete on one task in worktrees (best-of-N, tournament) and keep the most correct result, ranked by metric or by judges' Borda vote."
 ---
 
-# branch-off
+# walk-off
 
 A bake-off for git branches: a fork of agenthub (MIT, Alireza Rezvani) that works from a git worktree and adds judge voting, adapted from horse-race (MIT, qiao). Licenses are in the repo's `LICENSES/` folder. The scripts sit in `scripts/` next to this file; call them as `python3 <this skill's base directory>/scripts/<name>.py`. Run every script from the base branch's worktree root, since session state lives in `.agenthub/` there.
 
