@@ -53,6 +53,7 @@ is read-only except `pr`, which by default runs one review→fix round;
 | `--no-report-audit` | flag | off | Skip the report-fidelity audit. |
 | `--adversarial` | flag | off | Refute every finding before synthesis (~4.3× median cost). |
 | `--no-adversarial` | flag | n/a | No-op restating the default; hard-fails with `--adversarial`. |
+| `--level <name>` | `light` \| `max` \| `magnum` | none (today's behavior) | `max` = `--adversarial` (everything on); `magnum` is an exact alias for `max`; `light` = no refutation, the same as today's default. `--level max`/`magnum` with `--no-adversarial` hard-fails. |
 | `--refuters <n>` | integer 1–5 | 3 | Refuters per CRITICAL/HIGH finding; requires `--adversarial`. |
 | `--max-refuters <n>` | integer ≥ 1 | 20 | Refuter budget per review pass; requires `--adversarial`. |
 | `--no-loop` | flag | off | Make a `pr` review one-shot and read-only (no-op elsewhere). |
@@ -107,7 +108,10 @@ Load only what the current path needs.
 multi-agent-review <target-type> <target-args...> [flags]
 multi-agent-review pr 42              # loop, after the confirmation gate
 multi-agent-review pr 42 --no-loop    # one-shot, read-only
+multi-agent-review pr 42 --level max  # same as --adversarial; magnum = max
 ```
+
+`--level <light|max|magnum>` picks an effort level. `max` and `magnum` (an exact alias) mean `--adversarial`; `light` means no adversarial refutation, which is also what you get with no level. `--level max` or `--level magnum` together with `--no-adversarial` is a parse-time hard-fail, like `--adversarial` with `--no-adversarial`.
 
 > Maintainer note: after changing a flag, run `scripts/check_flag_tables.py` (the repo pre-commit hook also runs it); it fails when the `-h` table and `references/flags.md` list different flags.
 
