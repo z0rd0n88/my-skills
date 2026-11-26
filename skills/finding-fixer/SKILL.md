@@ -234,6 +234,16 @@ The apply agent reports on its own work. Read the diff before you believe it.
   in neither list. Those edits may still be on disk: `git diff` on the files those findings name
   is the only thing that separates an edit that landed from one that was never made. The run
   cannot tell them apart for you - it can only refuse to let the gap pass unnoticed.
+- **Check `coverage.blockedEdits`.** It lists every proposed edit the run withheld from the writer
+  because its target was outside the working directory, or was a file that runs code or steers
+  git: hooks, CI config, agent and editor settings, MCP servers, git attributes and submodules
+  (for example `.git/`, `.github/`, `.githooks/`, `.claude/hooks/`, `.claude/settings.json`,
+  `.mcp.json`). Each entry carries the reason. Those findings are still open. Report each one
+  with its file and reason. Do not apply a blocked edit yourself: the user decides whether that
+  target was intended.
+- **Check `apply.skipped` for "symlinked or outside the working directory".** The writer runs an
+  on-disk check before each edit and skips any target that resolves outside the working
+  directory or has a symlink on its path. Report those the same way as blocked edits.
 
 ## Step 5. Report
 
