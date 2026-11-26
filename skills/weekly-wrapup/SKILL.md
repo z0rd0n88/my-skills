@@ -24,7 +24,7 @@ skill.
 > invocation writes `/home/alex/Projects/WeeklyWrapup/<isodate>/wrapup.md`, files each new
 > proposal-table row as a `z0rd0n88/ClaudeConfig` issue (label `from-wrapup`, deduped
 > against open ones), runs the `improve-me` harness audit (which writes
-> `~/Improvements/<isodate>/report.md`), and, via the `wrapup-specs` skill, writes one
+> `~/Projects/Improvements/<isodate>/report.md`), and, via the `wrapup-specs` skill, writes one
 > improvement-spec file per flagship project with improvement items — no confirmation prompt,
 > no dry-run.
 
@@ -178,7 +178,7 @@ has evidence about the harness, not only about the work.
 
 Invoke the `ThinkTime:improve-me` skill via the `Skill` tool with `--days 7`: the wrapup's window, not
 the skill's monthly default. **Block until it returns.** It runs its signal collector over the
-week's session transcripts and writes `~/Improvements/<isodate>/report.md`.
+week's session transcripts and writes `~/Projects/Improvements/<isodate>/report.md`.
 
 **If the `Skill` tool cannot resolve `ThinkTime:improve-me`** — a paste-invoked headless run resolves no
 skills — read its SKILL.md from disk and follow it directly. It lives in the ThinkTime plugin
