@@ -21,6 +21,7 @@ skill.
 > into your repo. Both records ask for your go-ahead first.
 > Lanes also return the questions only the author can answer; any left pending caps the verdict
 > at merge-with-fixes until each is answered, filed, or declined.
+> Level `light` runs two lanes and no skeptic; its findings are unrefuted.
 
 Dynamic-workflow review of a committed PR or branch: three reviewer lanes picked from what the
 diff touches, then one fixed skeptic that tries to refute every finding. Reach for it at a merge
@@ -31,6 +32,7 @@ pending caps the verdict at merge-with-fixes until each is answered, filed, or d
 | Option | Values | Default | Effect |
 |---|---|---|---|
 | target | `pr <N>`, a branch name, or nothing | current branch vs. the default branch | What gets reviewed. A PR is fetched into its own worktree first. |
+| level | `light`, `max`, or `magnum` (a bare word or `--level <word>`) | `max` (today's behavior) | `max` = three lanes plus the skeptic; `magnum` is an exact alias for `max`. `light` = two lanes and no skeptic, so nothing is refuted and the verdict is `UNVERIFIED`. |
 
 ## Overview
 
@@ -39,6 +41,12 @@ never does: an unrefuted finding is a reviewer's opinion, and review rounds get 
 plausible-but-wrong findings.
 
 Invoking this skill **is** the user's opt-in to the `Workflow` tool. Four agents.
+
+**Level.** Read a level word from the arguments: `light`, `max`, or `magnum`, bare or as
+`--level <word>`. `magnum` is an exact alias for `max`, and no level means `max`, which is
+everything below unchanged. `light` changes two things only: Step 2 takes the top **two** lanes,
+and Step 3's `LEVEL` is `light`, so the script returns before the skeptic runs. A `light` run is
+two agents and refutes nothing; Step 4 says how to report it. Any other level word: stop and ask.
 
 ## Step 1 — scope
 
@@ -173,6 +181,9 @@ Two standing rules:
 
 State the three you picked and why in one line each before running.
 
+At level `light`, take the top **two** by strength of signal instead of three (the tautology-hunt
+rule still applies), fill `LANES` with two entries, and state those two.
+
 ## Step 3 — run the workflow
 
 Fill every `<<< >>>` site and pass the script inline to `Workflow`. `<<<TARGET>>>` appears
@@ -293,6 +304,9 @@ const LANES = [
 // 'critical-thinking' if the repo ships that agent, else 'general-purpose'.
 const SKEPTIC_AGENT = '<<<critical-thinking | general-purpose>>>'
 
+// 'light' skips the skeptic (see Overview, "Level"); 'max' for max, magnum, or no level.
+const LEVEL = '<<<max | light>>>'
+
 phase('Review')
 // `r &&`: agent() returns null on a dead lane, and `{ lens, ...null }` is truthy - without it,
 // filter(Boolean) passes a dead lane through as one that found nothing.
@@ -315,6 +329,12 @@ if (all.length === 0) {
   // No skeptic ran, so nobody tried to answer them: every question is the author's, PENDING.
   return { verdict: 'NO-FINDINGS', ref: REF, sha: SHA, lanes: LANES.map((l) => l.key), reviews,
            pendingQuestions: questions.map((q) => ({ ...q, disposition: 'PENDING', note: 'no skeptic ran' })) }
+}
+// Level light: no skeptic, so nothing is refuted or approved and every question stays PENDING.
+if (LEVEL === 'light') {
+  return { verdict: 'UNVERIFIED', level: 'light', ref: REF, sha: SHA, lanes: LANES.map((l) => l.key),
+           rawCount: all.length, findings: all, reviews,
+           pendingQuestions: questions.map((q) => ({ ...q, disposition: 'PENDING', note: 'light run: no skeptic' })) }
 }
 
 phase('Verify')
@@ -472,6 +492,13 @@ is no APPROVE/MERGE-WITH-FIXES/BLOCK verdict from the skeptic, no refuted count 
 lane whose `checked` is empty is the
 tell that the scope was wrong: an unfetched ref makes every `git diff` fail while a schema'd
 agent still returns a well-formed empty result.
+
+**Verdict `UNVERIFIED` (level `light`) is also a different report.** No skeptic ran, so there is
+no APPROVE/MERGE-WITH-FIXES/BLOCK verdict, no refuted count and no `checkedClaimsThatAreWrong`.
+Say so in one line (`light run: <n> findings, none refuted`), never phrase it as an approval,
+and relay `findings` as the lanes filed them, ranked most-severe first, plus each lane's
+`checked` and `notExamined` from `reviews[]` and every `pendingQuestions` entry (all PENDING).
+The record below carries the same `UNVERIFIED` label.
 
 Then **write the same report somewhere durable.** A review that exists only in a chat
 transcript is gone at the next compaction, and the next reviewer pays to re-derive it.

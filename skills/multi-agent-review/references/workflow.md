@@ -9,6 +9,7 @@
 Execute this step first on every invocation:
 
 1. Parse positional args + flags per §3.
+1a. **Normalize `--level` before anything reads the flags:** `--level max` or `--level magnum` → if `--no-adversarial` is present, hard-fail (`--level max and --no-adversarial are contradictory; pass one or neither`); otherwise treat it as the `--adversarial` token from here on, including the loop's forwarding to each round. `--level light` → drop it; it is a no-op (refutation is already off by default). Any other value → hard-fail.
 2. **Determine `mode`:** if `<target-type>` is `pr` AND `--no-loop` is absent AND `--in-loop` is absent → `mode = loop`; else `mode = oneshot`.
    **Recursion backstop — two independent, parser-visible layers.** *Belt:* the loop's inner self-call passes `--no-loop`, which forces the inner pass to `oneshot`. *Suspenders:* the inner self-call **also** passes an explicit `--in-loop` token in its `args`, and this step reads `--in-loop` from its **own** `args` and **hard-refuses loop mode (forces `oneshot`) if present** — so the refusal is structural even if `--no-loop` were ever dropped from the self-call. (Both channels are real command tokens this skill's own arg parser sees; there is no env var or out-of-band brief marker, because this step only reads its parsed `args`.)
 3. **Validate loop-only-flag exclusivity (parse-time hard-fail):** `--max-iterations`, `--high-and-up-only`, `--no-smoke`, `--resume-stopped` are valid only when `mode == loop`. Passing any of them together with `--no-loop`, or with a non-`pr` target, is a hard-fail with a clear message (e.g. `--max-iterations is only valid on a looping pr target; it conflicts with --no-loop`). `--yes` and `--no-loop` are accepted no-ops where they don't apply (see §3) — they never hard-fail on their own.
@@ -131,6 +132,7 @@ Anything else fails the gate. There are three distinct failure shapes, and all t
 ### 5A.1 Parse and validate
 
 1. Parse positional args + flags per §3.
+1a. Apply §5.0 step 1a's `--level` normalization, so an orchestrator or round that receives `--level` reads it the same way.
 2. Hard-fail with a clear error and exit if:
    - `<target-type>` is missing or not one of `pr|dir|file|spec|diff|slices`.
    - `<target-args>` don't match the type (e.g., `pr` with no number/URL; `file` with more than one path; `diff` with any positional arg other than nothing; `slices` with fewer than two paths).

@@ -21,10 +21,16 @@ those lenses attached and relays the report.
 
 ```
 reasoned-review <path-to-spec> [--lenses csv]
+reasoned-review <path-to-spec> [light|max|magnum]
 ```
 
 Pass `--lenses` to override the automatic selection. Lenses are document-shaped,
 so on a `pr` target `multi-agent-review` requires `--no-loop`.
+
+Level (a bare word or `--level <word>`): `light` keeps a smaller lens set —
+`pre-mortem`, `inversion`, and `red-team` only when its triggers fire. `max`, or
+`magnum` (an exact alias), is the full table, the same as giving no level.
+`--lenses` overrides any level.
 
 Runs `multi-agent-review` over a document with reasoning-model reviewer slots attached, choosing
 the lens set automatically. The routing decision is the skill's whole job — the review itself is
@@ -54,6 +60,12 @@ Read the target, then select:
 omissions are the defect class a line-by-line read cannot surface. A permission grant and an
 untrusted-text fan-out are attack surface on their own, whatever the subject matter, so either
 one selects `red-team`. Cap at 5.
+
+**Level `light`.** Apply only the "Always" row and the three `red-team` rows; skip the
+`first-principles` and `jobs-to-be-done` rows. That caps `light` at 3 lenses. `red-team` stays
+because its triggers mark attack surface, which a cheaper run must not drop. Level `max` or
+`magnum` (exact alias), or no level, applies the whole table as above. Name the level in the step 3
+announcement: `lenses (light): pre-mortem, inversion`.
 
 ## Steps
 
