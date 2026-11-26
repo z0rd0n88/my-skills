@@ -249,6 +249,8 @@ const editProblem = raw => {
   if (file.includes('\\')) return 'backslash in path'
   if (file.includes(':')) return 'colon in path (drive letter or alternate stream)'
   if (file.startsWith('~')) return 'home-relative path'
+  // The name is printed unfenced on the edit header line, so it carries no spaces or prose.
+  if (!/^[A-Za-z0-9_.\/-]+$/.test(file)) return 'character other than letters, digits, ".", "_", "-" or "/" in path'
   if (file.split('/').includes('..')) return 'path climbs with ..'
   const rel = file.startsWith('/')
     ? (file.startsWith(root + '/') ? file.slice(root.length + 1) : null)
@@ -312,10 +314,14 @@ const q = text => `<<${FENCE}\n${text}\n${FENCE}>>`
 // The text gate above cannot see the disk, so a symlink inside cwd that points outside passes
 // it. Each edit carries this check, pre-rendered with the target quoted here so the writer never
 // quotes a name itself: the target must resolve inside cwd with no symlink anywhere on its path.
+// It also applies PROTECTED, normalized the same way, because test files the writer names
+// itself pass no other gate.
 const shq = t => `'${String(t).replace(/'/g, `'\\''`)}'`
-const symlinkCheck = file => `python3 -c 'import os,sys; r=os.path.realpath(sys.argv[1]); ` +
+const symlinkCheck = file => `python3 -c 'import os,re,sys; r=os.path.realpath(sys.argv[1]); ` +
   `a=os.path.normpath(os.path.join(r, sys.argv[2])); ` +
-  `sys.exit(0 if a.startswith(r+os.sep) and os.path.realpath(a)==a else 1)' ${shq(root)} ${shq(file)}`
+  `n="/".join(s.rstrip(". ") for s in a[len(r)+1:].lower().split("/") if s.rstrip(". ")); ` +
+  `sys.exit(0 if a.startswith(r+os.sep) and os.path.realpath(a)==a and not re.search(sys.argv[3], n) else 1)' ` +
+  `${shq(root)} ${shq(file)} ${shq(PROTECTED.source)}`
 
 const editBlocks = actionable.map(v =>
   `### ${v.findingId}, verdict: ${v.verdict}\nEvidence:\n${q(v.evidence)}\n` +
