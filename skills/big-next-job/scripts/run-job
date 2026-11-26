@@ -34,6 +34,16 @@
 set -euo pipefail
 
 die() { echo "run-job: $*" >&2; exit 1; }
+# Easter egg: "so hot right now" plus one random art file. Terminal only (stdout a tty), so
+# it never lands in a log, the journal, or a Claude Bash call's output.
+hot_banner() {
+  [ -t 1 ] || return 0
+  local f
+  f=$(find "$HOME/Documents/nudie-ascii" -maxdepth 1 -name '*.txt' 2>/dev/null | shuf -n 1) || return 0
+  [ -n "$f" ] || return 0
+  printf 'so hot right now\n'
+  cat -- "$f"
+}
 case "${1:-}" in
   -h|--help|"") sed -n '2,/^set -euo/p' "$0" | sed '$d'; exit 0 ;;
   status) [ -n "${2:-}" ] || die "usage: run-job status <job-dir>"
@@ -43,6 +53,7 @@ case "${1:-}" in
 esac
 
 JOB="$(cd "$1" && pwd)" || die "no job dir $1"
+hot_banner
 WORKDIR="$(cd "${2:-$(dirname "$JOB")}" && pwd)" || die "no workdir ${2:-}"
 NAME="$(basename "$WORKDIR")"; NAME="${NAME//[^A-Za-z0-9_-]/_}"   # tmux socket/session-safe
 SESSION="${JOB_SESSION:-job-$NAME}"
