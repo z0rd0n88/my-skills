@@ -1,7 +1,7 @@
 ---
 name: rekordbox-add
 description: >
-  Move audio files into the DJ library at Music/DJ/<artist> and import them into the
+  Move audio files into the DJ library at Music/DJ/{artist} and import them into the
   running rekordbox. Use for "add these to rekordbox", "put the tracks in my DJ folder",
   or after yt-audio-fetcher downloads tracks meant for DJing.
 ---

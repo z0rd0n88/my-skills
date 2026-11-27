@@ -1,6 +1,6 @@
 ---
 name: total-review-scaffold
-description: Bootstrap a project wrapper for the total-review pattern. Detects stack (python/kotlin/ts), reads ARCH.md for slice candidates, activates required agents, and writes .claude/skills/<slug>-total-review/{SKILL.md, config.yml}. Use when setting up multi-agent code review for a new repo.
+description: Bootstrap a project wrapper for the total-review pattern. Detects stack (python/kotlin/ts), reads ARCH.md for slice candidates, activates required agents, and writes .claude/skills/{slug}-total-review/{SKILL.md, config.yml}. Use when setting up multi-agent code review for a new repo.
 ---
 
 # total-review-scaffold
