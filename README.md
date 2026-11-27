@@ -31,7 +31,7 @@ Every plugin's `source` is the repo root, so each lists its skill folders. A new
 
 `skills/addyosmani-*` are copies of [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills), renamed with an `addyosmani-` prefix so they never collide with same-named skills from other sources. MIT licensed; notice in `LICENSES/addyosmani-agent-skills.txt`.
 
-`skills/branch-off` is a fork of [agenthub](https://github.com/alirezarezvani/claude-skills) with judge voting adapted from [horse-race](https://github.com/qiao/horse-race). Both are MIT; notices are in `LICENSES/agenthub.txt` and `LICENSES/horse-race.txt`.
+`skills/walk-off` is a fork of [agenthub](https://github.com/alirezarezvani/claude-skills) with judge voting adapted from [horse-race](https://github.com/qiao/horse-race). Both are MIT; notices are in `LICENSES/agenthub.txt` and `LICENSES/horse-race.txt`.
 
 `skills/iron-ham-split` is a copy of [Iron-Ham/split](https://github.com/Iron-Ham/split) (MIT), renamed with an `iron-ham-` prefix. Its README names the source commit; the notice is in `LICENSES/iron-ham-split.txt`.
 
