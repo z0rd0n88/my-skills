@@ -104,7 +104,7 @@ FLOORS  = {L-ADVERSARIAL, L-BASELINE}         # score → ∞, always kept
 FORCED  = lanes made mandatory by a risk_flag or a repo invariant:
             keys/signing   → L-CRYPTO
             money/decimals → L-NUMERIC (+ L-FINANCE)
-            on-chain       → L-WEB3
+            on-chain       → L-WEB3   # degrades, never hard-fails (§6)
             db migration   → L-DATA
             ANY risk_flag  → L-REDTEAM   # subject to the two L-REDTEAM rules below
             + any lane the repo's CLAUDE.md/ADR demands
@@ -150,6 +150,12 @@ Assembly:
   fails rather than silently dropping the reviewer. (If `L-BASELINE` itself — a
   floor, not a FORCED lane — is uncoverable, that's the empty-pool case in §1 rule 3,
   not this rule.)
+- **Exception: `L-WEB3`.** It is FORCED by an on-chain flag but, when no pool agent
+  resolves, it degrades to `L-BASELINE` like an optional lane instead of hard-failing,
+  and says so in the rationale. No shipped agent covers Solana programs, so a hard-fail
+  here would block every on-chain review in a repo without its own lane map. On-chain
+  correctness rides on `L-CRYPTO` + `L-NUMERIC` and the `solana-dev` skill, as in VBE
+  (`.claude/agent-lanes.md`); see `lane-agent-table.md`.
 
 ## 7. Output contract
 

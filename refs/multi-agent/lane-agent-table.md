@@ -62,6 +62,14 @@ by lane class, and the two classes behave oppositely:
   condition as the cap-pressure rule (`context-aware-selection.md` §5 rule 2); the
   lane's droppability is conditional at both pressure points, and identically so, or
   the two rules contradict.
+- **Exception — `L-WEB3` degrades instead of hard-failing, even when FORCED.** Vista
+  Phase 1 is Solana-only (VBE ADR-0004), these skills ship no agents, and the usual
+  pools (vista-dev's included) hold no Solana program or venue specialist; the EVM
+  agent that used to end this chain was removed. A chain exhausted by either cause
+  degrades to `L-BASELINE` like an optional lane, and the rationale says *"L-WEB3: no
+  on-chain specialist in pool; on-chain correctness rides on L-CRYPTO + L-NUMERIC and
+  the `solana-dev` skill"*. That is VBE's own stance (VBE `.claude/agent-lanes.md`).
+  Never pull an EVM agent in to fill it.
 
 **Resolution order is a total order** — the dedup rule above is order-dependent, so
 "whoever resolves first wins the shared agent" only yields a reproducible roster if
@@ -96,7 +104,7 @@ preference chain; earlier wins if present in the pool.
 | `L-APPSEC` | `security-reviewer` → `security-reviewer` → `penetration-tester` | auth, input, secrets, ssrf, injection, token |
 | `L-CRYPTO` | `crypto-security-reviewer` → `smart-contract-auditor` → `security-reviewer` | key, sign, wallet, custody, delegation, kms |
 | `L-FINANCE` | `fintech-engineer` → `payment-integration` → `compliance-auditor` → `quant-analyst` | payment, ledger, order, notional, fee, settlement |
-| `L-WEB3` | `web3-integration-specialist` → `smart-contract-specialist` → `blockchain-developer` | onchain, pda, cpi, evm, solana, tx, dex, venue |
+| `L-WEB3` | `web3-integration-specialist` → `smart-contract-specialist`* | onchain, pda, cpi, evm, solana, tx, dex, venue (*no shipped agent covers this lane, so it usually degrades; see the `L-WEB3` exception above) |
 | `L-NUMERIC` | `numeric-precision-reviewer` | decimal, bigdecimal, rounding, precision, float |
 | `L-LANG:python` | `python-reviewer` → `python-pro` → `code-reviewer` | `.py`, python, pip, pytest |
 | `L-LANG:typescript` | `typescript-reviewer` → `typescript-pro` → `react-specialist` | `.ts`, `.tsx`, node, npm |
@@ -154,7 +162,7 @@ Format: one `L-*: name[, fallback...]` per line; an optional `FORCE:` line adds
 repo-mandated forced lanes. Names are validated against the pool at parse time
 (unknown → hard-fail, same as `--reviewers`).
 
-## Worked instantiation — a Kotlin/Solana custody repo (e.g. VistaMobileBE)
+## Worked instantiation — a Kotlin/Solana custody repo (e.g. VBE)
 
 Its pool renamed `architect-review`→`architect-reviewer` and carries
 `numeric-precision-reviewer`, `crypto-security-reviewer`,

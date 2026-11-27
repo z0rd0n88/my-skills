@@ -25,7 +25,7 @@ lives on disk (`baton-runner/<run-id>/`) so a fresh manager session resumes from
 ## Use this instead of `baton-runner` when
 
 Either of these holds on this machine — both did for the `maker-lab-3-5` run
-(#615, #618, #619):
+(VistaMarkets/vbe#615, #618, #619):
 
 - **`Workflow` is blocked inside subagents** by the user-scope
   `nested-fanout-guard` hook, so a unit can run neither `dw-review`

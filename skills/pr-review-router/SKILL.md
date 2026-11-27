@@ -36,10 +36,13 @@ pass, and posts one comment saying what was found and what was pushed.
 | `VistaMarkets/vfe` | `vfe/` | `dw-review` (generic) | `flutter analyze` and `flutter test` in each package the PR touches |
 | any other repo, only when named as the target | found by its remote, as below | `code-review` | the repo's own gate command, taken from its `AGENTS.md`, `CLAUDE.md`, `README` or CI workflow; none found means the gate can't run (Step 6) |
 
-Find a checkout by its remote, not by guessing a path:
+Find a checkout by its remote, not by guessing a path. The repos sit side by side in the Vista
+home folder (`~/vista-root/` on a laptop, the folder holding the checkouts in a cloud session),
+two levels above any checkout's git directory, from a worktree too:
 
 ```bash
-for d in /home/user/*/ "$PWD"/../*/; do
+home=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)/../.. || home=$PWD/..
+for d in "$home"/*/ "$home"/vista-root/*/ "$PWD"/*/ "$PWD"/../*/ "$HOME"/vista-root/*/; do
   url=$(git -C "$d" remote get-url origin 2>/dev/null) || continue
   case "$url" in *"$REPO"|*"$REPO".git) echo "$(cd "$d" && pwd)"; break;; esac
 done
