@@ -1,6 +1,6 @@
 ---
 name: total-review
-description: Shared multi-agent codebase review workflow library. Project wrappers at .claude/skills/<slug>-total-review/ delegate to this skill's REFERENCE.md with a sibling config.yml declaring layer slices, agent picks, and tracker commands.
+description: Shared multi-agent codebase review workflow library. Project wrappers at .claude/skills/{slug}-total-review/ delegate to this skill's REFERENCE.md with a sibling config.yml declaring layer slices, agent picks, and tracker commands.
 ---
 
 # total-review
