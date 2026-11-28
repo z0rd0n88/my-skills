@@ -31,3 +31,9 @@ When the user invokes this skill, read the conversation transcript and output a 
 3. Include specific actions taken by the Agent (e.g., file edits, commits, pushes, subagent invocations, and directory deletions).
 4. When mentioning files or directories, always provide their full absolute paths.
 5. Maintain chronological order from the beginning of the session to the current moment.
+6. Style the two speakers differently so they can be told apart at a glance: wrap each User sentence in an inline code span (monospace font, highlighted background), and write each Agent sentence as plain text (normal font, no highlight). Keep the labels plain bold. A code span cannot hold a backtick, so drop backticks from User sentences.
+
+## Example
+
+1. **User:** `Asked to rename /home/alex/Projects/app/src/old.ts to new.ts.`
+2. **Agent:** Renamed the file to /home/alex/Projects/app/src/new.ts and updated its two imports.
